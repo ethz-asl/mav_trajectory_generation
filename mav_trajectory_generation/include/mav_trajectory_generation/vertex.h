@@ -1,6 +1,9 @@
 /*
- * Copyright (c) 2015, Markus Achtelik, ASL, ETH Zurich, Switzerland
- * You can contact the author at <markus dot achtelik at mavt dot ethz dot ch>
+ * Copyright (c) 2016, Markus Achtelik, ASL, ETH Zurich, Switzerland
+ * Copyright (c) 2016, Michael Burri, ASL, ETH Zurich, Switzerland
+ * Copyright (c) 2016, Helen Oleynikova, ASL, ETH Zurich, Switzerland
+ * Copyright (c) 2016, Rik Bähnemann, ASL, ETH Zurich, Switzerland
+ * Copyright (c) 2016, Marija Popovic, ASL, ETH Zurich, Switzerland
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,22 +18,21 @@
  * limitations under the License.
  */
 
-#ifndef TRAJECTORY_TYPES_TEMPLATELESS_H_
-#define TRAJECTORY_TYPES_TEMPLATELESS_H_
+#ifndef MAV_TRAJECTORY_GENERATION_VERTEX_H_
+#define MAV_TRAJECTORY_GENERATION_VERTEX_H_
 
 #include <chrono>
 #include <map>
 #include <vector>
 
+#include <glog/logging.h>
 #include <Eigen/Core>
 #include <Eigen/StdVector>
-#include <glog/logging.h>
 
-#include <mav_planning_utils/motion_defines.h>
-#include <mav_planning_utils/polynomial_templateless.h>
+#include <mav_trajectory_generation/motion_defines.h>
+#include <mav_trajectory_generation/polynomial.h>
 
-namespace mav_planning_utils {
-
+namespace mav_trajectory_generation {
 
 /**
  * \brief Vertex describes the properties of a support point of a path.
@@ -45,25 +47,20 @@ namespace mav_planning_utils {
  * \code
  *     X------------X---------------X
  *   vertex             segment
- * \endcode
- */
-class Vertex {
- public:
-  typedef std::vector<Vertex> Vector;
-  typedef Eigen::VectorXd ConstraintValue;
-  typedef std::pair<int, ConstraintValue> Constraint;
-  typedef std::map<int, ConstraintValue> Constraints;
+ * \endcodbop<int, ConstraintValue> Constraints;
 
  private:
-  size_t dimension_;
+  int D_;  ///< Number of dimensions.
   Constraints constraints_;
 
  public:
-  /// constructs an empty vertex and sets time_to_next and
-  /// derivative_to_optimize to zero
-  Vertex(size_t dimension) : dimension_(dimension) {}
+  /**
+   * \brief Constructs an empty vertex and sets time_to_next and
+   * derivative_to_optimize to zero.
+   */
+  Vertex(int D) : D_(D) {}
 
-  size_t getDimension() const { return dimension_; }
+  int D() const { return D_; }
 
   /**
    * \brief Adds a constraint for the specified derivative order with the given
@@ -72,16 +69,12 @@ class Vertex {
    * value.
    */
   void addConstraint(int derivative_order, double value) {
-    constraints_[derivative_order] =
-        ConstraintValue::Constant(dimension_, value);
+    constraints_[derivative_order] = ConstraintValue::Constant(D_, value);
   }
 
-  /// adds a constraint for the derivative specified in type with the given
-  /// values in c
   /**
-   * the constraints for the specified derivative get set to the values in the
-   * vector c. the dimension has to match the
-   * dimension of the vertex
+   * \brief Adds a constraint for the derivative specified in type with the
+   * given values in c. The dimension has to match the dimension of the vertex.
    */
   template <class Derived>
   void addConstraint(int type, const Eigen::MatrixBase<Derived>& c);
@@ -96,12 +89,13 @@ class Vertex {
                       int up_to_derivative);
 
   void makeStartOrEnd(double value, int up_to_derivative) {
-    makeStartOrEnd(Eigen::VectorXd::Constant(dimension_, value),
-                   up_to_derivative);
+    makeStartOrEnd(Eigen::VectorXd::Constant(D_, value), up_to_derivative);
   }
 
-  /// Returns whether the vertex has a constraint for the specified derivative
-  /// order.
+  /**
+   * \brief Returns whether the vertex has a constraint for the specified
+   * derivative order.
+   */
   bool hasConstraint(int derivative_order) const;
 
   /**
@@ -113,29 +107,36 @@ class Vertex {
   bool getConstraint(int derivative_order,
                      Eigen::MatrixBase<Derived>* value) const;
 
-  /// Returns a const iterator to the first constraint.
+  /**
+   * \brief Returns a const iterator to the first constraint.
+   */
   typename Constraints::const_iterator cBegin() const {
     return constraints_.begin();
   }
 
-  /// Returns a const iterator to the end of the constraints, i.e. one after the
-  /// last element.
+  /**
+   * \brief Returns a const iterator to the end of the constraints,
+      i.e. one after the last element.
+   */
   typename Constraints::const_iterator cEnd() const {
     return constraints_.end();
   }
 
-  /// Returns the number of constraints.
-  size_t getNumberOfConstraints() const { return constraints_.size(); }
+  /**
+   * \brief Returns the number of constraints.
+   */
+  int getNumberOfConstraints() const { return constraints_.size(); }
 
-  /// Checks if both lhs and rhs are equal up to tol in case of double values.
+  /**
+   * \brief Checks if both lhs and rhs are equal up to tol in case of double
+   * values.
+   */
   bool isEqualTol(const Vertex& rhs, double tol) const;
 };
 
 std::ostream& operator<<(std::ostream& stream, const Vertex& v);
-
 std::ostream& operator<<(std::ostream& stream,
                          const std::vector<Vertex>& vertices);
 
-
-}  // end namespace mav_planning_utils
-#endif
+}  // end namespace mav_trajectory_generation
+#endif // MAV_TRAJECTORY_GENERATION_VERTEX_H_

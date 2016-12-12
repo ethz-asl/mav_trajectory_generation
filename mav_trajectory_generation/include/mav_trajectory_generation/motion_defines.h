@@ -18,30 +18,33 @@
  * limitations under the License.
  */
 
-#ifndef MAV_TRAJECTORY_GENERATION_TRAJECTORY_H_
-#define MAV_TRAJECTORY_GENERATION_TRAJECTORY_H_
+#ifndef MAV_TRAJECTORY_MOTION_DEFINES_H_
+#define MAV_TRAJECTORY_MOTION_DEFINES_H_
+
+#include <string>
 
 namespace mav_trajectory_generation {
 
-class Trajectory {
- public:
-  Trajectory();
+namespace derivative_order {
+static constexpr int POSITION = 0;
+static constexpr int VELOCITY = 1;
+static constexpr int ACCELERATION = 2;
+static constexpr int JERK = 3;
+static constexpr int SNAP = 4;
 
-  Eigen::VectorXd evaluate(double t, int derivative_order) const;
+static constexpr int ORIENTATION = 0;
+static constexpr int ANGULAR_VELOCITY = 1;
+static constexpr int ANGULAR_ACCELERATION = 2;
 
-  int D() const { return D_; }
-  int N() const { return N_; }
-  int K() const { return segments_.size(); }
+static constexpr int INVALID = -1;
+}
 
- private:
-  int D_;  ///< Number of dimensions.
-  int N_;  ///< Number of coefficients.
+std::string positionDerivativeToString(int derivative);
+int positionDerivativeToInt(const std::string& string);
 
-  // TODO(helenol): align!!!!!!!!11!1!
-  // K is number of segments...
-  std::vector<Segment> segments_;
-};
+std::string orintationDerivativeToString(int derivative);
+int orientationDerivativeToInt(const std::string& string);
 
 }  // namespace mav_trajectory_generation
 
-#endif  // MAV_TRAJECTORY_GENERATION_TRAJECTORY_H_
+#endif

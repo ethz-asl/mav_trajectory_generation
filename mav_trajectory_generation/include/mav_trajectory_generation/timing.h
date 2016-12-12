@@ -1,6 +1,9 @@
 /*
- * Copyright (C) 2012-2013 Simon Lynen, ASL, ETH Zurich, Switzerland
- * You can contact the author at <slynen at ethz dot ch>
+ * Copyright (c) 2016, Markus Achtelik, ASL, ETH Zurich, Switzerland
+ * Copyright (c) 2016, Michael Burri, ASL, ETH Zurich, Switzerland
+ * Copyright (c) 2016, Helen Oleynikova, ASL, ETH Zurich, Switzerland
+ * Copyright (c) 2016, Rik Bähnemann, ASL, ETH Zurich, Switzerland
+ * Copyright (c) 2016, Marija Popovic, ASL, ETH Zurich, Switzerland
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.

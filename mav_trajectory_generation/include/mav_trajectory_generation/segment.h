@@ -1,6 +1,9 @@
 /*
- * Copyright (c) 2015, Markus Achtelik, ASL, ETH Zurich, Switzerland
- * You can contact the author at <markus dot achtelik at mavt dot ethz dot ch>
+ * Copyright (c) 2016, Markus Achtelik, ASL, ETH Zurich, Switzerland
+ * Copyright (c) 2016, Michael Burri, ASL, ETH Zurich, Switzerland
+ * Copyright (c) 2016, Helen Oleynikova, ASL, ETH Zurich, Switzerland
+ * Copyright (c) 2016, Rik Bähnemann, ASL, ETH Zurich, Switzerland
+ * Copyright (c) 2016, Marija Popovic, ASL, ETH Zurich, Switzerland
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,23 +18,21 @@
  * limitations under the License.
  */
 
-#ifndef TRAJECTORY_TYPES_TEMPLATELESS_H_
-#define TRAJECTORY_TYPES_TEMPLATELESS_H_
+#ifndef MAV_TRAJECTORY_GENERATION_SEGMENT_H_
+#define MAV_TRAJECTORY_GENERATION_SEGMENT_H_
 
 #include <chrono>
 #include <map>
 #include <vector>
 
+#include <glog/logging.h>
 #include <Eigen/Core>
 #include <Eigen/StdVector>
-#include <glog/logging.h>
 
 #include <mav_planning_utils/motion_defines.h>
 #include <mav_planning_utils/polynomial_templateless.h>
 
-
-namespace mav_planning_utils {
-
+namespace mav_trajectory_generation {
 
 /**
  * \brief Class holding the properties of parametric segment of a path.
@@ -45,24 +46,22 @@ namespace mav_planning_utils {
 class Segment {
  public:
   typedef std::vector<Segment> Vector;
-  int N;
 
-  Segment(int N_, size_t dimension) : N(N_), time_(0), dimension_(dimension) {
-    polynomials_.resize(dimension_, N);
+  Segment(int N, int D) : N_(N), time_(0), D_(D) {
+    polynomials_.resize(D_, N_);
   }
 
+  int D() const { return D_; }
+  int N() const { return N_; }
   double getTime() const { return time_; }
   uint64_t getTimeNSec() const { return static_cast<uint64_t>(1.0e9 * time_); }
 
-  size_t getDimension() const { return dimension_; }
-
   void setTime(double _time) { time_ = _time; }
-
   void setTimeNSec(uint64_t time_ns) { time_ = time_ns * 1.0e-9; }
 
-  Polynomial& operator[](size_t idx);
+  Polynomial& operator[](int idx);
 
-  const Polynomial& operator[](size_t idx) const;
+  const Polynomial& operator[](int idx) const;
 
   const std::vector<Polynomial, Eigen::aligned_allocator<Polynomial>>&
   getPolynomialsRef() const {
@@ -73,12 +72,12 @@ class Segment {
       double t, int derivative_order = derivative_order::POSITION) const;
 
  protected:
-  std::vector<Polynomial, Eigen::aligned_allocator<Polynomial>>
-      polynomials_;
+  std::vector<Polynomial, Eigen::aligned_allocator<Polynomial>> polynomials_;
   double time_;
 
  private:
-  size_t dimension_;
+  int D_;  ///< Number of dimensions.
+  int N_;  ///< Number of coefficients.
 };
 
 /**
@@ -94,7 +93,5 @@ std::ostream& operator<<(std::ostream& stream, const Segment& s);
 std::ostream& operator<<(std::ostream& stream,
                          const std::vector<Segment>& segments);
 
-
-}  // end namespace mav_planning_utils
-
-#endif
+}  // end namespace mav_trajectory_generation
+#endif // MAV_TRAJECTORY_GENERATION_SEGMENT_H_

@@ -1,6 +1,9 @@
 /*
- * Copyright (c) 2015, Markus Achtelik, ASL, ETH Zurich, Switzerland
- * You can contact the author at <markus dot achtelik at mavt dot ethz dot ch>
+ * Copyright (c) 2016, Markus Achtelik, ASL, ETH Zurich, Switzerland
+ * Copyright (c) 2016, Michael Burri, ASL, ETH Zurich, Switzerland
+ * Copyright (c) 2016, Helen Oleynikova, ASL, ETH Zurich, Switzerland
+ * Copyright (c) 2016, Rik Bähnemann, ASL, ETH Zurich, Switzerland
+ * Copyright (c) 2016, Marija Popovic, ASL, ETH Zurich, Switzerland
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,21 +18,21 @@
  * limitations under the License.
  */
 
-#ifndef TRAJECTORY_TYPES_TEMPLATELESS_H_
-#define TRAJECTORY_TYPES_TEMPLATELESS_H_
+#ifndef MAV_TRAJECTORY_GENERATION_EXTREMUM_H_
+#define MAV_TRAJECTORY_GENERATION_EXTREMUM_H_
 
 #include <chrono>
 #include <map>
 #include <vector>
 
+#include <glog/logging.h>
 #include <Eigen/Core>
 #include <Eigen/StdVector>
-#include <glog/logging.h>
 
 #include <mav_planning_utils/motion_defines.h>
 #include <mav_planning_utils/polynomial_templateless.h>
 
-namespace mav_planning_utils {
+namespace mav_trajectory_generation {
 /***
  * \brief Container holding the properties (time, value, segment where it
  * occurred) of an extremum.
@@ -51,7 +54,6 @@ class Extremum {
 
 std::ostream& operator<<(std::ostream& stream, const Extremum& e);
 
-}  // end namespace mav_planning_utils
+}  // end namespace mav_trajectory_generation
 
-#endif
-
+#endif // MAV_TRAJECTORY_GENERATION_EXTREMUM_H_
