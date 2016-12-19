@@ -22,15 +22,14 @@
 #define MAV_TRAJECTORY_GENERATION_SEGMENT_H_
 
 #include <chrono>
+#include <Eigen/Core>
+#include <Eigen/StdVector>
+#include <glog/logging.h>
 #include <map>
 #include <vector>
 
-#include <glog/logging.h>
-#include <Eigen/Core>
-#include <Eigen/StdVector>
-
-#include <mav_planning_utils/motion_defines.h>
-#include <mav_planning_utils/polynomial_templateless.h>
+#include "mav_trajectory_generation/motion_defines.h"
+#include "mav_trajectory_generation/polynomial.h"
 
 namespace mav_trajectory_generation {
 
@@ -47,7 +46,7 @@ class Segment {
  public:
   typedef std::vector<Segment> Vector;
 
-  Segment(int N, int D) : N_(N), time_(0), D_(D) {
+  Segment(int N, int D) : time_(0), N_(N), D_(D) {
     polynomials_.resize(D_, N_);
   }
 
@@ -93,5 +92,6 @@ std::ostream& operator<<(std::ostream& stream, const Segment& s);
 std::ostream& operator<<(std::ostream& stream,
                          const std::vector<Segment>& segments);
 
-}  // end namespace mav_trajectory_generation
-#endif // MAV_TRAJECTORY_GENERATION_SEGMENT_H_
+}  // namespace mav_trajectory_generation
+
+#endif  // MAV_TRAJECTORY_GENERATION_SEGMENT_H_

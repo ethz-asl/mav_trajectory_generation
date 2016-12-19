@@ -1,36 +1,34 @@
 /*
-* Copyright (c) 2014, Markus Achtelik, ASL, ETH Zurich, Switzerland
-* You can contact the author at <markus dot achtelik at mavt dot ethz dot ch>
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-* http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+ * Copyright (c) 2016, Markus Achtelik, ASL, ETH Zurich, Switzerland
+ * Copyright (c) 2016, Michael Burri, ASL, ETH Zurich, Switzerland
+ * Copyright (c) 2016, Helen Oleynikova, ASL, ETH Zurich, Switzerland
+ * Copyright (c) 2016, Rik Bähnemann, ASL, ETH Zurich, Switzerland
+ * Copyright (c) 2016, Marija Popovic, ASL, ETH Zurich, Switzerland
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
-#ifndef POLYNOMIAL_OPTIMIZATION_IMPL_HALF_TEMPLATE_H_
-#define POLYNOMIAL_OPTIMIZATION_IMPL_HALF_TEMPLATE_H_
 
+#ifndef MAV_TRAJECTORY_GENERATION_IMPL_POLYNOMIAL_OPTIMIZATION_LINEAR_IMPL_H_
+#define MAV_TRAJECTORY_GENERATION_IMPL_POLYNOMIAL_OPTIMIZATION_LINEAR_IMPL_H_
+
+#include <Eigen/Sparse>
+#include <Eigen/StdVector>
+#include <glog/logging.h>
 #include <set>
 #include <tuple>
 
-#include <Eigen/StdVector>
-#include <Eigen/Sparse>
-#include <glog/logging.h>
-
-#include <mav_planning_utils/helper.h>
-#include <mav_planning_utils/motion_defines.h>
-#include <mav_planning_utils/polynomial_templateless.h>
-#include <mav_planning_utils/trajectory_types_templateless.h>
-
-namespace mav_planning_utils {
+namespace mav_trajectory_generation {
 
 template <int _N>
 PolynomialOptimization<_N>::PolynomialOptimization(size_t dimension)
@@ -603,6 +601,6 @@ void PolynomialOptimization<_N>::getR(Eigen::MatrixXd* R) const {
 
   *R = R_sparse;
 }
-}
+}  // namespace mav_trajectory_generation
 
-#endif /* PATH_PLANNING_UNCONSTRAINED_H_ */
+#endif  // MAV_TRAJECTORY_GENERATION_IMPL_POLYNOMIAL_OPTIMIZATION_LINEAR_IMPL_H_

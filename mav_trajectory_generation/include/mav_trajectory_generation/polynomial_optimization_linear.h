@@ -1,35 +1,38 @@
 /*
-* Copyright (c) 2015, Markus Achtelik, ASL, ETH Zurich, Switzerland
-* You can contact the author at <markus dot achtelik at mavt dot ethz dot ch>
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-* http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+ * Copyright (c) 2016, Markus Achtelik, ASL, ETH Zurich, Switzerland
+ * Copyright (c) 2016, Michael Burri, ASL, ETH Zurich, Switzerland
+ * Copyright (c) 2016, Helen Oleynikova, ASL, ETH Zurich, Switzerland
+ * Copyright (c) 2016, Rik Bähnemann, ASL, ETH Zurich, Switzerland
+ * Copyright (c) 2016, Marija Popovic, ASL, ETH Zurich, Switzerland
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
-#ifndef POLYNOMIAL_OPTIMIZATION_HALF_TEMPLATE_H_
-#define POLYNOMIAL_OPTIMIZATION_HALF_TEMPLATE_H_
+#ifndef MAV_TRAJECTORY_GENERATION_POLYNOMIAL_OPTIMIZATION_LINEAR_H_
+#define MAV_TRAJECTORY_GENERATION_POLYNOMIAL_OPTIMIZATION_LINEAR_H_
 
+#include <Eigen/Sparse>
+#include <Eigen/StdVector>
+#include <glog/logging.h>
 #include <tuple>
 
-#include <Eigen/StdVector>
-#include <Eigen/Sparse>
-#include <glog/logging.h>
+#include "mav_trajectory_generation/motion_defines.h"
+#include "mav_trajectory_generation/polynomial.h"
+#include "mav_trajectory_generation/segment.h"
+#include "mav_trajectory_generation/trajectory.h"
+#include "mav_trajectory_generation/vertex.h"
 
-#include <mav_planning_utils/motion_defines.h>
-#include <mav_planning_utils/polynomial_templateless.h>
-//#include <mav_planning_utils/polynomial_trajectory.h>
-#include <mav_planning_utils/trajectory_types_templateless.h>
-
-namespace mav_planning_utils {
+namespace mav_trajectory_generation {
 
 /**
  * \brief Implements the unconstrained optimization of paths consisting of
@@ -131,6 +134,17 @@ class PolynomialOptimization {
   bool solveLinear();
 
   /**
+   * \brief Returns the trajectory created by the optimization.
+   *
+   * Only valid after solveLinear() is called. This is the preferred external
+   * interface for getting information back out of the solver.
+   */
+  void getTrajectory(Trajectory* trajectory) const {
+    CHECK_NOTNULL(trajectory);
+    trajectory->setSegments(segments_);
+  }
+
+  /**
    * \brief Computes the candidates for the maximum magnitude of a single
    * segment in the specified derivative.
    *
@@ -192,19 +206,11 @@ class PolynomialOptimization {
   template <int Derivative>
   Extremum computeMaximumOfMagnitude(std::vector<Extremum>* candidates) const;
 
-  void printReorderingMatrix(std::ostream& stream) const;
-
-  void getSegments(typename Segment::Vector* segments) const {
-    CHECK(segments != nullptr);
+  // Only for internal use -- always use getTrajectory() instead if you can!
+  void getSegments(Segment::Vector* segments) const {
+    CHECK_NOTNULL(segments);
     *segments = segments_;
   }
-
-  /*
-  void getTrajectory(
-      mav_planning_utils::TrajectoryBase::Ptr* trajectory) const {
-    trajectory->reset(
-        new mav_planning_utils::PolynomialTrajectory<N>(dimension_, segments_));
-  } */
 
   void getSegmentTimes(std::vector<double>* segment_times) const {
     CHECK(segment_times != nullptr);
@@ -226,13 +232,9 @@ class PolynomialOptimization {
   }
 
   size_t getDimension() const { return dimension_; }
-
   size_t getNumberSegments() const { return n_segments_; }
-
   size_t getNumberAllConstraints() const { return n_all_constraints_; }
-
   size_t getNumberFixedConstraints() const { return n_fixed_constraints_; }
-
   size_t getNumberFreeConstraints() const { return n_free_constraints_; }
 
   // Accessor functions for internal matrices.
@@ -240,12 +242,14 @@ class PolynomialOptimization {
   void getM(Eigen::MatrixXd* M) const;
   void getR(Eigen::MatrixXd* R) const;
 
+  void printReorderingMatrix(std::ostream& stream) const;
+
  private:
   typedef Eigen::Matrix<double, N, N> SquareMatrix;
   typedef std::vector<SquareMatrix, Eigen::aligned_allocator<SquareMatrix> >
       SquareMatrixVector;
 
-   /** Constructs the sparse R (cost) matrix. **/
+  /** Constructs the sparse R (cost) matrix. **/
   void constructR(Eigen::SparseMatrix<double>* R) const;
 
   /**
@@ -313,8 +317,8 @@ class PolynomialOptimization {
   size_t n_fixed_constraints_;
   size_t n_free_constraints_;
 };
-}
+}  // namespace mav_trajectory_generation
 
-#include <mav_planning_utils/implementation/polynomial_optimization_impl_half_template.h>
+#include "mav_trajectory_generation/impl/polynomial_optimization_linear_impl.h
 
-#endif /* PATH_PLANNING_UNCONSTRAINED_H_ */
+#endif  // MAV_TRAJECTORY_GENERATION_POLYNOMIAL_OPTIMIZATION_LINEAR_H_

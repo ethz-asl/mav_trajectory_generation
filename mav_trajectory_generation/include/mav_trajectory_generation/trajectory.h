@@ -21,6 +21,8 @@
 #ifndef MAV_TRAJECTORY_GENERATION_TRAJECTORY_H_
 #define MAV_TRAJECTORY_GENERATION_TRAJECTORY_H_
 
+#include "mav_trajectory_generation/segment.h"
+
 namespace mav_trajectory_generation {
 
 class Trajectory {
@@ -33,13 +35,18 @@ class Trajectory {
   int N() const { return N_; }
   int K() const { return segments_.size(); }
 
+  void setSegments(const Segment::Vector& segments) {
+    segments_ = segments;
+    D_ = segments_.D();
+    N_ = segments_.N();
+  }
+
  private:
   int D_;  ///< Number of dimensions.
   int N_;  ///< Number of coefficients.
 
-  // TODO(helenol): align!!!!!!!!11!1!
   // K is number of segments...
-  std::vector<Segment> segments_;
+  Segment::Vector segments_;
 };
 
 }  // namespace mav_trajectory_generation

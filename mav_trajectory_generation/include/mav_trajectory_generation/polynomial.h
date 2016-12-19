@@ -1,32 +1,21 @@
 /*
-
- Copyright (c) 2013, Markus Achtelik, ASL, ETH Zurich, Switzerland
- You can contact the author at <markus dot achtelik at mavt dot ethz dot ch>
-
- All rights reserved.
-
- Redistribution and use in source and binary forms, with or without
- modification, are permitted provided that the following conditions are met:
- * Redistributions of source code must retain the above copyright
- notice, this list of conditions and the following disclaimer.
- * Redistributions in binary form must reproduce the above copyright
- notice, this list of conditions and the following disclaimer in the
- documentation and/or other materials provided with the distribution.
- * Neither the name of ETHZ-ASL nor the
- names of its contributors may be used to endorse or promote products
- derived from this software without specific prior written permission.
-
- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- DISCLAIMED. IN NO EVENT SHALL ETHZ-ASL BE LIABLE FOR ANY
- DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
+ * Copyright (c) 2016, Markus Achtelik, ASL, ETH Zurich, Switzerland
+ * Copyright (c) 2016, Michael Burri, ASL, ETH Zurich, Switzerland
+ * Copyright (c) 2016, Helen Oleynikova, ASL, ETH Zurich, Switzerland
+ * Copyright (c) 2016, Rik Bähnemann, ASL, ETH Zurich, Switzerland
+ * Copyright (c) 2016, Marija Popovic, ASL, ETH Zurich, Switzerland
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 #ifndef MAV_TRAJECTORY_GENERATION_POLYNOMIAL_H_
@@ -40,6 +29,7 @@
 #include <glog/logging.h>
 
 namespace mav_trajectory_generation {
+
 /**
  * \brief Implementation of polynomials of order _N-1. Order must be known at
  * compile time.
@@ -51,6 +41,13 @@ namespace mav_trajectory_generation {
 class Polynomial {
  public:
   typedef std::vector<Polynomial, Eigen::aligned_allocator<Polynomial>> Vector;
+
+  // Maximum degree of a polynomial for which the static derivative (basis
+  // coefficient) matrix should be evaluated for.
+  constexpr int kMaxN = 12;
+  // One static shared across all members of the class, computed up to order
+  // kMaxN.
+  static MatrixXd base_coefficients_;
 
   Polynomial(int N_) : N(N_) {}
 
@@ -94,7 +91,7 @@ class Polynomial {
 
     const int deg = N - 1;
     for (int i = 0; i < max_deg; i++) {
-      const VectorR row = base_coefficients_.row(i);
+      Eigen::VectorXd row = base_coefficients_.block(i, 0, 1, N);
       double acc = row[tmp] * coefficients_[tmp];
       for (int j = tmp - 1; j >= i; --j) {
         acc *= t;
@@ -110,18 +107,16 @@ class Polynomial {
     EIGEN_STATIC_ASSERT_VECTOR_ONLY(Derived);
     const int max_deg = result.size();
 
-    Eigen::MatrixBase<Derived> &_result =
-        const_cast<Eigen::MatrixBase<Derived> &>(result);
-
-
+    Eigen::MatrixBase<Derived>& _result =
+        const_cast<Eigen::MatrixBase<Derived>&>(result);
   }
 
   /// evaluates the specified derivative of the polynomial at time t and writes
   /// the result to result
-  void evaluate(double &result, double t, int derivative) const {
+  void evaluate(double& result, double t, int derivative) const {
     CHECK_LT(derivative, N_);
     const int tmp = N_ - 1;
-    const VectorR row = base_coefficients_.row(derivative);
+    Eigen::VectorXd row = base_coefficients_.block(derivative, 0, 1, N);
     result = row[tmp] * coefficients_[tmp];
     for (int j = tmp - 1; j >= derivative; --j) {
       result *= t;
@@ -187,6 +182,29 @@ class Polynomial {
   Eigen::VectorXd coefficients_;
 };
 
-}  // mav_trajectory_generation
+// Static functions to compute base coefficients.
+
+/// Computes the base coefficients of the derivatives of the polynomial,
+/// up to order N.
+Eigen::MatrixXd Polynomial::computeBaseCoefficients(int N) {
+  Eigen::MatrixXd base_coefficients(N, N);
+
+  base_coefficients.setZero();
+  base_coefficients.row(0).setOnes();
+
+  const int DEG = N - 1;
+  int order = DEG;
+  for (int n = 1; n < N; n++) {
+    for (int i = DEG - order; i < N; i++) {
+      base_coefficients(n, i) = (order - DEG + i) * base_coefficients(n - 1, i);
+    }
+    order--;
+  }
+  return base_coefficients;
+}
+
+Polynomial::base_coefficients_ = computeBaseCoefficients(Polynomial::kMaxN);
+
+}  // namespace mav_trajectory_generation
 
 #endif  // MAV_TRAJECTORY_GENERATION_POLYNOMIAL_H_

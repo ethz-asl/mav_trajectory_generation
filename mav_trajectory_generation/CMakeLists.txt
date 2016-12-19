@@ -10,11 +10,9 @@ add_definitions(-std=c++11)
 #############
 # LIBRARIES #
 #############
-#cs_add_library(${PROJECT_NAME}
-#  src/core/block.cc
-#  src/utils/timing.cc
-#  src/mesh/marching_cubes.cc
-#)
+cs_add_library(${PROJECT_NAME}
+  src/segment.cpp
+)
 
 ############
 # BINARIES #

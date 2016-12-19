@@ -29,8 +29,8 @@
 #include <Eigen/Core>
 #include <Eigen/StdVector>
 
-#include <mav_planning_utils/motion_defines.h>
-#include <mav_planning_utils/polynomial_templateless.h>
+#include "mav_trajectory_generation/motion_defines.h"
+#include "mav_trajectory_generation/polynomial_templateless.h"
 
 namespace mav_trajectory_generation {
 /***
@@ -54,6 +54,6 @@ class Extremum {
 
 std::ostream& operator<<(std::ostream& stream, const Extremum& e);
 
-}  // end namespace mav_trajectory_generation
+}  // namespace mav_trajectory_generation
 
-#endif // MAV_TRAJECTORY_GENERATION_EXTREMUM_H_
+#endif  // MAV_TRAJECTORY_GENERATION_EXTREMUM_H_
