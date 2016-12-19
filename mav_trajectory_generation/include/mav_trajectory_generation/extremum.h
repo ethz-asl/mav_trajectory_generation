@@ -21,16 +21,7 @@
 #ifndef MAV_TRAJECTORY_GENERATION_EXTREMUM_H_
 #define MAV_TRAJECTORY_GENERATION_EXTREMUM_H_
 
-#include <chrono>
-#include <map>
-#include <vector>
-
-#include <glog/logging.h>
-#include <Eigen/Core>
-#include <Eigen/StdVector>
-
-#include "mav_trajectory_generation/motion_defines.h"
-#include "mav_trajectory_generation/polynomial_templateless.h"
+#include <iostream>
 
 namespace mav_trajectory_generation {
 /***
@@ -52,7 +43,11 @@ class Extremum {
   int segment_idx;  ///< Index of the segment, where the extremum occurs.
 };
 
-std::ostream& operator<<(std::ostream& stream, const Extremum& e);
+inline std::ostream& operator<<(std::ostream& stream, const Extremum& e) {
+  stream << "time: " << e.time << ", value: " << e.value
+         << ", segment idx: " << e.segment_idx << std::endl;
+  return stream;
+}
 
 }  // namespace mav_trajectory_generation
 

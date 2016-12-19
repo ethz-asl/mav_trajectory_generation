@@ -191,4 +191,4 @@ typedef Timer DebugTimer;
 
 #endif  // MAV_TRAJECTORY_GENERATION_TIMING_H_
 
-#include "mav_trajectory_generation/impl/timing_impl.h
+#include "mav_trajectory_generation/impl/timing_impl.h"

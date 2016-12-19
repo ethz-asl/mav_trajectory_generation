@@ -18,15 +18,15 @@
  * limitations under the License.
  */
 
-
 #ifndef MAV_TRAJECTORY_GENERATION_IMPL_POLYNOMIAL_OPTIMIZATION_LINEAR_IMPL_H_
 #define MAV_TRAJECTORY_GENERATION_IMPL_POLYNOMIAL_OPTIMIZATION_LINEAR_IMPL_H_
 
 #include <Eigen/Sparse>
-#include <Eigen/StdVector>
 #include <glog/logging.h>
 #include <set>
 #include <tuple>
+
+#include "mav_trajectory_generation/convolution.h"
 
 namespace mav_trajectory_generation {
 
@@ -128,9 +128,9 @@ void PolynomialOptimization<_N>::setupMappingMatrix(
   // segment.
   // Thus, A is created as [A(t=0); A(t=segment_time].
   for (int i = 0; i < N / 2; ++i) {
-    Polynomial::baseCoeffsWithTime(N, _A.template row(i), i, 0);
-    Polynomial::baseCoeffsWithTime(N, _A.template row(i + N / 2), i,
-                                      segment_time);
+    Polynomial::baseCoeffsWithTime(N, i, 0, _A.template row(i));
+    Polynomial::baseCoeffsWithTime(N, i, segment_time,
+                                   _A.template row(i + N / 2));
   }
 }
 
@@ -144,9 +144,8 @@ double PolynomialOptimization<_N>::computeCost() const {
     const Segment& segment = segments_[segment_idx];
     for (size_t dimension_idx = 0; dimension_idx < dimension_;
          ++dimension_idx) {
-      const typename Polynomial::VectorR c =
-          segment[dimension_idx]
-              .getCoefficients(derivative_order::POSITION);
+      const Eigen::VectorXd c =
+          segment[dimension_idx].getCoefficients(derivative_order::POSITION);
       const double partial_cost = c * Q * c.transpose();
       cost += partial_cost;
     }
@@ -342,8 +341,8 @@ void PolynomialOptimization<_N>::updateSegmentTimes(
     const double segment_time = segment_times[i];
     CHECK_GT(segment_time, 0) << "segment times need to be greater than zero";
 
-    Polynomial::quadraticCostJacobian(N, cost_matrices_[i], segment_time,
-                                      derivative_to_optimize_);
+    Polynomial::quadraticCostJacobian(N, segment_time, derivative_to_optimize_,
+                                      cost_matrices_[i]);
     SquareMatrix A;
     setupMappingMatrix(segment_time, A);
     invertMappingMatrix(A, inverse_mapping_matrices_[i]);
@@ -463,7 +462,7 @@ void PolynomialOptimization<_N>::computeSegmentMaximumMagnitudeCandidates(
 
   Eigen::VectorXcd roots;
 
-  if (segment.getDimension() > 1) {
+  if (segment.D() > 1) {
     Eigen::Matrix<double, convolved_coefficients_length, 1>
         convolved_coefficients;
     convolved_coefficients.setZero();
@@ -482,8 +481,7 @@ void PolynomialOptimization<_N>::computeSegmentMaximumMagnitudeCandidates(
   // For dimension == 1, it doesn't make a difference, thus we can simply
   // compute the roots of the derivative.
   else {
-    const Polynomial d(N,
-        segment[0].getCoefficients(Derivative).transpose());
+    const Polynomial d(N, segment[0].getCoefficients(Derivative).transpose());
     roots = d.computeRoots();
   }
 

@@ -58,9 +58,9 @@ class Segment {
   void setTime(double _time) { time_ = _time; }
   void setTimeNSec(uint64_t time_ns) { time_ = time_ns * 1.0e-9; }
 
-  Polynomial& operator[](int idx);
+  Polynomial& operator[](size_t idx);
 
-  const Polynomial& operator[](int idx) const;
+  const Polynomial& operator[](size_t idx) const;
 
   const std::vector<Polynomial, Eigen::aligned_allocator<Polynomial>>&
   getPolynomialsRef() const {

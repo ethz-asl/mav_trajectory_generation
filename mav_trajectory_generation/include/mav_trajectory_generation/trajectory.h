@@ -36,9 +36,10 @@ class Trajectory {
   int K() const { return segments_.size(); }
 
   void setSegments(const Segment::Vector& segments) {
+    CHECK(!segments_.empty());
     segments_ = segments;
-    D_ = segments_.D();
-    N_ = segments_.N();
+    D_ = segments_.front().D();
+    N_ = segments_.front().N();
   }
 
  private:

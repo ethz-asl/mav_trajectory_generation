@@ -26,6 +26,7 @@
 #include <glog/logging.h>
 #include <tuple>
 
+#include "mav_trajectory_generation/extremum.h"
 #include "mav_trajectory_generation/motion_defines.h"
 #include "mav_trajectory_generation/polynomial.h"
 #include "mav_trajectory_generation/segment.h"
@@ -319,6 +320,6 @@ class PolynomialOptimization {
 };
 }  // namespace mav_trajectory_generation
 
-#include "mav_trajectory_generation/impl/polynomial_optimization_linear_impl.h
+#include "mav_trajectory_generation/impl/polynomial_optimization_linear_impl.h"
 
 #endif  // MAV_TRAJECTORY_GENERATION_POLYNOMIAL_OPTIMIZATION_LINEAR_H_

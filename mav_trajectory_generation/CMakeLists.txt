@@ -11,16 +11,20 @@ add_definitions(-std=c++11)
 # LIBRARIES #
 #############
 cs_add_library(${PROJECT_NAME}
+  src/motion_defines.cpp
+  src/rpoly.cpp
   src/segment.cpp
+  src/vertex.cpp
+  src/polynomial.cpp
 )
 
 ############
 # BINARIES #
 ############
-#cs_add_executable(voxblox_rox
-#  src/voxblox.cc
-#)
-#target_link_libraries(voxblox_rox ${PROJECT_NAME})
+cs_add_executable(polynomial_timing_evaluation
+  src/polynomial_timing_evaluation.cpp
+)
+target_link_libraries(polynomial_timing_evaluation ${PROJECT_NAME})
 
 #########
 # TESTS #

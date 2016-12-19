@@ -54,6 +54,11 @@ convolve(const Eigen::Matrix<double, DataDimension_, 1>& data,
   return convolved;
 }
 
+template <typename T>
+int sgn(T val) {
+  return (T(0) < val) - (val < T(0));
+}
+
 }  // namespace mav_trajectory_generation
 
 #endif  // MAV_TRAJECTORY_GENERATION_CONVOLUTION_H_
