@@ -40,6 +40,33 @@
 
 namespace mav_trajectory_generation {
 
+Eigen::VectorXcd findRootsJenkinsTraub(
+    const Eigen::VectorXd& coefficients_increasing) {
+  const Eigen::VectorXd coefficients_decreasing =
+      coefficients_increasing.reverse();
+
+  const int n_coefficients = coefficients_increasing.size();
+  double* roots_real = new double[n_coefficients];
+  double* roots_imag = new double[n_coefficients];
+
+  int ret =
+      findRootsJenkinsTraub(coefficients_decreasing.data(), n_coefficients - 1,
+                            roots_real, roots_imag, NULL);
+
+  Eigen::VectorXcd roots;
+
+  if (ret > 0) {
+    roots.resize(ret);
+    for (int i = 0; i < ret; ++i) {
+      roots[i] = std::complex<double>(roots_real[i], roots_imag[i]);
+    }
+  }
+
+  delete[] roots_real;
+  delete[] roots_imag;
+  return roots;
+}
+
 namespace rpoly_impl {
 
 void quad(double a, double b1, double c, double *sr, double *si, double *lr,

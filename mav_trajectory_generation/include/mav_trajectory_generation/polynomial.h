@@ -72,16 +72,17 @@ class Polynomial {
 
   /**
    * \brief Returns the coefficients for the specified derivative of the
-   * polynomial.
+   * polynomial as a ROW vector.
    */
-  Eigen::Matrix<double, 1, Eigen::Dynamic> getCoefficients(
-      int derivative = 0) const {
+  Eigen::RowVectorXd getCoefficients(int derivative = 0) const {
     assert(derivative <= N_);
-    if (derivative == 0)
-      return coefficients_;
-    else
-      return coefficients_.tail(N_ - derivative)
-          .cwiseProduct(base_coefficients_.block(derivative, 0, 1, N_));
+    if (derivative == 0) {
+      return coefficients_.transpose();
+    } else {
+      return coefficients_.tail(N_ - derivative).transpose()
+          .cwiseProduct(
+              base_coefficients_.block(derivative, derivative, 1, N_));
+    }
   }
 
   /// evaluates the polynomial at time t and writes the result to result
@@ -91,8 +92,7 @@ class Polynomial {
 
     const int tmp = N_ - 1;
     for (int i = 0; i < max_deg; i++) {
-      Eigen::Matrix<double, 1, Eigen::Dynamic> row =
-          base_coefficients_.block(i, 0, 1, N_);
+      Eigen::RowVectorXd row = base_coefficients_.block(i, 0, 1, N_);
       double acc = row[tmp] * coefficients_[tmp];
       for (int j = tmp - 1; j >= i; --j) {
         acc *= t;
@@ -108,8 +108,7 @@ class Polynomial {
     CHECK_LT(derivative, N_);
     double result;
     const int tmp = N_ - 1;
-    Eigen::Matrix<double, 1, Eigen::Dynamic> row =
-        base_coefficients_.block(derivative, 0, 1, N_);
+    Eigen::RowVectorXd row = base_coefficients_.block(derivative, 0, 1, N_);
     result = row[tmp] * coefficients_[tmp];
     for (int j = tmp - 1; j >= derivative; --j) {
       result *= t;
@@ -138,7 +137,6 @@ class Polynomial {
     //
     //      Eigen::EigenSolver<CompanionMatrix> es(companion, false);
     //      return es.eigenvalues();
-
     return findRootsJenkinsTraub(coefficients_);
   }
 
@@ -177,8 +175,8 @@ class Polynomial {
    * \sa static void baseCoeffsWithTime(const Eigen::MatrixBase<Derived> &
    * coeffs, int derivative, double t)
    */
-  static Eigen::Matrix<double, 1, Eigen::Dynamic> baseCoeffsWithTime(
-      int N, int derivative, double t) {
+  static Eigen::RowVectorXd baseCoeffsWithTime(int N, int derivative,
+                                               double t) {
     Eigen::Matrix<double, Eigen::Dynamic, 1> c(N, 1);
     baseCoeffsWithTime(N, derivative, t, c);
     return c;
@@ -195,24 +193,20 @@ class Polynomial {
   static void quadraticCostJacobian(int N, int derivative, double t,
                                     const Eigen::MatrixBase<Derived>& C) {
     CHECK_LT(derivative, N);
-    if (Derived::RowsAtCompileTime == Eigen::Dynamic ||
-        Derived::ColsAtCompileTime == Eigen::Dynamic) {
-      CHECK_EQ(C.rows(), N);
-      CHECK_EQ(C.cols(), N);
-    } else {
-      // EIGEN_STATIC_ASSERT_MATRIX_SPECIFIC_SIZE(Derived, N, N);
-    }
+    CHECK_EQ(C.rows(), N);
+    CHECK_EQ(C.cols(), N);
 
     Eigen::MatrixBase<Derived>& _C = const_cast<Eigen::MatrixBase<Derived>&>(C);
     _C.setZero();
 
     for (int col = 0; col < N - derivative; col++) {
       for (int row = 0; row < N - derivative; row++) {
-        double exp = (N - 1 - derivative) * 2 + 1 - row - col;
+        double exponent = (N - 1 - derivative) * 2 + 1 - row - col;
 
         _C(N - 1 - row, N - 1 - col) =
             base_coefficients_(derivative, N - 1 - row) *
-            base_coefficients_(derivative, N - 1 - col) * pow(t, exp) * 2 / exp;
+            base_coefficients_(derivative, N - 1 - col) * pow(t, exponent) *
+            2.0 / exponent;
       }
     }
   }

@@ -34,9 +34,9 @@ const Polynomial& Segment::operator[](size_t idx) const {
 
 Eigen::VectorXd Segment::evaluate(double t, int derivative) const {
   Eigen::VectorXd result(D_);
-  for (size_t d = 0; d < D_; ++d)
+  for (size_t d = 0; d < D_; ++d) {
     result[d] = polynomials_[d].evaluate(t, derivative);
-
+  }
   return result;
 }
 
@@ -45,8 +45,9 @@ void printSegment(std::ostream& stream, const Segment& s, int derivative) {
   stream << "t: " << s.getTime() << std::endl;
   stream << " coefficients for " << positionDerivativeToString(derivative)
          << ": " << std::endl;
-  for (size_t i = 0; i < s.D(); ++i)
+  for (size_t i = 0; i < s.D(); ++i) {
     stream << s[i].getCoefficients(derivative) << std::endl;
+  }
 }
 
 std::ostream& operator<<(std::ostream& stream, const Segment& s) {

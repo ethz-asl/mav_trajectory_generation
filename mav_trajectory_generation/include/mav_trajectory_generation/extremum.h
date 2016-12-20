@@ -28,9 +28,9 @@ namespace mav_trajectory_generation {
  * \brief Container holding the properties (time, value, segment where it
  * occurred) of an extremum.
  */
-class Extremum {
+struct Extremum {
  public:
-  Extremum() : time(0), value(0), segment_idx(0) {}
+  Extremum() : time(0.0), value(0.0), segment_idx(0) {}
 
   Extremum(double _time, double _value, int _segment_idx)
       : time(_time), value(_value), segment_idx(_segment_idx) {}

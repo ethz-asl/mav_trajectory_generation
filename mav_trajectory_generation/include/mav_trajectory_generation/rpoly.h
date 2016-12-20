@@ -22,6 +22,7 @@
 #define MAV_TRAJECTORY_GENERATION_RPOLY_H_
 
 #include <Eigen/Core>
+#include <iostream>
 
 namespace mav_trajectory_generation {
 
@@ -56,38 +57,8 @@ int findRootsJenkinsTraub(const double* coefficients_decreasing, int degree,
  * INDECREASING! order.
  * \return roots Complex roots of the polynomial.
  */
-template <typename Derived>
 Eigen::VectorXcd findRootsJenkinsTraub(
-    const Eigen::MatrixBase<Derived>& coefficients_increasing);
-
-template <typename Derived>
-Eigen::VectorXcd findRootsJenkinsTraub(
-    const Eigen::MatrixBase<Derived>& coefficients_increasing) {
-  EIGEN_STATIC_ASSERT_VECTOR_ONLY(Derived);
-
-  const Derived coefficients_decreasing = coefficients_increasing.reverse();
-
-  const int n_coefficients = coefficients_increasing.size();
-  double* roots_real = new double[n_coefficients];
-  double* roots_imag = new double[n_coefficients];
-
-  int ret =
-      findRootsJenkinsTraub(coefficients_decreasing.data(), n_coefficients - 1,
-                            roots_real, roots_imag, NULL);
-
-  Eigen::VectorXcd roots;
-
-  if (ret > 0) {
-    roots.resize(ret);
-    for (int i = 0; i < ret; ++i) {
-      roots[i] = std::complex<double>(roots_real[i], roots_imag[i]);
-    }
-  }
-
-  delete[] roots_real;
-  delete[] roots_imag;
-  return roots;
-}
+    const Eigen::VectorXd& coefficients_increasing);
 
 }  // namespace mav_trajectory_generation
 

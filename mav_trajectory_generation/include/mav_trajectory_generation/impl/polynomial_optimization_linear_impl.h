@@ -144,7 +144,7 @@ double PolynomialOptimization<_N>::computeCost() const {
     const Segment& segment = segments_[segment_idx];
     for (size_t dimension_idx = 0; dimension_idx < dimension_;
          ++dimension_idx) {
-      const Eigen::Matrix<double, 1, Eigen::Dynamic> c =
+      const Eigen::RowVectorXd c =
           segment[dimension_idx].getCoefficients(derivative_order::POSITION);
       const double partial_cost = c * Q * c.transpose();
       cost += partial_cost;
@@ -464,7 +464,7 @@ void PolynomialOptimization<_N>::computeSegmentMaximumMagnitudeCandidates(
 
   if (segment.D() > 1) {
     Eigen::Matrix<double, convolved_coefficients_length, 1>
-        convolved_coefficients;
+        convolved_coefficients;  // Column vector.
     convolved_coefficients.setZero();
     for (const Polynomial& p : segment.getPolynomialsRef()) {
       Eigen::Matrix<double, n_d, 1> d =
@@ -481,7 +481,7 @@ void PolynomialOptimization<_N>::computeSegmentMaximumMagnitudeCandidates(
   // For dimension == 1, it doesn't make a difference, thus we can simply
   // compute the roots of the derivative.
   else {
-    const Polynomial d(N, segment[0].getCoefficients(Derivative).transpose());
+    const Polynomial d(N, segment[0].getCoefficients(Derivative));
     roots = d.computeRoots();
   }
 
@@ -542,6 +542,7 @@ Extremum PolynomialOptimization<_N>::computeMaximumOfMagnitude(
         0.0);  // Add the beginning as well. Call below appends its extrema.
     computeSegmentMaximumMagnitudeCandidates<Derivative>(s, 0.0, s.getTime(),
                                                          &extrema_times);
+
     for (double t : extrema_times) {
       const Extremum candidate(t, s.evaluate(t, Derivative).norm(),
                                segment_idx);

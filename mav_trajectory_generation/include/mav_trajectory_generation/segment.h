@@ -46,7 +46,7 @@ class Segment {
  public:
   typedef std::vector<Segment> Vector;
 
-  Segment(int N, int D) : time_(0), N_(N), D_(D) {
+  Segment(int N, int D) : time_(0.0), N_(N), D_(D) {
     polynomials_.resize(D_, N_);
   }
 
@@ -62,16 +62,13 @@ class Segment {
 
   const Polynomial& operator[](size_t idx) const;
 
-  const std::vector<Polynomial, Eigen::aligned_allocator<Polynomial>>&
-  getPolynomialsRef() const {
-    return polynomials_;
-  }
+  const Polynomial::Vector& getPolynomialsRef() const { return polynomials_; }
 
   Eigen::VectorXd evaluate(
       double t, int derivative_order = derivative_order::POSITION) const;
 
  protected:
-  std::vector<Polynomial, Eigen::aligned_allocator<Polynomial>> polynomials_;
+  Polynomial::Vector polynomials_;
   double time_;
 
  private:
