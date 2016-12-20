@@ -75,8 +75,8 @@ class Segment {
   double time_;
 
  private:
-  int D_;  ///< Number of dimensions.
   int N_;  ///< Number of coefficients.
+  int D_;  ///< Number of dimensions.
 };
 
 /**

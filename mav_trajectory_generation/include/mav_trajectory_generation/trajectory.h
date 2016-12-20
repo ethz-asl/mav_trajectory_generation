@@ -42,6 +42,9 @@ class Trajectory {
     N_ = segments_.front().N();
   }
 
+  // TODO(helenol): write functions to merge and split trajectories into
+  // different dimensions.
+
  private:
   int D_;  ///< Number of dimensions.
   int N_;  ///< Number of coefficients.

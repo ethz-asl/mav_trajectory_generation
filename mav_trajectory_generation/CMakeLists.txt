@@ -29,10 +29,10 @@ target_link_libraries(polynomial_timing_evaluation ${PROJECT_NAME})
 #########
 # TESTS #
 #########
-#catkin_add_gtest(test_tsdf_map
-#  test/test_tsdf_map.cc
-#)
-#target_link_libraries(test_tsdf_map ${PROJECT_NAME} ${catkin_LIBRARIES})
+catkin_add_gtest(test_polynomial_optimization
+  test/test_polynomial_optimization.cpp
+)
+target_link_libraries(test_polynomial_optimization ${PROJECT_NAME} ${catkin_LIBRARIES})
 
 ##########
 # EXPORT #

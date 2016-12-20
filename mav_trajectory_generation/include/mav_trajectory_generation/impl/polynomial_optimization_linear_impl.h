@@ -144,7 +144,7 @@ double PolynomialOptimization<_N>::computeCost() const {
     const Segment& segment = segments_[segment_idx];
     for (size_t dimension_idx = 0; dimension_idx < dimension_;
          ++dimension_idx) {
-      const Eigen::VectorXd c =
+      const Eigen::Matrix<double, 1, Eigen::Dynamic> c =
           segment[dimension_idx].getCoefficients(derivative_order::POSITION);
       const double partial_cost = c * Q * c.transpose();
       cost += partial_cost;
@@ -341,7 +341,7 @@ void PolynomialOptimization<_N>::updateSegmentTimes(
     const double segment_time = segment_times[i];
     CHECK_GT(segment_time, 0) << "segment times need to be greater than zero";
 
-    Polynomial::quadraticCostJacobian(N, segment_time, derivative_to_optimize_,
+    Polynomial::quadraticCostJacobian(N, derivative_to_optimize_, segment_time,
                                       cost_matrices_[i]);
     SquareMatrix A;
     setupMappingMatrix(segment_time, A);

@@ -50,7 +50,7 @@ class Polynomial {
   // kMaxN.
   static Eigen::MatrixXd base_coefficients_;
 
-  Polynomial(int N) : N_(N) {}
+  Polynomial(int N) : N_(N), coefficients_(N) { coefficients_.setZero(); }
 
   // Assign arbitrary coefficients to a polynomial.
   template <class Derived>
@@ -67,6 +67,7 @@ class Polynomial {
    */
   template <class Derived>
   void setCoefficients(const Eigen::MatrixBase<Derived>& coeffs) {
+    CHECK_EQ(coeffs.cols(), N_);
     coefficients_ = coeffs;
   }
 
@@ -81,19 +82,18 @@ class Polynomial {
       return coefficients_;
     else
       return coefficients_.tail(N_ - derivative)
-          .cwiseProduct(
-              base_coefficients_.row(derivative).tail(N_ - derivative));
+          .cwiseProduct(base_coefficients_.block(derivative, 0, 1, N_));
   }
 
   /// evaluates the polynomial at time t and writes the result to result
   void evaluate(double t, Eigen::VectorXd* result) const {
-    CHECK_LE(result->rows(), N_);
+    CHECK_LE(result->size(), N_);
     const int max_deg = result->size();
 
-    const int deg = N_ - 1;
     const int tmp = N_ - 1;
     for (int i = 0; i < max_deg; i++) {
-      Eigen::VectorXd row = base_coefficients_.block(i, 0, 1, N_);
+      Eigen::Matrix<double, 1, Eigen::Dynamic> row =
+          base_coefficients_.block(i, 0, 1, N_);
       double acc = row[tmp] * coefficients_[tmp];
       for (int j = tmp - 1; j >= i; --j) {
         acc *= t;
@@ -109,33 +109,14 @@ class Polynomial {
     CHECK_LT(derivative, N_);
     double result;
     const int tmp = N_ - 1;
-    Eigen::VectorXd row = base_coefficients_.block(derivative, 0, 1, N_);
+    Eigen::Matrix<double, 1, Eigen::Dynamic> row =
+        base_coefficients_.block(derivative, 0, 1, N_);
     result = row[tmp] * coefficients_[tmp];
     for (int j = tmp - 1; j >= derivative; --j) {
       result *= t;
       result += row[j] * coefficients_[j];
     }
     return result;
-  }
-
-  /// evaluates the polynomial at time t and returns the result
-  template <int max_deg>
-  inline Eigen::Matrix<double, max_deg, 1> evaluate(double t) const {
-    Eigen::Matrix<double, max_deg, 1> result;
-    evaluate(result, t);
-    return result;
-  }
-
-  /// evaluates the polynomial at times in t and writes the result for each time
-  /// into the corresponding column of result
-  template <int max_deg, int n_samples>
-  void evaluate(const Eigen::Matrix<double, 1, n_samples>& t,
-                Eigen::Matrix<double, max_deg, n_samples> result) const {
-    Eigen::Matrix<double, max_deg, 1> _result;
-    for (int i = 0; i < n_samples; i++) {
-      evaluate(t[i], _result);
-      result.col(i) = result;
-    }
   }
 
   /**
@@ -212,7 +193,7 @@ class Polynomial {
    * \param[in] derivative used to compute the cost
    */
   template <class Derived>
-  static void quadraticCostJacobian(int N, double t, int derivative,
+  static void quadraticCostJacobian(int N, int derivative, double t,
                                     const Eigen::MatrixBase<Derived>& C) {
     CHECK_LT(derivative, N);
     if (Derived::RowsAtCompileTime == Eigen::Dynamic ||
@@ -242,10 +223,10 @@ class Polynomial {
    * \sa static void quadraticCostJacobian(const Eigen::MatrixBase<Derived> & C,
    * Scalar t, int derivative)
    */
-  static Eigen::MatrixXd quadraticCostJacobian(int N, double t,
-                                               int derivative) {
+  static Eigen::MatrixXd quadraticCostJacobian(int N, int derivative,
+                                               double t) {
     Eigen::MatrixXd C(N, N);
-    quadraticCostJacobian(N, t, derivative, C);
+    quadraticCostJacobian(N, derivative, t, C);
     return C;
   }
 
