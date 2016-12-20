@@ -67,7 +67,6 @@ class Polynomial {
    */
   template <class Derived>
   void setCoefficients(const Eigen::MatrixBase<Derived>& coeffs) {
-    CHECK_EQ(coeffs.cols(), N_);
     coefficients_ = coeffs;
   }
 
