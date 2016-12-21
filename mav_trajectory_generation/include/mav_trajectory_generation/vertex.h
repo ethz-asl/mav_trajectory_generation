@@ -78,16 +78,14 @@ class Vertex {
    * vector c. the dimension has to match the
    * dimension of the vertex
    */
-  template <class Derived>
-  void addConstraint(int type, const Eigen::MatrixBase<Derived>& c);
+  void addConstraint(int type, const Eigen::VectorXd& constraint);
 
   /**
    * \brief Sets a constraint for position and sets all derivatives up to
    * (including) up_to_derivative to zero.
    * Convenience method for beginning / end vertices.
    */
-  template <class Derived>
-  void makeStartOrEnd(const Eigen::MatrixBase<Derived>& c,
+  void makeStartOrEnd(const Eigen::VectorXd& constraint,
                       int up_to_derivative);
 
   void makeStartOrEnd(double value, int up_to_derivative) {
@@ -101,9 +99,8 @@ class Vertex {
   /// Passes the value of the constraint for derivative order to *value,
   /// and returns whether the
   ///        constraint is set.
-  template <class Derived>
   bool getConstraint(int derivative_order,
-                     Eigen::MatrixBase<Derived>* value) const;
+                     Eigen::VectorXd* constraint) const;
 
   /// Returns a const iterator to the first constraint.
   typename Constraints::const_iterator cBegin() const {
@@ -165,8 +162,8 @@ std::vector<double> estimateSegmentTimes(const Vertex::Vector& vertices,
 template <class Derived1, class Derived2>
 Vertex::Vector createRandomVertices(
     int maximum_derivative, size_t n_segments,
-    const Eigen::MatrixBase<Derived1>& minimum_position,
-    const Eigen::MatrixBase<Derived2>& maximum_position, size_t seed = 0);
+    const Eigen::VectorXd& minimum_position,
+    const Eigen::VectorXd& maximum_position, size_t seed = 0);
 
 /**
  * \brief Conveninence function to create 1D vertices.

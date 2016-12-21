@@ -25,14 +25,10 @@
 
 namespace mav_trajectory_generation {
 
-template <class Derived1, class Derived2>
 Vertex::Vector createRandomVertices(int maximum_derivative, size_t n_segments,
-                                    const Eigen::MatrixBase<Derived1>& pos_min,
-                                    const Eigen::MatrixBase<Derived2>& pos_max,
+                                    const Eigen::VectorXd& pos_min,
+                                    const Eigen::VectorXd& pos_max,
                                     size_t seed) {
-  EIGEN_STATIC_ASSERT_VECTOR_ONLY(Derived1);
-  EIGEN_STATIC_ASSERT_VECTOR_ONLY(Derived2);
-
   CHECK_GE(static_cast<int>(n_segments), 1);
   CHECK_EQ(pos_min.size(), pos_min.size());
   CHECK_GT(maximum_derivative, 0);
@@ -87,31 +83,25 @@ inline Vertex::Vector createRandomVertices1D(int maximum_derivative,
                                              size_t n_segments, double pos_min,
                                              double pos_max, size_t seed) {
   return createRandomVertices(maximum_derivative, n_segments,
-                              Eigen::Matrix<double, 1, 1>::Constant(pos_min),
-                              Eigen::Matrix<double, 1, 1>::Constant(pos_max),
-                              seed);
+                              Eigen::VectorXd::Constant(1, pos_min),
+                              Eigen::VectorXd::Constant(1, pos_max), seed);
 }
 
-template <class Derived>
 void Vertex::addConstraint(int derivative_order,
-                           const Eigen::MatrixBase<Derived>& c) {
-  EIGEN_STATIC_ASSERT_VECTOR_ONLY(Derived)
-  CHECK(c.rows() == static_cast<long>(D_));
-  constraints_[derivative_order] = c;
+                           const Eigen::VectorXd& constraint) {
+  CHECK_EQ(constraint.rows(), static_cast<long>(D_));
+  constraints_[derivative_order] = constraint;
 }
 
-template <class Derived>
-void Vertex::makeStartOrEnd(const Eigen::MatrixBase<Derived>& c,
+void Vertex::makeStartOrEnd(const Eigen::VectorXd& constraint,
                             int up_to_derivative) {
-  addConstraint(derivative_order::POSITION, c);
+  addConstraint(derivative_order::POSITION, constraint);
   for (int i = 1; i <= up_to_derivative; ++i) {
     constraints_[i] = ConstraintValue::Zero(static_cast<int>(D_));
   }
 }
 
-template <class Derived>
-bool Vertex::getConstraint(int derivative_order,
-                           Eigen::MatrixBase<Derived>* value) const {
+bool Vertex::getConstraint(int derivative_order, Eigen::VectorXd* value) const {
   CHECK_NOTNULL(value);
   typename Constraints::const_iterator it = constraints_.find(derivative_order);
   if (it != constraints_.end()) {
