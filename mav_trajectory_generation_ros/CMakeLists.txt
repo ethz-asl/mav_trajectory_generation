@@ -12,6 +12,7 @@ add_definitions(-std=c++11)
 #############
 cs_add_library(${PROJECT_NAME}
   src/trajectory_sampling.cpp
+  src/ros_conversions.cpp
 )
 
 ############
