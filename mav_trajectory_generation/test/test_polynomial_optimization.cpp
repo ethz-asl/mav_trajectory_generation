@@ -91,9 +91,9 @@ void checkPath(const Vertex::Vector& vertices,
       std::stringstream segment_derivative;
       printSegment(segment_derivative, segment, derivative);
       EXPECT_TRUE(EIGEN_MATRIX_NEAR(desired, actual, tol))
-          << "[fixed constraint check t=0] at vertex " << i
-          << " and constraint " << positionDerivativeToString(derivative)
-          << "\nsegment:\n" << segment << segment_derivative.str();
+          << "[fixed constraint check t=0] at vertex " << i << " and constraint "
+          << positionDerivativeToString(derivative) << "\nsegment:\n" << segment
+          << segment_derivative.str();
     }
     for (Vertex::Constraints::const_iterator it = v_end.cBegin();
          it != v_end.cEnd(); ++it) {
@@ -104,9 +104,9 @@ void checkPath(const Vertex::Vector& vertices,
       std::stringstream segment_derivative;
       printSegment(segment_derivative, segment, derivative);
       EXPECT_TRUE(EIGEN_MATRIX_NEAR(desired, actual, tol))
-          << "[fixed constraint check] at vertex " << i + 1
-          << " and constraint " << positionDerivativeToString(derivative)
-          << "\nsegment:\n" << segment << segment_derivative.str();
+          << "[fixed constraint check] at vertex " << i + 1 << " and constraint "
+          << positionDerivativeToString(derivative) << "\nsegment:\n" << segment
+          << segment_derivative.str();
     }
 
     // Check if values at vertices are continuous.
@@ -223,7 +223,8 @@ TEST(MavPlanningUtils, PathPlanningUnconstrained_1D_10_segments) {
   opt.getSegments(&segments);
 
   std::cout << "Base coefficients: "
-            << Polynomial::base_coefficients_.block(3, 0, 1, N) << std::endl;
+            << Polynomial::base_coefficients_.block(3, 0, 1, N)
+            << std::endl;
 
   checkPath(vertices, segments);
   double v_max = getMaximumMagnitude(segments, derivative_order::VELOCITY);
@@ -415,7 +416,84 @@ bool checkExtrema(const std::vector<double>& testee,
   return true;
 }
 
-TEST(MavPlanningUtils, PathOptimization3D_segment_extrema_of_magnitude) {
+TEST(MavPlanningUtils, PathOptimization_1D_segment_extrema_of_magnitude) {
+  Vertex::Vector vertices;
+  vertices = createRandomVertices1D(max_derivative, 100, -10, 10, 1234);
+  const double approximate_v_max = 3.0;
+  const double approximate_a_max = 5.0;
+
+  std::vector<double> segment_times =
+      estimateSegmentTimes(vertices, approximate_v_max, approximate_a_max);
+
+  PolynomialOptimization<N> opt(1);
+  opt.setupFromVertices(vertices, segment_times, derivative_to_optimize);
+  opt.solveLinear();
+
+  Segment::Vector segments;
+  opt.getSegments(&segments);
+
+  timing::Timer time_analytic("time_extrema_analytic_1", false);
+  timing::Timer time_sampling("time_extrema_sampling_1", false);
+  int segment_idx = 0;
+  for (const Segment& s : segments) {
+    std::vector<double> res;
+    time_analytic.Start();
+    opt.computeSegmentMaximumMagnitudeCandidates<1>(s, 0, s.getTime(), &res);
+    time_analytic.Stop();
+
+    std::vector<double> res_sampling;
+    time_sampling.Start();
+    opt.computeSegmentMaximumMagnitudeCandidatesBySampling<1>(
+        s, 0, s.getTime(), 0.001, &res_sampling);
+    time_sampling.Stop();
+
+    constexpr double check_tolerance = 0.01;
+    bool success = checkExtrema(res, res_sampling, check_tolerance);
+    if (!success) {
+      std::cout << "############CHECK XTREMA FAILED: \n";
+      std::cout << "segment idx: " << segment_idx << "/" << segments.size()
+                << std::endl;
+
+      std::cout << "real eigs for segment with time " << s.getTime() << "s : ";
+
+      for (const double& t : res) std::cout << t << " ";
+      std::cout << std::endl;
+      std::cout << "sampling: ";
+      for (const double& t : res_sampling) std::cout << t << " ";
+      std::cout << std::endl;
+
+      std::cout << "vx = [ "
+                << s[0].getCoefficients(derivative_order::VELOCITY)
+                       .reverse()
+                       .format(matlab_format)
+                << "];\n";
+      std::cout << "t = 0:0.001:" << s.getTime() << "; \n";
+    }
+    EXPECT_TRUE(success);
+    ++segment_idx;
+  }
+
+  double v_max_ref = getMaximumMagnitude(segments, derivative_order::VELOCITY);
+  double a_max_ref =
+      getMaximumMagnitude(segments, derivative_order::ACCELERATION);
+
+  timing::Timer time_analytic_v("time_extrema_analytic_v");
+  Extremum v_max =
+      opt.computeMaximumOfMagnitude<derivative_order::VELOCITY>(nullptr);
+  time_analytic_v.Stop();
+  timing::Timer time_analytic_a("time_extrema_analytic_a");
+  Extremum a_max =
+      opt.computeMaximumOfMagnitude<derivative_order::ACCELERATION>(nullptr);
+  time_analytic_a.Stop();
+
+  std::cout << "v_max " << v_max << std::endl << "a_max " << a_max << std::endl;
+
+  EXPECT_NEAR(v_max_ref, v_max.value, 0.01);
+  EXPECT_NEAR(a_max_ref, a_max.value, 0.01);
+}
+
+TEST(MavPlanningUtils,
+     PathOptimization3D_segment_extrema_of_magnitude) {
   Eigen::Vector3d pos_min, pos_max;
   pos_min << -10.0, -9.0, -8.0;
   pos_max << 8.0, 9.0, 10.0;

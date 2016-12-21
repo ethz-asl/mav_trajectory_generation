@@ -407,8 +407,12 @@ bool PolynomialOptimization<_N>::computeSegmentMaximumMagnitudeCandidates(
         convolved_coefficients;  // Column vector.
     convolved_coefficients.setZero();
     for (const Polynomial& p : segment.getPolynomialsRef()) {
-      Eigen::Matrix<double, n_d, 1> d = p.getCoefficients(Derivative);
-      Eigen::Matrix<double, n_dd, 1> dd = p.getCoefficients(Derivative + 1);
+      // Our coefficients are INCREASING, so when you take the derivative,
+      // only the lower powers of t have non-zero coefficients.
+      // So we take the head.
+      Eigen::Matrix<double, n_d, 1> d = p.getCoefficients(Derivative).head(n_d);
+      Eigen::Matrix<double, n_dd, 1> dd =
+          p.getCoefficients(Derivative + 1).head(n_dd);
       convolved_coefficients += convolve(d, dd);
     }
 
@@ -419,7 +423,8 @@ bool PolynomialOptimization<_N>::computeSegmentMaximumMagnitudeCandidates(
   // For dimension == 1, it doesn't make a difference, thus we can simply
   // compute the roots of the derivative.
   else {
-    const Polynomial d(N, segment[0].getCoefficients(Derivative));
+    const Polynomial d(n_dd,
+                       segment[0].getCoefficients(Derivative + 1).head(n_dd));
     roots = d.computeRoots();
   }
 
