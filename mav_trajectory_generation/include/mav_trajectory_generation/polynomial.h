@@ -51,7 +51,9 @@ class Polynomial {
 
   // Assigns arbitrary coefficients to a polynomial.
   Polynomial(int N, const Eigen::VectorXd& coeffs)
-      : N_(N), coefficients_(coeffs) {}
+      : N_(N), coefficients_(coeffs) {
+    CHECK_EQ(N_, coeffs.size()) << "Number of coefficients has to match.";
+  }
 
   /// Gets the number of coefficients (order + 1) of the polynomial.
   int N() const { return N_; }
@@ -60,6 +62,7 @@ class Polynomial {
   // Coefficients are stored in increasing order with the power of t,
   // i.e. c1 + c2*t + c3*t^2 ==> coeffs = [c1 c2 c3]
   void setCoefficients(const Eigen::VectorXd& coeffs) {
+    CHECK_EQ(N_, coeffs.size()) << "Number of coefficients has to match.";
     coefficients_ = coeffs;
   }
 
@@ -70,13 +73,20 @@ class Polynomial {
     if (derivative == 0) {
       return coefficients_;
     } else {
-      return coefficients_.tail(N_ - derivative)
-          .cwiseProduct(base_coefficients_.block(derivative, derivative, 1, N_)
-                            .transpose());
+      Eigen::VectorXd result(N_);
+      result.setZero();
+      result.head(N_ - derivative) =
+          coefficients_.tail(N_ - derivative)
+              .cwiseProduct(
+                  base_coefficients_.block(derivative, derivative, 1, N_)
+                      .transpose());
+      return result;
     }
   }
 
   // Evaluates the polynomial at time t and writes the result.
+  // Fills in all derivatives up to result.size()-1 (that is, if result is a
+  // 3-vector, then will fill in derivatives 0, 1, and 2).
   void evaluate(double t, Eigen::VectorXd* result) const {
     CHECK_LE(result->size(), N_);
     const int max_deg = result->size();
@@ -94,7 +104,7 @@ class Polynomial {
   }
 
   // Evaluates the specified derivative of the polynomial at time t and returns
-  // the result.
+  // the result (only one value).
   double evaluate(double t, int derivative) const {
     CHECK_LT(derivative, N_);
     double result;
