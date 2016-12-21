@@ -391,7 +391,7 @@ void PolynomialOptimization<_N>::printReorderingMatrix(
 
 template <int _N>
 template <int Derivative>
-void PolynomialOptimization<_N>::computeSegmentMaximumMagnitudeCandidates(
+bool PolynomialOptimization<_N>::computeSegmentMaximumMagnitudeCandidates(
     const Segment& segment, double t_start, double t_stop,
     std::vector<double>* candidates) {
   CHECK(candidates);
@@ -425,6 +425,11 @@ void PolynomialOptimization<_N>::computeSegmentMaximumMagnitudeCandidates(
     roots = d.computeRoots();
   }
 
+  if (roots.size() == 0) {
+    // Then Jenkins-Traub failed! :( Should fall back to something else.
+    return false;
+  }
+
   for (int i = 0; i < roots.size(); ++i) {
     const double t_real = real(roots[i]);
     // We only want real roots.
@@ -437,6 +442,7 @@ void PolynomialOptimization<_N>::computeSegmentMaximumMagnitudeCandidates(
     }
     candidates->push_back(t_real);
   }
+  return true;
 }
 
 template <int _N>

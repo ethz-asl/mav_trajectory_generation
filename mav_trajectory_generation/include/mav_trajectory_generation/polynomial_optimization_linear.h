@@ -166,9 +166,11 @@ class PolynomialOptimization {
    * \param[in] t_stop Only maxima <= t_stop are returned. Usually set to
    * segment time.
    * \param[out] candidates Vector containing the candidate times for a maximum.
+   * Returns whether the computation succeeded -- false means no candidates
+   * were found by Jenkins-Traub.
    */
   template <int Derivative>
-  static void computeSegmentMaximumMagnitudeCandidates(
+  static bool computeSegmentMaximumMagnitudeCandidates(
       const Segment& segment, double t_start, double t_stop,
       std::vector<double>* candidates);
 
