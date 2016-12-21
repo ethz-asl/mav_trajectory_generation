@@ -42,22 +42,22 @@ Timing& Timing::Instance() {
   return t;
 }
 
-Timing::Timing() : maxTagLength_(0) {}
+Timing::Timing() : max_tag_length_(0) {}
 
 Timing::~Timing() {}
 
 // Static functions to query the timers:
 size_t Timing::GetHandle(std::string const& tag) {
   // Search for an existing tag.
-  map_t::iterator i = Instance().tagMap_.find(tag);
-  if (i == Instance().tagMap_.end()) {
+  map_t::iterator i = Instance().tag_map_.find(tag);
+  if (i == Instance().tag_map_.end()) {
     // If it is not there, create a tag.
     size_t handle = Instance().timers_.size();
-    Instance().tagMap_[tag] = handle;
+    Instance().tag_map_[tag] = handle;
     Instance().timers_.push_back(TimerMapValue());
     // Track the maximum tag length to help printing a table of timing values
     // later.
-    Instance().maxTagLength_ = std::max(Instance().maxTagLength_, tag.size());
+    Instance().max_tag_length_ = std::max(Instance().max_tag_length_, tag.size());
     return handle;
   } else {
     return i->second;
@@ -68,7 +68,7 @@ std::string Timing::GetTag(size_t handle) {
   std::string tag;
 
   // Perform a linear search for the tag.
-  for (typename map_t::value_type current_tag : Instance().tagMap_) {
+  for (typename map_t::value_type current_tag : Instance().tag_map_) {
     if (current_tag.second == handle) {
       return current_tag.first;
     }
@@ -184,7 +184,7 @@ std::string Timing::SecondsToTimeString(double seconds) {
 }
 
 void Timing::Print(std::ostream& out) {
-  map_t& tagMap = Instance().tagMap_;
+  map_t& tagMap = Instance().tag_map_;
 
   if (tagMap.empty()) {
     return;
@@ -194,7 +194,7 @@ void Timing::Print(std::ostream& out) {
   out << "-----------\n";
   for (typename map_t::value_type t : tagMap) {
     size_t i = t.second;
-    out.width((std::streamsize)Instance().maxTagLength_);
+    out.width((std::streamsize)Instance().max_tag_length_);
     out.setf(std::ios::left, std::ios::adjustfield);
     out << t.first << "\t";
     out.width(7);
@@ -224,7 +224,7 @@ std::string Timing::Print() {
   return ss.str();
 }
 
-void Timing::Reset() { Instance().tagMap_.clear(); }
+void Timing::Reset() { Instance().tag_map_.clear(); }
 
 }  // namespace timing
 }  // namespace mav_trajectory_generation

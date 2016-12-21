@@ -318,6 +318,28 @@ class PolynomialOptimization {
   size_t n_fixed_constraints_;
   size_t n_free_constraints_;
 };
+
+// Constraint class that aggregates all constraints from incoming Vertices.
+struct Constraint {
+  bool operator<(const Constraint& rhs) const {
+    if (vertex_idx < rhs.vertex_idx) return true;
+    if (rhs.vertex_idx < vertex_idx) return false;
+
+    if (constraint_idx < rhs.constraint_idx) return true;
+    if (rhs.constraint_idx < constraint_idx) return false;
+    return false;
+  }
+
+  bool operator==(const Constraint& rhs) const {
+    return vertex_idx == rhs.vertex_idx &&
+           constraint_idx == rhs.constraint_idx;
+  }
+
+  size_t vertex_idx;
+  size_t constraint_idx;
+  Vertex::ConstraintValue value;
+};
+
 }  // namespace mav_trajectory_generation
 
 #include "mav_trajectory_generation/impl/polynomial_optimization_linear_impl.h"

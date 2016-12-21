@@ -33,6 +33,9 @@
 
 namespace mav_trajectory_generation {
 
+constexpr double kNumNSecPerSec = 1.0e9;
+constexpr double kNumSecPerNsec = 1.0e-9;
+
 /**
  * \brief Class holding the properties of parametric segment of a path.
  *        Time of the segment and one polynomial for each dimension.
@@ -53,10 +56,12 @@ class Segment {
   int D() const { return D_; }
   int N() const { return N_; }
   double getTime() const { return time_; }
-  uint64_t getTimeNSec() const { return static_cast<uint64_t>(1.0e9 * time_); }
+  uint64_t getTimeNSec() const {
+    return static_cast<uint64_t>(kNumNSecPerSec * time_);
+  }
 
   void setTime(double _time) { time_ = _time; }
-  void setTimeNSec(uint64_t time_ns) { time_ = time_ns * 1.0e-9; }
+  void setTimeNSec(uint64_t time_ns) { time_ = time_ns * kNumSecPerNsec; }
 
   Polynomial& operator[](size_t idx);
 

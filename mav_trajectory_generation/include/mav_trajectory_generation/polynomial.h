@@ -75,7 +75,7 @@ class Polynomial {
    * polynomial as a ROW vector.
    */
   Eigen::RowVectorXd getCoefficients(int derivative = 0) const {
-    assert(derivative <= N_);
+    CHECK_LE(derivative, N_);
     if (derivative == 0) {
       return coefficients_.transpose();
     } else {
@@ -85,7 +85,7 @@ class Polynomial {
     }
   }
 
-  /// evaluates the polynomial at time t and writes the result to result
+  /// Evaluates the polynomial at time t and writes the result to result.
   void evaluate(double t, Eigen::VectorXd* result) const {
     CHECK_LE(result->size(), N_);
     const int max_deg = result->size();
@@ -102,8 +102,8 @@ class Polynomial {
     }
   }
 
-  /// evaluates the specified derivative of the polynomial at time t and returns
-  /// the result
+  /// Evaluates the specified derivative of the polynomial at time t and returns
+  /// the result.
   double evaluate(double t, int derivative) const {
     CHECK_LT(derivative, N_);
     double result;

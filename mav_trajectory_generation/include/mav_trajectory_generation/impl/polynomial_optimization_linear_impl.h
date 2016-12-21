@@ -49,9 +49,6 @@ bool PolynomialOptimization<_N>::setupFromPositons(
   Vertex::Vector vertices;
   const size_t n_vertices = positions.size();
 
-  CHECK(n_vertices == times.size() + 1)
-      << "Size of times must be one less than positions.";
-
   vertices.resize(n_vertices, Vertex(1));
   vertices.front().makeStartOrEnd(0, kHighestDerivativeToOptimize);
   vertices.back().makeStartOrEnd(0, kHighestDerivativeToOptimize);
@@ -72,7 +69,11 @@ bool PolynomialOptimization<_N>::setupFromVertices(
          "add another vertex in the middle with all constraints set free.";
 
   CHECK(derivative_to_optimize >= 0 &&
-        derivative_to_optimize <= kHighestDerivativeToOptimize);
+        derivative_to_optimize <= kHighestDerivativeToOptimize)
+      << "You try to optimize the " << derivative_to_optimize
+      << "th derivative of position on a " << N
+      << "th order polynomial. This is not possible, you either need a higher "
+         "order polynomial or a smaller derivative to optimize.";
 
   derivative_to_optimize_ = derivative_to_optimize;
   vertices_ = vertices;
@@ -105,10 +106,13 @@ bool PolynomialOptimization<_N>::setupFromVertices(
                      << ": maximum possible derivative is "
                      << kHighestDerivativeToOptimize << ", but was set to "
                      << it->first << ". Ignoring constraint";
-      } else
+      } else {
         vertex_tmp.addConstraint(it->first, it->second);
+      }
     }
-    if (!vertex_valid) vertex = vertex_tmp;
+    if (!vertex_valid) {
+      vertex = vertex_tmp;
+    }
   }
   updateSegmentTimes(times);
   setupConstraintReorderingMatrix();
@@ -162,7 +166,6 @@ void PolynomialOptimization<_N>::invertMappingMatrix(
   // http://eigen.tuxfamily.org/dox/TopicFunctionTakingEigenTypes.html#title3
   Eigen::MatrixBase<DerivedAi>& inverse_mapping_matrix_non_const =
       const_cast<Eigen::MatrixBase<DerivedAi>&>(inverse_mapping_matrix);
-  //  inverse_mapping_matrix_non_const = mapping_matrix.inverse();
 
   // The mapping matrix has the following structure:
   // [ x 0 0 0 0 0 ]
@@ -208,26 +211,6 @@ void PolynomialOptimization<_N>::setupConstraintReorderingMatrix() {
   // Paranoia ;).
   CHECK(n_vertices == n_vertices_);
 
-  struct Constraint {
-    bool operator<(const Constraint& rhs) const {
-      if (vertex_idx < rhs.vertex_idx) return true;
-      if (rhs.vertex_idx < vertex_idx) return false;
-
-      if (constraint_idx < rhs.constraint_idx) return true;
-      if (rhs.constraint_idx < constraint_idx) return false;
-      return false;
-    }
-
-    bool operator==(const Constraint& rhs) const {
-      return vertex_idx == rhs.vertex_idx &&
-             constraint_idx == rhs.constraint_idx;
-    }
-
-    size_t vertex_idx;
-    size_t constraint_idx;
-    Vertex::ConstraintValue value;
-  };
-
   std::vector<Constraint> all_constraints;
   std::set<Constraint> fixed_constraints;
   std::set<Constraint> free_constraints;
@@ -240,10 +223,8 @@ void PolynomialOptimization<_N>::setupConstraintReorderingMatrix() {
     const Vertex& vertex = vertices_[vertex_idx];
 
     // Extract constraints and sort them to fixed and free. For the start and
-    // end Vertex, we need to do this
-    // once, while we need to do it twice for the other vertices, since
-    // constraints are shared and enforce
-    // continuity.
+    // end Vertex, we need to do this once, while we need to do it twice for the
+    // other vertices, since constraints are shared and enforce continuity.
     int n_constraint_occurence = 2;
     if (vertex_idx == 0 || vertex_idx == (n_segments_))
       n_constraint_occurence = 1;
@@ -388,25 +369,10 @@ bool PolynomialOptimization<_N>::solveLinear() {
   // TODO(acmarkus): figure out if sparse becomes less efficient for small
   // problems, and switch back to dense in case.
 
-  //  for (size_t i = 0; i < n_segments_; ++i) {
-  //    const SquareMatrix& Ai = inverse_mapping_matrices_[i];
-  //    const SquareMatrix& Q = cost_matrices_[i];
-  //    cost_hessian_.block<N, N>(i * N, i * N) = Ai.transpose() * Q * Ai;
-  //  }
-
   // Compute cost matrix for the unconstrained optimization problem.
   // Block-wise \f$ H = A^{-T}QA^{-1} \f$ according to [1]
   Eigen::SparseMatrix<double> R;
   constructR(&R);
-  //  Eigen::MatrixXd R = _R;
-
-  //  // Extract block matrices and prepare solver.
-  //  Eigen::MatrixXd Rpf = R.block(n_fixed_constraints_, 0,
-  //  n_free_constraints_, n_fixed_constraints_);
-  //  Eigen::MatrixXd Rpp = -R.block(n_fixed_constraints_, n_fixed_constraints_,
-  //  n_free_constraints_, n_free_constraints_);
-  //  Eigen::LDLT<Eigen::MatrixXd> solver;
-  //  solver.compute(Rpp);
 
   // Extract block matrices and prepare solver.
   Eigen::SparseMatrix<double> Rpf = R.block(
@@ -418,23 +384,12 @@ bool PolynomialOptimization<_N>::solveLinear() {
       solver;
   solver.compute(Rpp);
 
-  //  std::cout<<"[INFO]:\n";
-  //  std::cout<<"        R  : " << R.rows() << "x" << R.cols() << " %nnz: " <<
-  //  static_cast<double>(R.nonZeros()) / static_cast<double>(R.size()) * 100.0
-  //  << std::endl;
-  //  std::cout<<"        Rpf: " << Rpf.rows() << "x" << Rpf.cols() << " %nnz: "
-  //  << static_cast<double>(Rpf.nonZeros()) / static_cast<double>(Rpf.size()) *
-  //  100.0 << std::endl;
-  //  std::cout<<"        Rpp: " << Rpp.rows() << "x" << Rpp.cols() << " %nnz: "
-  //  << static_cast<double>(Rpp.nonZeros()) / static_cast<double>(Rpp.size()) *
-  //  100.0 << std::endl;
-
   // Compute dp_opt for every dimension.
   for (size_t dimension_idx = 0; dimension_idx < dimension_; ++dimension_idx) {
-    Eigen::VectorXd _df =
+    Eigen::VectorXd df =
         -Rpf * fixed_constraints_compact_[dimension_idx];  // Rpf = Rfp^T
     free_constraints_compact_[dimension_idx] =
-        solver.solve(_df);  // dp = -Rpp^-1 * Rpf * df
+        solver.solve(df);  // dp = -Rpp^-1 * Rpf * df
   }
 
   updateSegmentsFromCompactConstraints();
@@ -487,11 +442,15 @@ void PolynomialOptimization<_N>::computeSegmentMaximumMagnitudeCandidates(
 
   for (int i = 0; i < roots.size(); ++i) {
     const double t_real = real(roots[i]);
-    bool is_real = (imag(roots[i]) == 0);
-    bool is_in_range =
-        (t_real >= t_start) &&
-        (t_real <= t_stop);  // TODO(acmarkus) need double tol check?
-    if (is_real && is_in_range) candidates->push_back(t_real);
+    // We only want real roots.
+    if (std::abs(imag(roots[i])) > std::numeric_limits<double>::epsilon()) {
+      continue;
+    }
+    // Only want roots in the time range.
+    if (t_real < t_start || t_real > t_stop) {
+      continue;
+    }
+    candidates->push_back(t_real);
   }
 }
 
@@ -501,28 +460,28 @@ void PolynomialOptimization<_N>::
     computeSegmentMaximumMagnitudeCandidatesBySampling(
         const Segment& segment, double t_start, double t_stop, double dt,
         std::vector<double>* candidates) {
-  Eigen::VectorXd v_old, v_start;
-  v_start = segment.evaluate(t_start - dt, Derivative);
+  Eigen::VectorXd value_old, value_start;
+  value_start = segment.evaluate(t_start - dt, Derivative);
 
-  v_old = segment.evaluate(t_start, Derivative);
+  value_old = segment.evaluate(t_start, Derivative);
 
   // Determine initial direction from t_start -dt to t_start.
   // t_start may be an extremum, especially for start and end vertices!
-  double direction = v_old.squaredNorm() - v_start.squaredNorm();
+  double direction = value_old.squaredNorm() - value_start.squaredNorm();
 
   // Continue with direction from t_start to t_start + dt until t_stop + dt.
   // Again, there may be an extremum at t_stop (e.g. end vertex).
   for (double t = t_start + dt; t < t_stop + 2 * dt; t += dt) {
-    Eigen::VectorXd v_new;
-    v_new = segment.evaluate(t, Derivative);
+    Eigen::VectorXd value_new;
+    value_new = segment.evaluate(t, Derivative);
 
-    double direction_new = v_new.squaredNorm() - v_old.squaredNorm();
+    double direction_new = value_new.squaredNorm() - value_old.squaredNorm();
 
     if (sgn(direction) != sgn(direction_new)) {
       candidates->push_back(t - dt);  // extremum was at last dt
     }
 
-    v_old = v_new;
+    value_old = value_new;
     direction = direction_new;
   }
 }
@@ -538,8 +497,8 @@ Extremum PolynomialOptimization<_N>::computeMaximumOfMagnitude(
   for (const Segment& s : segments_) {
     std::vector<double> extrema_times;
     extrema_times.reserve(N - 1);
-    extrema_times.push_back(
-        0.0);  // Add the beginning as well. Call below appends its extrema.
+    // Add the beginning as well. Call below appends its extrema.
+    extrema_times.push_back(0.0);
     computeSegmentMaximumMagnitudeCandidates<Derivative>(s, 0.0, s.getTime(),
                                                          &extrema_times);
 

@@ -38,7 +38,7 @@ class Accumulator {
  public:
   Accumulator()
       : window_samples_(0),
-        totalsamples_(0),
+        total_samples_(0),
         window_sum_(0),
         sum_(0),
         min_(std::numeric_limits<T>::max()),
@@ -54,7 +54,7 @@ class Accumulator {
       oldest = sample;
     }
     sum_ += sample;
-    ++totalsamples_;
+    ++total_samples_;
     if (sample > max_) {
       max_ = sample;
     }
@@ -63,11 +63,11 @@ class Accumulator {
     }
   }
 
-  int TotalSamples() const { return totalsamples_; }
+  int TotalSamples() const { return total_samples_; }
 
   double Sum() const { return sum_; }
 
-  double Mean() const { return sum_ / totalsamples_; }
+  double Mean() const { return sum_ / total_samples_; }
 
   double RollingMean() const {
     return window_sum_ / std::min(window_samples_, N);
@@ -92,7 +92,7 @@ class Accumulator {
 
  private:
   int window_samples_;
-  int totalsamples_;
+  int total_samples_;
   Total window_sum_;
   Total sum_;
   T min_;
@@ -163,7 +163,7 @@ class Timing {
   static std::string Print();
   static std::string SecondsToTimeString(double seconds);
   static void Reset();
-  static const map_t& GetTimers() { return Instance().tagMap_; }
+  static const map_t& GetTimers() { return Instance().tag_map_; }
 
  private:
   void AddTime(size_t handle, double seconds);
@@ -176,8 +176,8 @@ class Timing {
   typedef std::vector<TimerMapValue> list_t;
 
   list_t timers_;
-  map_t tagMap_;
-  size_t maxTagLength_;
+  map_t tag_map_;
+  size_t max_tag_length_;
 };
 
 #if DISABLE_TIMING
