@@ -25,11 +25,11 @@
 
 namespace mav_trajectory_generation {
 
+// Holder class for trajectories of D dimensions, of K segments, and
+// polynomial order N-1. (N=12 -> 11th order polynomial, with 12 coefficients).
 class Trajectory {
  public:
   Trajectory();
-
-  Eigen::VectorXd evaluate(double t, int derivative_order) const;
 
   int D() const { return D_; }
   int N() const { return N_; }
@@ -40,14 +40,42 @@ class Trajectory {
     segments_ = segments;
     D_ = segments_.front().D();
     N_ = segments_.front().N();
+
+    // Cache the max time.
+    max_time_ = 0.0;
+    for (const Segment& segment : segments) {
+      CHECK_EQ(segment.D(), D_);
+      max_time_ += segment.getTime();
+    }
   }
+
+  void getSegments(Segment::Vector* segments) const {
+    CHECK_NOTNULL(segments);
+    *segments = segments_;
+  }
+
+  double getMinTime() const { return 0.0; }
+  double getMaxTime() const { return max_time_; }
 
   // TODO(helenol): write functions to merge and split trajectories into
   // different dimensions.
 
+  // Evaluation functions.
+  // Evaluate at a single time, and a single derivative. Return type of
+  // dimension D.
+  Eigen::VectorXd evaluate(double t, int derivative_order) const;
+
+  // Evaluates the trajectory in a specified range and derivative.
+  // Outputs are a vector of the sampled values (size of VectorXd is D) by
+  // time and optionally the actual sampling times.
+  void evaluateRange(double t_start, double t_end, double dt,
+                     int derivative_order, std::vector<Eigen::VectorXd>* result,
+                     std::vector<double>* sampling_times = nullptr) const;
+
  private:
-  int D_;  ///< Number of dimensions.
-  int N_;  ///< Number of coefficients.
+  int D_;            // Number of dimensions.
+  int N_;            // Number of coefficients.
+  double max_time_;  // Time at the end of the trajectory.
 
   // K is number of segments...
   Segment::Vector segments_;

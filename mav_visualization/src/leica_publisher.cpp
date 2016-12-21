@@ -18,16 +18,18 @@
 
 int main(int argc, char** argv) {
   ros::init(argc, argv, "leica_publisher");
-  ros::NodeHandle pnh("~");
+  ros::NodeHandle nh;
+  ros::NodeHandle nh_private("~");
 
   ros::Publisher marker_pub =
-      pnh.advertise<visualization_msgs::MarkerArray>("marker_array", 10, true);
+      nh_private.advertise<visualization_msgs::MarkerArray>("marker_array", 10,
+                                                            true);
 
   std::string frame_id("leica");
   double scale = 1.0;
 
-  pnh.param("frame_id", frame_id, frame_id);
-  pnh.param("scale", scale, scale);
+  nh_private.param("frame_id", frame_id, frame_id);
+  nh_private.param("scale", scale, scale);
 
   mav_visualization::LeicaMarker leica;
   visualization_msgs::MarkerArray markers;

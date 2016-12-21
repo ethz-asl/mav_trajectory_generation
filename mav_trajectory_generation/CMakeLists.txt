@@ -16,6 +16,7 @@ cs_add_library(${PROJECT_NAME}
   src/segment.cpp
   src/vertex.cpp
   src/polynomial.cpp
+  src/trajectory.cpp
 )
 
 ############
