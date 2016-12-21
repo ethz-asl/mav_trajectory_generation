@@ -21,9 +21,9 @@
 #ifndef MAV_TRAJECTORY_GENERATION_POLYNOMIAL_H_
 #define MAV_TRAJECTORY_GENERATION_POLYNOMIAL_H_
 
+#include <glog/logging.h>
 #include <Eigen/Eigen>
 #include <Eigen/SVD>
-#include <glog/logging.h>
 #include <utility>
 #include <vector>
 
@@ -31,14 +31,11 @@
 
 namespace mav_trajectory_generation {
 
-/**
- * \brief Implementation of polynomials of order _N-1. Order must be known at
- * compile time.
- * Polynomial coefficients are stored with increasing powers, i.e. \f$c_0 +
- * c_1*t ... c_{N-1} * t^{N-1}\f$
- * \tparam _N Number of coefficients of the polynomial.
- * \tparam double Floating point type of the double.
- */
+// Implementation of polynomials of order N-1. Order must be known at
+// compile time.
+// Polynomial coefficients are stored with increasing powers,
+// i.e. c_0 + c_1*t ... c_{N-1} * t^{N-1}
+// where N = number of coefficients of the polynomial.
 class Polynomial {
  public:
   typedef std::vector<Polynomial, Eigen::aligned_allocator<Polynomial>> Vector;
@@ -52,26 +49,22 @@ class Polynomial {
 
   Polynomial(int N) : N_(N), coefficients_(N) { coefficients_.setZero(); }
 
-  // Assign arbitrary coefficients to a polynomial.
+  // Assigns arbitrary coefficients to a polynomial.
   Polynomial(int N, const Eigen::VectorXd& coeffs)
       : N_(N), coefficients_(coeffs) {}
 
-  /// Get the number of coefficients (order + 1) of the polynomial.
+  /// Gets the number of coefficients (order + 1) of the polynomial.
   int N() const { return N_; }
 
-  /**
-   * \brief sets up the internal representation from coeffs
-   * coefficients are stored in increasing order with the power of t, i.e. c1 +
-   * c2*t + c3*t^2 ==> coeffs = [c1 c2 c3]
-   */
+  // Sets up the internal representation from coefficients.
+  // Coefficients are stored in increasing order with the power of t,
+  // i.e. c1 + c2*t + c3*t^2 ==> coeffs = [c1 c2 c3]
   void setCoefficients(const Eigen::VectorXd& coeffs) {
     coefficients_ = coeffs;
   }
 
-  /**
-   * \brief Returns the coefficients for the specified derivative of the
-   * polynomial as a ROW vector.
-   */
+  // Returns the coefficients for the specified derivative of the
+  // polynomial as a ROW vector.
   Eigen::VectorXd getCoefficients(int derivative = 0) const {
     CHECK_LE(derivative, N_);
     if (derivative == 0) {
@@ -83,7 +76,7 @@ class Polynomial {
     }
   }
 
-  /// Evaluates the polynomial at time t and writes the result to result.
+  // Evaluates the polynomial at time t and writes the result.
   void evaluate(double t, Eigen::VectorXd* result) const {
     CHECK_LE(result->size(), N_);
     const int max_deg = result->size();
@@ -100,8 +93,8 @@ class Polynomial {
     }
   }
 
-  /// Evaluates the specified derivative of the polynomial at time t and returns
-  /// the result.
+  // Evaluates the specified derivative of the polynomial at time t and returns
+  // the result.
   double evaluate(double t, int derivative) const {
     CHECK_LT(derivative, N_);
     double result;
@@ -115,10 +108,8 @@ class Polynomial {
     return result;
   }
 
-  /**
-   * \brief Computes the complex roots of the polynomial.
-   * Only for the polynomial itself, not for its derivatives.
-   */
+  // Computes the complex roots of the polynomial.
+  // Only for the polynomial itself, not for its derivatives.
   Eigen::VectorXcd computeRoots() const {
     //      Companion matrix method , see
     //      http://en.wikipedia.org/wiki/Companion_matrix.
@@ -138,14 +129,12 @@ class Polynomial {
     return findRootsJenkinsTraub(coefficients_);
   }
 
-  /**
-    * \brief Computes the base coefficients with the according powers of t, as
-    * e.g. needed for computation of (in)equality constraints
-    * \param[out] coeffs vector to write the coefficients to
-    * \param[in] derivative of the polynomial for which the coefficients have to
-    * be computed
-    * \param[in] t time of evaluation
-    */
+  // Computes the base coefficients with the according powers of t, as
+  // e.g. needed for computation of (in)equality constraints.
+  // Output: coeffs vector to write the coefficients to
+  // Input: polynomial derivative for which the coefficients have to
+  // be computed
+  // Input: time of evaluation
   static void baseCoeffsWithTime(int N, int derivative, double t,
                                  Eigen::VectorXd* coeffs) {
     CHECK_LT(derivative, N);
@@ -166,11 +155,9 @@ class Polynomial {
     }
   }
 
-  /**
-   * \brief Convenience method to compute the base coefficents with time
-   * \sa static void baseCoeffsWithTime(const Eigen::MatrixBase<Derived> &
-   * coeffs, int derivative, double t)
-   */
+  // Convenience method to compute the base coefficents with time
+  // static void baseCoeffsWithTime(const Eigen::MatrixBase<Derived> &
+  // coeffs, int derivative, double t)
   static Eigen::VectorXd baseCoeffsWithTime(int N, int derivative, double t) {
     Eigen::VectorXd c(N);
     baseCoeffsWithTime(N, derivative, t, &c);
@@ -186,8 +173,8 @@ class Polynomial {
 
 // Static functions to compute base coefficients.
 
-/// Computes the base coefficients of the derivatives of the polynomial,
-/// up to order N.
+// Computes the base coefficients of the derivatives of the polynomial,
+// up to order N.
 Eigen::MatrixXd computeBaseCoefficients(int N);
 
 }  // namespace mav_trajectory_generation
