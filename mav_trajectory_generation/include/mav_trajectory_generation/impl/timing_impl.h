@@ -35,8 +35,6 @@
 namespace mav_trajectory_generation {
 namespace timing {
 
-const double kNumSecondsPerNanosecond = 1.e-9;
-
 Timing& Timing::Instance() {
   static Timing t;
   return t;
@@ -99,11 +97,7 @@ void Timer::Start() {
 void Timer::Stop() {
   std::chrono::time_point<std::chrono::system_clock> now =
       std::chrono::system_clock::now();
-  double dt =
-      static_cast<double>(
-          std::chrono::duration_cast<std::chrono::nanoseconds>(now - time_)
-              .count()) *
-      kNumSecondsPerNanosecond;
+  double dt = std::chrono::duration<double>(now - time_).count();
 
   Timing::Instance().AddTime(handle_, dt);
   timing_ = false;
