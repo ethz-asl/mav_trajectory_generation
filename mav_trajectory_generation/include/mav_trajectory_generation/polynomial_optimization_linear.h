@@ -53,8 +53,10 @@ class PolynomialOptimization {
 
  public:
   enum { N = _N };
-
   static constexpr int kHighestDerivativeToOptimize = N / 2 - 1;
+  typedef Eigen::Matrix<double, N, N> SquareMatrix;
+  typedef std::vector<SquareMatrix, Eigen::aligned_allocator<SquareMatrix> >
+      SquareMatrixVector;
 
   /**
    * \brief Sets up the optimization problem for the specified dimension.
@@ -95,14 +97,10 @@ class PolynomialOptimization {
    * \param[in] A matrix
    * \param[out] Ai inverse of the A matrix
    */
-  template <class DerivedA, class DerivedAi>
-  static void invertMappingMatrix(
-      const Eigen::MatrixBase<DerivedA>& mapping_matrix,
-      const Eigen::MatrixBase<DerivedAi>& inverse_mapping_matrix);
+  static void invertMappingMatrix(const SquareMatrix& mapping_matrix,
+                                  SquareMatrix* inverse_mapping_matrix);
 
-  template <class Derived>
-  static void setupMappingMatrix(double segment_time,
-                                 const Eigen::MatrixBase<Derived>& A);
+  static void setupMappingMatrix(double segment_time, SquareMatrix* A);
 
   /**
    * \brief Computes the cost in the derivative that was specified during
@@ -232,6 +230,16 @@ class PolynomialOptimization {
     *fixed_constraints = fixed_constraints_compact_;
   }
 
+  /**
+   * \brief Computes the Jacobian of the integral over the squared derivative
+   * \param[out] C Jacobian matrix to write into. If C is dynamic, the correct
+   * size has to be set.
+   * \param[in] t time of evaluation
+   * \param[in] derivative used to compute the cost
+   */
+  static void computeQuadraticCostJacobian(int derivative, double t,
+                                           SquareMatrix* cost_jacobian);
+
   size_t getDimension() const { return dimension_; }
   size_t getNumberSegments() const { return n_segments_; }
   size_t getNumberAllConstraints() const { return n_all_constraints_; }
@@ -246,10 +254,6 @@ class PolynomialOptimization {
   void printReorderingMatrix(std::ostream& stream) const;
 
  private:
-  typedef Eigen::Matrix<double, N, N> SquareMatrix;
-  typedef std::vector<SquareMatrix, Eigen::aligned_allocator<SquareMatrix> >
-      SquareMatrixVector;
-
   /** Constructs the sparse R (cost) matrix. **/
   void constructR(Eigen::SparseMatrix<double>* R) const;
 
@@ -275,8 +279,11 @@ class PolynomialOptimization {
    */
   Eigen::SparseMatrix<double> constraint_reordering_;
 
-  typename Segment::Vector segments_;
+  // Original vertices containing the constraints.
   Vertex::Vector vertices_;
+
+  // The actual segments containing the solution.
+  Segment::Vector segments_;
 
   /**
    * \brief Vector that stores an inverted mapping matrix for each segment.
@@ -321,7 +328,7 @@ class PolynomialOptimization {
 
 // Constraint class that aggregates all constraints from incoming Vertices.
 struct Constraint {
-  bool operator<(const Constraint& rhs) const {
+  inline bool operator<(const Constraint& rhs) const {
     if (vertex_idx < rhs.vertex_idx) return true;
     if (rhs.vertex_idx < vertex_idx) return false;
 
@@ -330,9 +337,8 @@ struct Constraint {
     return false;
   }
 
-  bool operator==(const Constraint& rhs) const {
-    return vertex_idx == rhs.vertex_idx &&
-           constraint_idx == rhs.constraint_idx;
+  inline bool operator==(const Constraint& rhs) const {
+    return vertex_idx == rhs.vertex_idx && constraint_idx == rhs.constraint_idx;
   }
 
   size_t vertex_idx;

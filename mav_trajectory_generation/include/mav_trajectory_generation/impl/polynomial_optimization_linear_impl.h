@@ -120,21 +120,14 @@ bool PolynomialOptimization<_N>::setupFromVertices(
 }
 
 template <int _N>
-template <class Derived>
-void PolynomialOptimization<_N>::setupMappingMatrix(
-    double segment_time, const Eigen::MatrixBase<Derived>& A) {
-  CHECK(A.rows() == N && A.cols() == N) << "A has to be " << N << "x" << N;
-  // Cast constness away, according to
-  // http://eigen.tuxfamily.org/dox/TopicFunctionTakingEigenTypes.html#title3.
-  Eigen::MatrixBase<Derived>& _A = const_cast<Eigen::MatrixBase<Derived>&>(A);
-
+void PolynomialOptimization<_N>::setupMappingMatrix(double segment_time,
+                                                    SquareMatrix* A) {
   // The sum of fixed/free variables has to be equal on both ends of the
   // segment.
   // Thus, A is created as [A(t=0); A(t=segment_time].
   for (int i = 0; i < N / 2; ++i) {
-    Polynomial::baseCoeffsWithTime(N, i, 0, _A.template row(i));
-    Polynomial::baseCoeffsWithTime(N, i, segment_time,
-                                   _A.template row(i + N / 2));
+    A->row(i) = Polynomial::baseCoeffsWithTime(N, i, 0.0);
+    A->row(i + N / 2) = Polynomial::baseCoeffsWithTime(N, i, segment_time);
   }
 }
 
@@ -148,9 +141,9 @@ double PolynomialOptimization<_N>::computeCost() const {
     const Segment& segment = segments_[segment_idx];
     for (size_t dimension_idx = 0; dimension_idx < dimension_;
          ++dimension_idx) {
-      const Eigen::RowVectorXd c =
+      const Eigen::VectorXd c =
           segment[dimension_idx].getCoefficients(derivative_order::POSITION);
-      const double partial_cost = c * Q * c.transpose();
+      const double partial_cost = c.transpose() * Q * c;
       cost += partial_cost;
     }
   }
@@ -158,15 +151,8 @@ double PolynomialOptimization<_N>::computeCost() const {
 }
 
 template <int _N>
-template <class DerivedA, class DerivedAi>
 void PolynomialOptimization<_N>::invertMappingMatrix(
-    const Eigen::MatrixBase<DerivedA>& mapping_matrix,
-    const Eigen::MatrixBase<DerivedAi>& inverse_mapping_matrix) {
-  // Once again
-  // http://eigen.tuxfamily.org/dox/TopicFunctionTakingEigenTypes.html#title3
-  Eigen::MatrixBase<DerivedAi>& inverse_mapping_matrix_non_const =
-      const_cast<Eigen::MatrixBase<DerivedAi>&>(inverse_mapping_matrix);
-
+    const SquareMatrix& mapping_matrix, SquareMatrix* inverse_mapping_matrix) {
   // The mapping matrix has the following structure:
   // [ x 0 0 0 0 0 ]
   // [ 0 x 0 0 0 0 ]
@@ -182,6 +168,8 @@ void PolynomialOptimization<_N>::invertMappingMatrix(
   // [ -inv(D) * C * inv(A_diag) inv(D) ]
   const int half_n = N / 2;
 
+  // "template" keyword required below as half_n is dependent on the template
+  // parameter.
   const Eigen::Matrix<double, half_n, 1> A_diag =
       mapping_matrix.template block<half_n, half_n>(0, 0).diagonal();
   const Eigen::Matrix<double, half_n, half_n> A_inv =
@@ -193,13 +181,12 @@ void PolynomialOptimization<_N>::invertMappingMatrix(
   const Eigen::Matrix<double, half_n, half_n> D_inv =
       mapping_matrix.template block<half_n, half_n>(half_n, half_n).inverse();
 
-  inverse_mapping_matrix_non_const.template block<half_n, half_n>(0, 0) = A_inv;
-  inverse_mapping_matrix_non_const.template block<half_n, half_n>(0, half_n)
-      .setZero();
-  inverse_mapping_matrix_non_const.template block<half_n, half_n>(half_n, 0) =
+  inverse_mapping_matrix->template block<half_n, half_n>(0, 0) = A_inv;
+  inverse_mapping_matrix->template block<half_n, half_n>(0, half_n).setZero();
+  inverse_mapping_matrix->template block<half_n, half_n>(half_n, 0) =
       -D_inv * C * A_inv;
-  inverse_mapping_matrix_non_const.template block<half_n, half_n>(
-      half_n, half_n) = D_inv;
+  inverse_mapping_matrix->template block<half_n, half_n>(half_n, half_n) =
+      D_inv;
 }
 
 template <int _N>
@@ -322,11 +309,11 @@ void PolynomialOptimization<_N>::updateSegmentTimes(
     const double segment_time = segment_times[i];
     CHECK_GT(segment_time, 0) << "segment times need to be greater than zero";
 
-    Polynomial::quadraticCostJacobian(N, derivative_to_optimize_, segment_time,
-                                      cost_matrices_[i]);
+    computeQuadraticCostJacobian(derivative_to_optimize_, segment_time,
+                                 &cost_matrices_[i]);
     SquareMatrix A;
-    setupMappingMatrix(segment_time, A);
-    invertMappingMatrix(A, inverse_mapping_matrices_[i]);
+    setupMappingMatrix(segment_time, &A);
+    invertMappingMatrix(A, &inverse_mapping_matrices_[i]);
   };
 }
 
@@ -422,10 +409,8 @@ void PolynomialOptimization<_N>::computeSegmentMaximumMagnitudeCandidates(
         convolved_coefficients;  // Column vector.
     convolved_coefficients.setZero();
     for (const Polynomial& p : segment.getPolynomialsRef()) {
-      Eigen::Matrix<double, n_d, 1> d =
-          p.getCoefficients(Derivative).transpose();
-      Eigen::Matrix<double, n_dd, 1> dd =
-          p.getCoefficients(Derivative + 1).transpose();
+      Eigen::Matrix<double, n_d, 1> d = p.getCoefficients(Derivative);
+      Eigen::Matrix<double, n_dd, 1> dd = p.getCoefficients(Derivative + 1);
       convolved_coefficients += convolve(d, dd);
     }
 
@@ -559,6 +544,25 @@ void PolynomialOptimization<_N>::getR(Eigen::MatrixXd* R) const {
 
   *R = R_sparse;
 }
+
+template <int _N>
+void PolynomialOptimization<_N>::computeQuadraticCostJacobian(
+    int derivative, double t, SquareMatrix* cost_jacobian) {
+  CHECK_LT(derivative, N);
+
+  cost_jacobian->setZero();
+  for (int col = 0; col < N - derivative; col++) {
+    for (int row = 0; row < N - derivative; row++) {
+      double exponent = (N - 1 - derivative) * 2 + 1 - row - col;
+
+      (*cost_jacobian)(N - 1 - row, N - 1 - col) =
+          Polynomial::base_coefficients_(derivative, N - 1 - row) *
+          Polynomial::base_coefficients_(derivative, N - 1 - col) *
+          pow(t, exponent) * 2.0 / exponent;
+    }
+  }
+}
+
 }  // namespace mav_trajectory_generation
 
 #endif  // MAV_TRAJECTORY_GENERATION_IMPL_POLYNOMIAL_OPTIMIZATION_LINEAR_IMPL_H_

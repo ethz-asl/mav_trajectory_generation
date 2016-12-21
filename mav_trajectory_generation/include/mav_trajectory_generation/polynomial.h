@@ -53,8 +53,7 @@ class Polynomial {
   Polynomial(int N) : N_(N), coefficients_(N) { coefficients_.setZero(); }
 
   // Assign arbitrary coefficients to a polynomial.
-  template <class Derived>
-  Polynomial(int N, const Eigen::MatrixBase<Derived>& coeffs)
+  Polynomial(int N, const Eigen::VectorXd& coeffs)
       : N_(N), coefficients_(coeffs) {}
 
   /// Get the number of coefficients (order + 1) of the polynomial.
@@ -65,8 +64,7 @@ class Polynomial {
    * coefficients are stored in increasing order with the power of t, i.e. c1 +
    * c2*t + c3*t^2 ==> coeffs = [c1 c2 c3]
    */
-  template <class Derived>
-  void setCoefficients(const Eigen::MatrixBase<Derived>& coeffs) {
+  void setCoefficients(const Eigen::VectorXd& coeffs) {
     coefficients_ = coeffs;
   }
 
@@ -74,14 +72,14 @@ class Polynomial {
    * \brief Returns the coefficients for the specified derivative of the
    * polynomial as a ROW vector.
    */
-  Eigen::RowVectorXd getCoefficients(int derivative = 0) const {
+  Eigen::VectorXd getCoefficients(int derivative = 0) const {
     CHECK_LE(derivative, N_);
     if (derivative == 0) {
-      return coefficients_.transpose();
+      return coefficients_;
     } else {
-      return coefficients_.tail(N_ - derivative).transpose()
-          .cwiseProduct(
-              base_coefficients_.block(derivative, derivative, 1, N_));
+      return coefficients_.tail(N_ - derivative)
+          .cwiseProduct(base_coefficients_.block(derivative, derivative, 1, N_)
+                            .transpose());
     }
   }
 
@@ -148,25 +146,23 @@ class Polynomial {
     * be computed
     * \param[in] t time of evaluation
     */
-  template <class Derived>
   static void baseCoeffsWithTime(int N, int derivative, double t,
-                                 const Eigen::MatrixBase<Derived>& coeffs) {
+                                 Eigen::VectorXd* coeffs) {
     CHECK_LT(derivative, N);
     CHECK_GE(derivative, 0);
-    Eigen::MatrixBase<Derived>& c =
-        const_cast<Eigen::MatrixBase<Derived>&>(coeffs);
 
-    c.setZero();
+    coeffs->resize(N, 1);
+    coeffs->setZero();
     // first coefficient doesn't get multiplied
-    c[derivative] = base_coefficients_(derivative, derivative);
+    (*coeffs)[derivative] = base_coefficients_(derivative, derivative);
 
-    if (t == 0) return;
+    if (std::abs(t) < std::numeric_limits<double>::epsilon()) return;
 
-    double _t = t;
+    double t_power = t;
     // now multiply increasing power of t towards the right
     for (int j = derivative + 1; j < N; j++) {
-      c[j] = base_coefficients_(derivative, j) * _t;
-      _t = _t * t;
+      (*coeffs)[j] = base_coefficients_(derivative, j) * t_power;
+      t_power = t_power * t;
     }
   }
 
@@ -175,52 +171,10 @@ class Polynomial {
    * \sa static void baseCoeffsWithTime(const Eigen::MatrixBase<Derived> &
    * coeffs, int derivative, double t)
    */
-  static Eigen::RowVectorXd baseCoeffsWithTime(int N, int derivative,
-                                               double t) {
-    Eigen::Matrix<double, Eigen::Dynamic, 1> c(N, 1);
-    baseCoeffsWithTime(N, derivative, t, c);
+  static Eigen::VectorXd baseCoeffsWithTime(int N, int derivative, double t) {
+    Eigen::VectorXd c(N);
+    baseCoeffsWithTime(N, derivative, t, &c);
     return c;
-  }
-
-  /**
-   * \brief Computes the Jacobian of the integral over the squared derivative
-   * \param[out] C Jacobian matrix to write into. If C is dynamic, the correct
-   * size has to be set.
-   * \param[in] t time of evaluation
-   * \param[in] derivative used to compute the cost
-   */
-  template <class Derived>
-  static void quadraticCostJacobian(int N, int derivative, double t,
-                                    const Eigen::MatrixBase<Derived>& C) {
-    CHECK_LT(derivative, N);
-    CHECK_EQ(C.rows(), N);
-    CHECK_EQ(C.cols(), N);
-
-    Eigen::MatrixBase<Derived>& _C = const_cast<Eigen::MatrixBase<Derived>&>(C);
-    _C.setZero();
-
-    for (int col = 0; col < N - derivative; col++) {
-      for (int row = 0; row < N - derivative; row++) {
-        double exponent = (N - 1 - derivative) * 2 + 1 - row - col;
-
-        _C(N - 1 - row, N - 1 - col) =
-            base_coefficients_(derivative, N - 1 - row) *
-            base_coefficients_(derivative, N - 1 - col) * pow(t, exponent) *
-            2.0 / exponent;
-      }
-    }
-  }
-
-  /**
-   * \brief convenience method to compute the Jacobian of the quadratic cost
-   * \sa static void quadraticCostJacobian(const Eigen::MatrixBase<Derived> & C,
-   * Scalar t, int derivative)
-   */
-  static Eigen::MatrixXd quadraticCostJacobian(int N, int derivative,
-                                               double t) {
-    Eigen::MatrixXd C(N, N);
-    quadraticCostJacobian(N, derivative, t, C);
-    return C;
   }
 
  private:
