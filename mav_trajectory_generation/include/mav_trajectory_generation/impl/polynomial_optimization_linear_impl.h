@@ -195,8 +195,6 @@ void PolynomialOptimization<_N>::setupConstraintReorderingMatrix() {
   std::vector<Triplet> reordering_list;
 
   const size_t n_vertices = vertices_.size();
-  // Paranoia ;).
-  CHECK(n_vertices == n_vertices_);
 
   std::vector<Constraint> all_constraints;
   std::set<Constraint> fixed_constraints;
