@@ -26,7 +26,7 @@
 #include <eigen-checks/entrypoint.h>
 
 #include "mav_trajectory_generation/polynomial_optimization_linear.h"
-//#include "mav_trajectory_generation/polynomial_optimization_nonlinear.h"
+#include "mav_trajectory_generation/polynomial_optimization_nonlinear.h"
 #include "mav_trajectory_generation/timing.h"
 
 using namespace mav_trajectory_generation;
@@ -91,9 +91,9 @@ void checkPath(const Vertex::Vector& vertices,
       std::stringstream segment_derivative;
       printSegment(segment_derivative, segment, derivative);
       EXPECT_TRUE(EIGEN_MATRIX_NEAR(desired, actual, tol))
-          << "[fixed constraint check t=0] at vertex " << i << " and constraint "
-          << positionDerivativeToString(derivative) << "\nsegment:\n" << segment
-          << segment_derivative.str();
+          << "[fixed constraint check t=0] at vertex " << i
+          << " and constraint " << positionDerivativeToString(derivative)
+          << "\nsegment:\n" << segment << segment_derivative.str();
     }
     for (Vertex::Constraints::const_iterator it = v_end.cBegin();
          it != v_end.cEnd(); ++it) {
@@ -104,9 +104,9 @@ void checkPath(const Vertex::Vector& vertices,
       std::stringstream segment_derivative;
       printSegment(segment_derivative, segment, derivative);
       EXPECT_TRUE(EIGEN_MATRIX_NEAR(desired, actual, tol))
-          << "[fixed constraint check] at vertex " << i + 1 << " and constraint "
-          << positionDerivativeToString(derivative) << "\nsegment:\n" << segment
-          << segment_derivative.str();
+          << "[fixed constraint check] at vertex " << i + 1
+          << " and constraint " << positionDerivativeToString(derivative)
+          << "\nsegment:\n" << segment << segment_derivative.str();
     }
 
     // Check if values at vertices are continuous.
@@ -190,17 +190,17 @@ TEST(MavPlanningUtils, PathPlanning_TestVertexGeneration3D) {
   }
 }
 
-// TEST(MavPlanningUtils, PathPlanning_A_matrix_inversion) {
-//  const double max_time = 60;
-//  for (double t = 1; t <= max_time; t += 1) {
-//    Eigen::Matrix<double, N, N> A, Ai, Ai_eigen;
-//    PolynomialOptimization<N>::setupMappingMatrix(t, A);
-//    PolynomialOptimization<N>::invertMappingMatrix(A, Ai);
-//    Ai_eigen = A.inverse();
-//    EXPECT_TRUE(EIGEN_MATRIX_NEAR(Ai, Ai_eigen, 1.0e-15)) << "time was "<< t
-//    << std::endl;
-//  }
-//}
+TEST(MavPlanningUtils, PathPlanning_A_matrix_inversion) {
+  const double max_time = 60;
+  for (double t = 1; t <= max_time; t += 1) {
+    Eigen::Matrix<double, N, N> A, Ai, Ai_eigen;
+    PolynomialOptimization<N>::setupMappingMatrix(t, &A);
+    PolynomialOptimization<N>::invertMappingMatrix(A, &Ai);
+    Ai_eigen = A.inverse();
+    EXPECT_TRUE(EIGEN_MATRIX_NEAR(Ai, Ai_eigen, 1.0e-10)) << "time was " << t
+                                                          << std::endl;
+  }
+}
 
 TEST(MavPlanningUtils, PathPlanningUnconstrained_1D_10_segments) {
   Vertex::Vector vertices;
@@ -223,8 +223,7 @@ TEST(MavPlanningUtils, PathPlanningUnconstrained_1D_10_segments) {
   opt.getSegments(&segments);
 
   std::cout << "Base coefficients: "
-            << Polynomial::base_coefficients_.block(3, 0, 1, N)
-            << std::endl;
+            << Polynomial::base_coefficients_.block(3, 0, 1, N) << std::endl;
 
   checkPath(vertices, segments);
   double v_max = getMaximumMagnitude(segments, derivative_order::VELOCITY);
@@ -345,9 +344,8 @@ TEST(MavPlanningUtils,
   timer_cost.Stop();
   std::cout << "cost: " << cost << std::endl;
 
-  EXPECT_LT(v_max, approximate_v_max * 5.0);  // max. velocity estimation
-                                              // beforehand is not accurate here
-                                              // anymore
+  // max. velocity estimation  beforehand is not accurate here anymore
+  EXPECT_LT(v_max, approximate_v_max * 5.0);
   EXPECT_LT(a_max, approximate_a_max * 2.0);
   EXPECT_TRUE(
       checkCost(opt.computeCost(), segments, derivative_to_optimize, 0.1));
@@ -387,9 +385,8 @@ TEST(MavPlanningUtils,
   timer_cost.Stop();
   std::cout << "cost: " << cost << std::endl;
 
-  EXPECT_LT(v_max, approximate_v_max * 5.0);  // max. velocity estimation
-                                              // beforehand is not accurate here
-                                              // anymore
+  /// max. velocity estimation beforehand is not accurate here anymore
+  EXPECT_LT(v_max, approximate_v_max * 5.0);
   EXPECT_LT(a_max, approximate_a_max * 2.0);
   EXPECT_TRUE(
       checkCost(opt.computeCost(), segments, derivative_to_optimize, 0.1));
@@ -418,8 +415,7 @@ bool checkExtrema(const std::vector<double>& testee,
   return true;
 }
 
-TEST(MavPlanningUtils,
-     PathOptimization3D_segment_extrema_of_magnitude) {
+TEST(MavPlanningUtils, PathOptimization3D_segment_extrema_of_magnitude) {
   Eigen::Vector3d pos_min, pos_max;
   pos_min << -10.0, -9.0, -8.0;
   pos_max << 8.0, 9.0, 10.0;
@@ -508,7 +504,7 @@ TEST(MavPlanningUtils,
   EXPECT_NEAR(a_max_ref, a_max.value, 0.01);
 }
 
-/* TEST(MavPlanningUtils, PathPlanningUnconstrained_3D_10_segments_nonlinear) {
+TEST(MavPlanningUtils, PathPlanningUnconstrained_3D_10_segments_nonlinear) {
   Eigen::Vector3d pos_min, pos_max;
   pos_min << -10.0, -20.0, -10.0;
   pos_max << 10.0, 20.0, 10.0;
@@ -567,7 +563,7 @@ TEST(MavPlanningUtils,
   std::cout << "nlopt2 stopped for reason: " << nlopt::returnValueToString(ret)
             << std::endl;
 
-  Segment<N>::Vector segments1, segments2;
+  Segment::Vector segments1, segments2;
   opt.getPolynomialOptimizationRef().getSegments(&segments1);
   opt2.getPolynomialOptimizationRef().getSegments(&segments2);
 
@@ -576,16 +572,22 @@ TEST(MavPlanningUtils,
   double v_max = getMaximumMagnitude(segments1, derivative_order::VELOCITY);
   double a_max = getMaximumMagnitude(segments1, derivative_order::ACCELERATION);
   std::cout << "v_max 1: " << v_max << " a_max 1: " << a_max << std::endl;
+  EXPECT_LT(v_max, approximate_v_max * 1.5);
+  EXPECT_LT(a_max, approximate_a_max * 1.5);
+
+  EXPECT_TRUE(checkCost(opt.getPolynomialOptimizationRef().computeCost(),
+                        segments1, derivative_to_optimize, 0.1));
+
   v_max = getMaximumMagnitude(segments2, derivative_order::VELOCITY);
   a_max = getMaximumMagnitude(segments2, derivative_order::ACCELERATION);
   std::cout << "v_max 2: " << v_max << " a_max 2: " << a_max << std::endl;
 
-  //  EXPECT_LT(v_max, approximate_v_max * 5.0); // max. velocity estimation
-  //  beforehand is not accurate here anymore
-  //  EXPECT_LT(a_max, approximate_a_max * 2.0);
-  //  EXPECT_TRUE(checkCost<N>(opt.computeCost(), segments,
-  //  derivative_to_optimize, 0.1));
-} */
+  EXPECT_LT(v_max, approximate_v_max * 1.5);
+  EXPECT_LT(a_max, approximate_a_max * 1.5);
+
+  EXPECT_TRUE(checkCost(opt2.getPolynomialOptimizationRef().computeCost(),
+                        segments2, derivative_to_optimize, 0.1));
+}
 
 void createTestPolynomials() {
   Vertex::Vector vertices;
