@@ -208,6 +208,13 @@ class PolynomialOptimizationNonLinear {
    */
   int optimize();
 
+  // Get the resulting trajectory out -- prefer this as the main method
+  // to get the results of the optimization, over getting the reference
+  // to the linear optimizer.
+  void getTrajectory(Trajectory* trajectory) const {
+    poly_opt_.getTrajectory(trajectory);
+  }
+
   /**
    * \brief Returns a const reference to the underlying linear optimization
    * object.
