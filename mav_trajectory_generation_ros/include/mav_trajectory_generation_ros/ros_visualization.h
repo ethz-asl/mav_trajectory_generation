@@ -21,10 +21,10 @@
 #ifndef MAV_TRAJECTORY_GENERATION_ROS_ROS_VISUALIZATION_H_
 #define MAV_TRAJECTORY_GENERATION_ROS_ROS_VISUALIZATION_H_
 
-#include <mav_trajectory_generation/trajectory.h>
-
-#include <visualization_msgs/MarkerArray.h>
 #include <mav_visualization/MarkerGroup.h>
+#include <visualization_msgs/MarkerArray.h>
+
+#include <mav_trajectory_generation/trajectory.h>
 
 namespace mav_trajectory_generation {
 

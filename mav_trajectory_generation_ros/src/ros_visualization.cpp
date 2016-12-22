@@ -15,8 +15,9 @@
 * limitations under the License.
 */
 
-#include <mav_msgs/conversions.h>
 #include <eigen_conversions/eigen_msg.h>
+#include <mav_msgs/conversions.h>
+#include <mav_visualization/helpers.h>
 
 #include "mav_trajectory_generation_ros/ros_visualization.h"
 
@@ -47,22 +48,23 @@ void drawMavTrajectory(const Trajectory& trajectory, double distance,
                        const std::string& frame_id,
                        visualization_msgs::MarkerArray* marker_array) {
   // This is just an empty extra marker that doesn't draw anything.
-  mav_viz::MarkerGroup dummy_marker;
+  mav_visualization::MarkerGroup dummy_marker;
   return drawMavTrajectory(trajectory, distance, frame_id, dummy_marker,
                            marker_array);
 }
 
 void drawMavTrajectoryWithMavMarker(
     const Trajectory& trajectory, double distance, const std::string& frame_id,
-    const mav_viz::MarkerGroup& additional_marker,
+    const mav_visualization::MarkerGroup& additional_marker,
     visualization_msgs::MarkerArray* marker_array) {
   CHECK_NOTNULL(marker_array);
   marker_array->markers.clear();
 
   // Sample the trajectory.
+  // TODO!!! CONTINUE HERE!
 
   Marker line_strip;
-  line_strip.type = Marker::LINE_STRIP;
+  line_strip.type = mav_visualization::Marker::LINE_STRIP;
   line_strip.color = mav_visualization::createColorRGBA(1, 0.5, 0, 1);
   line_strip.scale.x = 0.01;
   line_strip.ns = "path";
@@ -79,40 +81,43 @@ void drawMavTrajectoryWithMavMarker(
       mav_msgs::EigenMavStateFromEigenTrajectoryPoint(flat_state, &mav_state);
 
       MarkerArray axes_arrows;
-      mav_viz::drawAxesArrows(axes_arrows, mav_state.position_W,
-                              mav_state.orientation_W_B, 0.3, 0.3);
+      mav_visualization::drawAxesArrows(mav_state.position_W,
+                                        mav_state.orientation_W_B, 0.3, 0.3,
+                                        &axes_arrows);
       internal::appendMarkers(axes_arrows, "pose", marker_array);
 
       Marker arrow;
-      mav_viz::drawArrow(
-          arrow, flat_state.position_W,
+      mav_visualization::drawArrowPoints(
+          flat_state.position_W,
           flat_state.position_W + flat_state.acceleration_W,
           mav_visualization::createColorRGBA((190.0 / 255.0), (81.0 / 255.0),
-                                   (80.0 / 255.0), 1),
-          0.3);
-      arrow.ns = positionDerivativeToString(ACCELERATION);
+                                             (80.0 / 255.0), 1),
+          0.3, &arrow);
+      arrow.ns = positionDerivativeToString(derivative_order::ACCELERATION);
       marker_array->markers.push_back(arrow);
 
-      mav_viz::drawArrow(
-          arrow, flat_state.position_W,
+      mav_visualization::drawArrowPoints(
+          flat_state.position_W,
           flat_state.position_W + flat_state.velocity_W,
           mav_visualization::createColorRGBA((80.0 / 255.0), (172.0 / 255.0),
-                                   (196.0 / 255.0), 1),
-          0.3);
-      arrow.ns = positionDerivativeToString(VELOCITY);
+                                             (196.0 / 255.0), 1),
+          0.3, &arrow);
+      arrow.ns = positionDerivativeToString(derivative_order::VELOCITY);
       marker_array->markers.push_back(arrow);
 
-      mav_viz::MarkerGroup tmp_marker(additional_marker);
+      mav_visualization::MarkerGroup tmp_marker(additional_marker);
       tmp_marker.transform(mav_state.position_W, mav_state.orientation_W_B);
       tmp_marker.getMarkers(marker_array->markers, 1.0, true);
     }
     last_position = flat_state.position_W;
-    line_strip.points.push_back(mav_viz::eigenToPoint(last_position));
+    geometry_msgs::Point last_position_msg;
+    tf::pointEigenToMsg(last_position, last_position_msg);
+    line_strip.points.push_back(last_position_msg);
   }
   marker_array->markers.push_back(line_strip);
 
   std_msgs::Header header;
-  header.frame_id = "world";
+  header.frame_id = frame_id;
   header.stamp = ros::Time::now();
   setMarkerProperties(header, 0.0, Marker::ADD, marker_array);
 }
@@ -138,7 +143,9 @@ bool drawVertices(const Vertex::Vector& vertices, const std::string& frame_id,
     if (vertex.hasConstraint(derivative_order::POSITION)) {
       Eigen::Vector3d position = Eigen::Vector3d::Zero();
       vertex.getConstraint(derivative_order::POSITION, &position);
-      marker.points.push_back(mav_viz::eigenToPoint(position));
+      geometry_msgs::Point constraint_msg;
+      tf::pointEigenToMsg(position, constraint_msg);
+      marker.points.push_back(mav_visualization::eigenToPoint(constraint_msg));
     } else
       ROS_WARN("Vertex does not have a position constraint, skipping.");
   }
