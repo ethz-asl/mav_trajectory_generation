@@ -78,5 +78,4 @@ std::vector<double> estimateSegmentTimes(const Vertex::Vector& vertices,
   return segment_times;
 }
 
-
 }  // namespace mav_trajectory_generation

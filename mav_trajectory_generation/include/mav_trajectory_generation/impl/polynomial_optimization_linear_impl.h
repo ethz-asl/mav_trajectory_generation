@@ -338,7 +338,7 @@ bool PolynomialOptimization<_N>::solveLinear() {
   // problems, and switch back to dense in case.
 
   // Compute cost matrix for the unconstrained optimization problem.
-  // Block-wise \f$ H = A^{-T}QA^{-1} \f$ according to [1]
+  // Block-wise H = A^{-T}QA^{-1} according to [1]
   Eigen::SparseMatrix<double> R;
   constructR(&R);
 

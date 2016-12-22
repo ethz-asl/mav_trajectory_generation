@@ -23,12 +23,12 @@
 #ifndef MAV_TRAJECTORY_GENERATION_IMPL_TIMING_IMPL_H_
 #define MAV_TRAJECTORY_GENERATION_IMPL_TIMING_IMPL_H_
 
+#include <math.h>
+#include <stdio.h>
 #include <algorithm>
 #include <ostream>
 #include <sstream>
-#include <stdio.h>
 #include <string>
-#include <math.h>
 
 #include "mav_trajectory_generation/timing.h"
 
@@ -55,7 +55,8 @@ size_t Timing::GetHandle(std::string const& tag) {
     Instance().timers_.push_back(TimerMapValue());
     // Track the maximum tag length to help printing a table of timing values
     // later.
-    Instance().max_tag_length_ = std::max(Instance().max_tag_length_, tag.size());
+    Instance().max_tag_length_ =
+        std::max(Instance().max_tag_length_, tag.size());
     return handle;
   } else {
     return i->second;
@@ -222,6 +223,5 @@ void Timing::Reset() { Instance().tag_map_.clear(); }
 
 }  // namespace timing
 }  // namespace mav_trajectory_generation
-
 
 #endif  // MAV_TRAJECTORY_GENERATION_IMPL_TIMING_IMPL_H_

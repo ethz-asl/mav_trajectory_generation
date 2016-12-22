@@ -46,8 +46,8 @@ class Trajectory {
   // different dimensions.
 
  private:
-  int D_;  ///< Number of dimensions.
-  int N_;  ///< Number of coefficients.
+  int D_;  // Number of dimensions.
+  int N_;  // Number of coefficients.
 
   // K is number of segments...
   Segment::Vector segments_;
