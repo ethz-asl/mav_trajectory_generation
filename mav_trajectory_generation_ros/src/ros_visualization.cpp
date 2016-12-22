@@ -20,18 +20,16 @@
 #include <mav_visualization/helpers.h>
 
 #include "mav_trajectory_generation_ros/ros_visualization.h"
+#include "mav_trajectory_generation_ros/trajectory_sampling.h"
 
 namespace mav_trajectory_generation {
 
 // Declare/define some internal functions that we don't want to expose.
 namespace internal {
 
-static constexpr double kDefaultDistance = 1.0;
-static constexpr double kDefaultSamplingTime = 0.1;
-
-void appendMarkers(const MarkerArray& markers_to_insert,
+void appendMarkers(const visualization_msgs::MarkerArray& markers_to_insert,
                    const std::string& marker_namespace,
-                   MarkerArray* marker_array) {
+                   visualization_msgs::MarkerArray* marker_array) {
   marker_array->markers.reserve(marker_array->markers.size() +
                                 markers_to_insert.markers.size());
   for (const auto marker : markers_to_insert.markers) {
@@ -42,15 +40,34 @@ void appendMarkers(const MarkerArray& markers_to_insert,
   }
 }
 
+/**
+ * \brief Overwrites the given properties of the marker array.
+ */
+void setMarkerProperties(const std_msgs::Header& header, double life_time,
+                         const visualization_msgs::Marker::_action_type& action,
+                         visualization_msgs::MarkerArray* markers) {
+  CHECK_NOTNULL(markers);
+  int count = 0;
+  for (visualization_msgs::Marker& marker : markers->markers) {
+    marker.header = header;
+    marker.action = action;
+    marker.id = count;
+    marker.lifetime = ros::Duration(life_time);
+    ++count;
+  }
+}
+
 }  // end namespace internal
+
+static constexpr double kDefaultSamplingTime = 0.1;
 
 void drawMavTrajectory(const Trajectory& trajectory, double distance,
                        const std::string& frame_id,
                        visualization_msgs::MarkerArray* marker_array) {
   // This is just an empty extra marker that doesn't draw anything.
   mav_visualization::MarkerGroup dummy_marker;
-  return drawMavTrajectory(trajectory, distance, frame_id, dummy_marker,
-                           marker_array);
+  return drawMavTrajectoryWithMavMarker(trajectory, distance, frame_id,
+                                        dummy_marker, marker_array);
 }
 
 void drawMavTrajectoryWithMavMarker(
@@ -61,17 +78,22 @@ void drawMavTrajectoryWithMavMarker(
   marker_array->markers.clear();
 
   // Sample the trajectory.
-  // TODO!!! CONTINUE HERE!
+  mav_msgs::EigenTrajectoryPoint::Vector flat_states;
+  bool success =
+      sampleWholeTrajectory(trajectory, kDefaultSamplingTime, &flat_states);
+  if (!success) {
+    return;
+  }
 
-  Marker line_strip;
-  line_strip.type = mav_visualization::Marker::LINE_STRIP;
+  visualization_msgs::Marker line_strip;
+  line_strip.type = visualization_msgs::Marker::LINE_STRIP;
   line_strip.color = mav_visualization::createColorRGBA(1, 0.5, 0, 1);
   line_strip.scale.x = 0.01;
   line_strip.ns = "path";
 
   double accumulated_distance = 0;
   Eigen::Vector3d last_position = Eigen::Vector3d::Zero();
-  for (size_t i = 0; i < n_samples; ++i) {
+  for (size_t i = 0; i < flat_states.size(); ++i) {
     const mav_msgs::EigenTrajectoryPoint& flat_state = flat_states[i];
 
     accumulated_distance += (last_position - flat_state.position_W).norm();
@@ -80,13 +102,13 @@ void drawMavTrajectoryWithMavMarker(
       mav_msgs::EigenMavState mav_state;
       mav_msgs::EigenMavStateFromEigenTrajectoryPoint(flat_state, &mav_state);
 
-      MarkerArray axes_arrows;
+      visualization_msgs::MarkerArray axes_arrows;
       mav_visualization::drawAxesArrows(mav_state.position_W,
                                         mav_state.orientation_W_B, 0.3, 0.3,
                                         &axes_arrows);
       internal::appendMarkers(axes_arrows, "pose", marker_array);
 
-      Marker arrow;
+      visualization_msgs::Marker arrow;
       mav_visualization::drawArrowPoints(
           flat_state.position_W,
           flat_state.position_W + flat_state.acceleration_W,
@@ -97,8 +119,7 @@ void drawMavTrajectoryWithMavMarker(
       marker_array->markers.push_back(arrow);
 
       mav_visualization::drawArrowPoints(
-          flat_state.position_W,
-          flat_state.position_W + flat_state.velocity_W,
+          flat_state.position_W, flat_state.position_W + flat_state.velocity_W,
           mav_visualization::createColorRGBA((80.0 / 255.0), (172.0 / 255.0),
                                              (196.0 / 255.0), 1),
           0.3, &arrow);
@@ -119,33 +140,34 @@ void drawMavTrajectoryWithMavMarker(
   std_msgs::Header header;
   header.frame_id = frame_id;
   header.stamp = ros::Time::now();
-  setMarkerProperties(header, 0.0, Marker::ADD, marker_array);
+  internal::setMarkerProperties(header, 0.0, visualization_msgs::Marker::ADD,
+                                marker_array);
 }
 
-bool drawVertices(const Vertex::Vector& vertices, const std::string& frame_id,
+void drawVertices(const Vertex::Vector& vertices, const std::string& frame_id,
                   visualization_msgs::MarkerArray* marker_array) {
   CHECK_NOTNULL(marker_array);
   marker_array->markers.resize(1);
-  Marker& marker = marker_array->markers.front();
+  visualization_msgs::Marker& marker = marker_array->markers.front();
 
-  marker.type = Marker::LINE_STRIP;
+  marker.type = visualization_msgs::Marker::LINE_STRIP;
   marker.color = mav_visualization::createColorRGBA(0.5, 1.0, 0, 1);
   marker.scale.x = 0.01;
   marker.ns = "straight_path";
 
   for (const Vertex& vertex : vertices) {
     if (vertex.D() != 3) {
-      ROS_ERROR("Vertex has dimension %lu but should have dimension 3.",
-                vertex.getDimension());
-      return false;
+      ROS_ERROR("Vertex has dimension %d but should have dimension 3.",
+                vertex.D());
+      return;
     }
 
     if (vertex.hasConstraint(derivative_order::POSITION)) {
-      Eigen::Vector3d position = Eigen::Vector3d::Zero();
+      Eigen::VectorXd position = Eigen::Vector3d::Zero();
       vertex.getConstraint(derivative_order::POSITION, &position);
       geometry_msgs::Point constraint_msg;
       tf::pointEigenToMsg(position, constraint_msg);
-      marker.points.push_back(mav_visualization::eigenToPoint(constraint_msg));
+      marker.points.push_back(constraint_msg);
     } else
       ROS_WARN("Vertex does not have a position constraint, skipping.");
   }
@@ -153,8 +175,8 @@ bool drawVertices(const Vertex::Vector& vertices, const std::string& frame_id,
   std_msgs::Header header;
   header.frame_id = frame_id;
   header.stamp = ros::Time::now();
-  setMarkerProperties(header, 0.0, Marker::ADD, marker_array);
-  return true;
+  internal::setMarkerProperties(header, 0.0, visualization_msgs::Marker::ADD,
+                                marker_array);
 }
 
 }  // namespace mav_trajectory_generation

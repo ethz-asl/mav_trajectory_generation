@@ -26,17 +26,6 @@
 
 namespace mav_visualization {
 
-// Helper function to create a std_msgs::ColorRGBA.
-// TODO(helenol): move this elsewhere.
-inline std_msgs::ColorRGBA createColorRGBA(float r, float g, float b, float a) {
-  std_msgs::ColorRGBA c;
-  c.r = r;
-  c.g = g;
-  c.b = b;
-  c.a = a;
-  return c;
-}
-
 typedef std::vector<visualization_msgs::Marker> MarkerVector;
 
 class MarkerGroup {

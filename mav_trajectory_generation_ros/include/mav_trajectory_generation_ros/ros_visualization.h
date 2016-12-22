@@ -21,10 +21,11 @@
 #ifndef MAV_TRAJECTORY_GENERATION_ROS_ROS_VISUALIZATION_H_
 #define MAV_TRAJECTORY_GENERATION_ROS_ROS_VISUALIZATION_H_
 
-#include <mav_visualization/MarkerGroup.h>
+#include <mav_visualization/marker_group.h>
 #include <visualization_msgs/MarkerArray.h>
 
 #include <mav_trajectory_generation/trajectory.h>
+#include <mav_trajectory_generation/vertex.h>
 
 namespace mav_trajectory_generation {
 
@@ -38,8 +39,12 @@ void drawMavTrajectory(const Trajectory& trajectory, double distance,
 // distance.
 void drawMavTrajectoryWithMavMarker(
     const Trajectory& trajectory, double distance, const std::string& frame_id,
-    const mav_viz::MarkerGroup& additional_marker,
+    const mav_visualization::MarkerGroup& additional_marker,
     visualization_msgs::MarkerArray* marker_array);
+
+// Visualize original vertices.s
+void drawVertices(const Vertex::Vector& vertices, const std::string& frame_id,
+                  visualization_msgs::MarkerArray* marker_array);
 
 }  // namespace mav_trajectory_generation
 

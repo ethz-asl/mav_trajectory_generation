@@ -5,6 +5,10 @@
   <description>Visualization helpers for MAVs (with meshes).</description>
 
   <author email="markus.achtelik_devel@mavt.ethz.ch">Markus Achtelik</author>
+  <author email="michael.burri@mavt.ethz.ch">Michael Burri</author>
+  <author email="helen.oleynikova@mavt.ethz.ch">Helen Oleynikova</author>
+  <author email="brik@ethz.ch">Rik Bähnemann</author>
+  <author email="marija.popovic@mavt.ethz.ch">Marija Popovic</author>
 
   <maintainer email="brik@ethz.ch">Rik Bähnemann</maintainer>
 
@@ -15,6 +19,7 @@
 
   <depend>cmake_modules</depend>
   <depend>eigen_catkin</depend>
+  <depend>eigen_conversions</depend>
   <depend>roscpp</depend>
   <depend>visualization_msgs</depend>
 </package>
