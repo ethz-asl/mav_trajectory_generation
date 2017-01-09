@@ -26,37 +26,27 @@
 
 namespace mav_trajectory_generation {
 
-/**
- * \brief Finds the roots of a polynomial with real coefficients, using the
- * Jenkins-Traub method.
- *        Interface to the original implementation.
- *
- * http://en.wikipedia.org/wiki/Jenkins–Traub_algorithm
- * \param[in] coefficients_decreasing Coefficients of the polynomial in
- * DECREASING! order.
- * \param[in] degree Degree of the polynomial. Usually n_coefficients - 1.
- * \param[out] roots_real Real part of the roots.
- * \param[out] roots_imag Imaginary part of the roots.
- * \param[out] info Contains info about the roots found.
- * \return Number of roots found, or -1 in case of a failure.
- *
- * \note Size of info is not documented. It seems like it just stores the number
- * of iterations per root.
- * --> Recommend to pass NULL and not use it.
- */
+// Finds the roots of a polynomial with real coefficients, using the
+// Jenkins-Traub method. Interface to the original implementation.
+// http://en.wikipedia.org/wiki/Jenkins–Traub_algorithm
+// Input: coefficients_decreasing = Coefficients of the polynomial in
+// DECREASING! order.
+// Input: degree = Degree of the polynomial. Usually n_coefficients - 1.
+// Output: roots_real = Real part of the roots.
+// Output: roots_imag = Imaginary part of the roots.
+// Output: info = Contains info about the roots found.
+// Output: return = Number of roots found, or -1 in case of a failure.
+// Note: Size of info is not documented. It seems like it just stores the number
+// of iterations per root. --> Recommend to pass NULL and not use it.
 int findRootsJenkinsTraub(const double* coefficients_decreasing, int degree,
                           double* roots_real, double* roots_imag, int info[]);
 
-/**
- * \brief Finds the roots of a polynomial with real coefficients, using the
- * Jenkins-Traub method.
- *        Eigen wrapper for convenience.
- *
- * http://en.wikipedia.org/wiki/Jenkins–Traub_algorithm
- * \param[in] coefficients_increasing Coefficients of the polynomial in
- * INDECREASING! order.
- * \return roots Complex roots of the polynomial.
- */
+// Finds the roots of a polynomial with real coefficients, using the
+// Jenkins-Traub method. Eigen wrapper for convenience.
+// http://en.wikipedia.org/wiki/Jenkins–Traub_algorithm
+// Input: coefficients_increasing = Coefficients of the polynomial in
+// INDECREASING! order.
+// Output: return = Complex roots of the polynomial.
 Eigen::VectorXcd findRootsJenkinsTraub(
     const Eigen::VectorXd& coefficients_increasing);
 
