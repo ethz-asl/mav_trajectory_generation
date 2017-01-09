@@ -109,4 +109,46 @@ void Trajectory::evaluateRange(double t_start, double t_end, double dt,
   }
 }
 
+Trajectory Trajectory::getTrajectoryWithSingleDimension(int dimension) const {
+  CHECK_LT(dimension, D_);
+
+  // Create a new set of segments with just 1 dimension.
+  Segment::Vector segments;
+  segments.reserve(segments_.size());
+
+  for (size_t k = 0; k < segments_.size(); ++k) {
+    Segment segment(N_, 1);
+    segment[0] = (segments_[k])[dimension];
+    segments.push_back(segment);
+  }
+
+  Trajectory traj;
+  traj.setSegments(segments);
+  return traj;
+}
+
+Trajectory Trajectory::getAppendedTrajectory(
+    const Trajectory& trajectory_to_append) const {
+  CHECK_EQ(N_, trajectory_to_append.N());
+
+  // Create a new set of segments with just 1 dimension.
+  Segment::Vector segments;
+  segments.reserve(segments_.size());
+
+  for (size_t k = 0; k < segments_.size(); ++k) {
+    Segment segment(N_, D_ + trajectory_to_append.D());
+    for (int d = 0; d < D_; d++) {
+      segment[d] = (segments_[k])[d];
+    }
+    for (int d = 0; d < trajectory_to_append.D(); ++d) {
+      segment[D_ + d] = trajectory_to_append.segments()[k][d];
+    }
+    segments.push_back(segment);
+  }
+
+  Trajectory traj;
+  traj.setSegments(segments);
+  return traj;
+}
+
 }  // namespace mav_trajectory_generation

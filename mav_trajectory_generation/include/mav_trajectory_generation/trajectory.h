@@ -29,11 +29,14 @@ namespace mav_trajectory_generation {
 // polynomial order N-1. (N=12 -> 11th order polynomial, with 12 coefficients).
 class Trajectory {
  public:
-  Trajectory();
+  Trajectory() {}
+  ~Trajectory() {}
 
   int D() const { return D_; }
   int N() const { return N_; }
   int K() const { return segments_.size(); }
+
+  bool empty() const { return segments_.empty(); }
 
   void setSegments(const Segment::Vector& segments) {
     CHECK(!segments_.empty());
@@ -54,11 +57,17 @@ class Trajectory {
     *segments = segments_;
   }
 
+  const Segment::Vector& segments() const { return segments_; }
+
   double getMinTime() const { return 0.0; }
   double getMaxTime() const { return max_time_; }
 
-  // TODO(helenol): write functions to merge and split trajectories into
-  // different dimensions.
+  // Functions to create new trajectories by splitting (getting a NEW trajectory
+  // with a single dimension) or compositing (create a new trajectory with
+  // another trajectory appended).
+  Trajectory getTrajectoryWithSingleDimension(int dimension) const;
+  Trajectory getAppendedTrajectory(
+      const Trajectory& trajectory_to_append) const;
 
   // Evaluation functions.
   // Evaluate at a single time, and a single derivative. Return type of
