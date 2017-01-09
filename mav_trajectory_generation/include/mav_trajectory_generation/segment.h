@@ -21,10 +21,10 @@
 #ifndef MAV_TRAJECTORY_GENERATION_SEGMENT_H_
 #define MAV_TRAJECTORY_GENERATION_SEGMENT_H_
 
-#include <chrono>
+#include <glog/logging.h>
 #include <Eigen/Core>
 #include <Eigen/StdVector>
-#include <glog/logging.h>
+#include <chrono>
 #include <map>
 #include <vector>
 
@@ -36,15 +36,10 @@ namespace mav_trajectory_generation {
 constexpr double kNumNSecPerSec = 1.0e9;
 constexpr double kNumSecPerNsec = 1.0e-9;
 
-/**
- * \brief Class holding the properties of parametric segment of a path.
- *        Time of the segment and one polynomial for each dimension.
- *
- * \code
- *     X------------X---------------X
- *   vertex             segment
- * \endcode
- */
+// Class holding the properties of parametric segment of a path.
+// Time of the segment and one polynomial for each dimension.
+//    X------------X---------------X
+//  vertex             segment
 class Segment {
  public:
   typedef std::vector<Segment> Vector;
@@ -77,16 +72,13 @@ class Segment {
   double time_;
 
  private:
-  int N_;  ///< Number of coefficients.
-  int D_;  ///< Number of dimensions.
+  int N_;  // Number of coefficients.
+  int D_;  // Number of dimensions.
 };
 
-/**
- * \brief Prints the properties of the segment.
- *
- * Polynomial coefficients are printed with increasing powers, i.e. c_0 + c_1*t
- * ... c_{N-1} * t^{N-1}
- */
+// Prints the properties of the segment.
+// Polynomial coefficients are printed with increasing powers,
+// i.e. c_0 + c_1*t ... c_{N-1} * t^{N-1}
 void printSegment(std::ostream& stream, const Segment& s, int derivative);
 
 std::ostream& operator<<(std::ostream& stream, const Segment& s);

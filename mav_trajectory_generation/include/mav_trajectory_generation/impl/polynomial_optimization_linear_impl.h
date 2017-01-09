@@ -21,8 +21,8 @@
 #ifndef MAV_TRAJECTORY_GENERATION_IMPL_POLYNOMIAL_OPTIMIZATION_LINEAR_IMPL_H_
 #define MAV_TRAJECTORY_GENERATION_IMPL_POLYNOMIAL_OPTIMIZATION_LINEAR_IMPL_H_
 
-#include <Eigen/Sparse>
 #include <glog/logging.h>
+#include <Eigen/Sparse>
 #include <set>
 #include <tuple>
 
@@ -44,23 +44,6 @@ PolynomialOptimization<_N>::PolynomialOptimization(size_t dimension)
 }
 
 template <int _N>
-bool PolynomialOptimization<_N>::setupFromPositons(
-    const std::vector<double>& positions, const std::vector<double>& times) {
-  Vertex::Vector vertices;
-  const size_t n_vertices = positions.size();
-
-  vertices.resize(n_vertices, Vertex(1));
-  vertices.front().makeStartOrEnd(0, kHighestDerivativeToOptimize);
-  vertices.back().makeStartOrEnd(0, kHighestDerivativeToOptimize);
-  for (size_t i = 0; i < n_vertices; ++i) {
-    Vertex& v = vertices[i];
-    v.addConstraint(derivative_order::POSITION, positions[i]);
-  }
-
-  return setupFromVertices(vertices, times, kHighestDerivativeToOptimize);
-}
-
-template <int _N>
 bool PolynomialOptimization<_N>::setupFromVertices(
     const Vertex::Vector& vertices, const std::vector<double>& times,
     int derivative_to_optimize) {
@@ -70,7 +53,7 @@ bool PolynomialOptimization<_N>::setupFromVertices(
 
   CHECK(derivative_to_optimize >= 0 &&
         derivative_to_optimize <= kHighestDerivativeToOptimize)
-      << "You try to optimize the " << derivative_to_optimize
+      << "You tried to optimize the " << derivative_to_optimize
       << "th derivative of position on a " << N
       << "th order polynomial. This is not possible, you either need a higher "
          "order polynomial or a smaller derivative to optimize.";
@@ -90,12 +73,12 @@ bool PolynomialOptimization<_N>::setupFromVertices(
   inverse_mapping_matrices_.resize(n_segments_);
   cost_matrices_.resize(n_segments_);
 
-  // Iterate through all vertices and remove invalid constraints (order to
+  // Iterate through all vertices and remove invalid constraints (order too
   // high).
   for (size_t vertex_idx = 0; vertex_idx < n_vertices_; ++vertex_idx) {
     Vertex& vertex = vertices_[vertex_idx];
 
-    // check if we have valid constraints
+    // Check if we have valid constraints.
     bool vertex_valid = true;
     Vertex vertex_tmp(dimension_);
     for (Vertex::Constraints::const_iterator it = vertex.cBegin();
@@ -124,7 +107,7 @@ void PolynomialOptimization<_N>::setupMappingMatrix(double segment_time,
                                                     SquareMatrix* A) {
   // The sum of fixed/free variables has to be equal on both ends of the
   // segment.
-  // Thus, A is created as [A(t=0); A(t=segment_time].
+  // Thus, A is created as [A(t=0); A(t=segment_time)].
   for (int i = 0; i < N / 2; ++i) {
     A->row(i) = Polynomial::baseCoeffsWithTime(N, i, 0.0);
     A->row(i + N / 2) = Polynomial::baseCoeffsWithTime(N, i, segment_time);
@@ -305,7 +288,7 @@ void PolynomialOptimization<_N>::updateSegmentTimes(
 
   for (size_t i = 0; i < n_segments_; ++i) {
     const double segment_time = segment_times[i];
-    CHECK_GT(segment_time, 0) << "segment times need to be greater than zero";
+    CHECK_GT(segment_time, 0) << "Segment times need to be greater than zero";
 
     computeQuadraticCostJacobian(derivative_to_optimize_, segment_time,
                                  &cost_matrices_[i]);
@@ -355,7 +338,7 @@ bool PolynomialOptimization<_N>::solveLinear() {
   // problems, and switch back to dense in case.
 
   // Compute cost matrix for the unconstrained optimization problem.
-  // Block-wise \f$ H = A^{-T}QA^{-1} \f$ according to [1]
+  // Block-wise H = A^{-T}QA^{-1} according to [1]
   Eigen::SparseMatrix<double> R;
   constructR(&R);
 

@@ -141,10 +141,10 @@ class Polynomial {
 
   // Computes the base coefficients with the according powers of t, as
   // e.g. needed for computation of (in)equality constraints.
-  // Output: coeffs vector to write the coefficients to
+  // Output: coeffs = vector to write the coefficients to
   // Input: polynomial derivative for which the coefficients have to
   // be computed
-  // Input: time of evaluation
+  // Input: t = time of evaluation
   static void baseCoeffsWithTime(int N, int derivative, double t,
                                  Eigen::VectorXd* coeffs) {
     CHECK_LT(derivative, N);

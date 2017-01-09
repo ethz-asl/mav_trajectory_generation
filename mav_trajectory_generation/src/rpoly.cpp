@@ -31,23 +31,23 @@
  *                  number of roots found.
  */
 
-#include <stdio.h>
-#include <time.h>
 #include <math.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 
 #include "mav_trajectory_generation/rpoly.h"
 
 namespace mav_trajectory_generation {
 
 Eigen::VectorXcd findRootsJenkinsTraub(
-    const Eigen::VectorXd& coefficients_increasing) {
+    const Eigen::VectorXd &coefficients_increasing) {
   const Eigen::VectorXd coefficients_decreasing =
       coefficients_increasing.reverse();
 
   const int n_coefficients = coefficients_increasing.size();
-  double* roots_real = new double[n_coefficients];
-  double* roots_imag = new double[n_coefficients];
+  double *roots_real = new double[n_coefficients];
+  double *roots_imag = new double[n_coefficients];
 
   int ret =
       findRootsJenkinsTraub(coefficients_decreasing.data(), n_coefficients - 1,
