@@ -47,6 +47,7 @@ class Segment {
   Segment(int N, int D) : time_(0.0), N_(N), D_(D) {
     polynomials_.resize(D_, N_);
   }
+  Segment(const Segment& segment) = default;
 
   int D() const { return D_; }
   int N() const { return N_; }
@@ -55,7 +56,7 @@ class Segment {
     return static_cast<uint64_t>(kNumNSecPerSec * time_);
   }
 
-  void setTime(double _time) { time_ = _time; }
+  void setTime(double time_sec) { time_ = time_sec; }
   void setTimeNSec(uint64_t time_ns) { time_ = time_ns * kNumSecPerNsec; }
 
   Polynomial& operator[](size_t idx);

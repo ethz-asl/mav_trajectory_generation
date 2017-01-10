@@ -137,6 +137,7 @@ Trajectory Trajectory::getAppendedTrajectory(
     return *this;
   }
   CHECK_EQ(N_, trajectory_to_append.N());
+  CHECK_EQ(segments_.size(), static_cast<int>(trajectory_to_append.K()));
 
   // Create a new set of segments with just 1 dimension.
   Segment::Vector segments;
@@ -144,11 +145,12 @@ Trajectory Trajectory::getAppendedTrajectory(
 
   for (size_t k = 0; k < segments_.size(); ++k) {
     Segment segment(N_, D_ + trajectory_to_append.D());
-    for (int d = 0; d < D_; d++) {
+    segment.setTime(segments_[k].getTime());
+    for (int d = 0; d < D_; ++d) {
       segment[d] = (segments_[k])[d];
     }
     for (int d = 0; d < trajectory_to_append.D(); ++d) {
-      segment[D_ + d] = trajectory_to_append.segments()[k][d];
+      segment[D_ + d] = (trajectory_to_append.segments()[k])[d];
     }
     segments.push_back(segment);
   }
