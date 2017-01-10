@@ -146,5 +146,3 @@ inline Vertex::Vector createRandomVertices1D(int maximum_derivative,
 }  // namespace mav_trajectory_generation
 
 #endif  // MAV_TRAJECTORY_GENERATION_VERTEX_H_
-
-#include "mav_trajectory_generation/impl/vertex_impl.h"

@@ -12,11 +12,12 @@ add_definitions(-std=c++11)
 #############
 cs_add_library(${PROJECT_NAME}
   src/motion_defines.cpp
+  src/polynomial.cpp
   src/rpoly.cpp
   src/segment.cpp
-  src/vertex.cpp
-  src/polynomial.cpp
+  src/timing.cpp
   src/trajectory.cpp
+  src/vertex.cpp
 )
 
 ############

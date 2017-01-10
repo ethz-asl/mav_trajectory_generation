@@ -20,9 +20,6 @@
 
 /* Adapted from Paul Furgale Schweizer Messer sm_timing*/
 
-#ifndef MAV_TRAJECTORY_GENERATION_IMPL_TIMING_IMPL_H_
-#define MAV_TRAJECTORY_GENERATION_IMPL_TIMING_IMPL_H_
-
 #include <math.h>
 #include <stdio.h>
 #include <algorithm>
@@ -224,4 +221,3 @@ void Timing::Reset() { Instance().tag_map_.clear(); }
 }  // namespace timing
 }  // namespace mav_trajectory_generation
 
-#endif  // MAV_TRAJECTORY_GENERATION_IMPL_TIMING_IMPL_H_
