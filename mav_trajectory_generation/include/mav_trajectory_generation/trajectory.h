@@ -29,7 +29,7 @@ namespace mav_trajectory_generation {
 // polynomial order N-1. (N=12 -> 11th order polynomial, with 12 coefficients).
 class Trajectory {
  public:
-  Trajectory() {}
+  Trajectory() : D_(0), N_(0) {}
   ~Trajectory() {}
 
   int D() const { return D_; }
@@ -37,9 +37,14 @@ class Trajectory {
   int K() const { return segments_.size(); }
 
   bool empty() const { return segments_.empty(); }
+  void clear() {
+    segments_.clear();
+    D_ = 0;
+    N_ = 0;
+  }
 
   void setSegments(const Segment::Vector& segments) {
-    CHECK(!segments_.empty());
+    CHECK(!segments.empty());
     segments_ = segments;
     D_ = segments_.front().D();
     N_ = segments_.front().N();

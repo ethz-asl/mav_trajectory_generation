@@ -30,6 +30,7 @@ void HexacopterMarker::createHexacopter(bool simple) {
 
   // make rotors
   marker.type = visualization_msgs::Marker::CYLINDER;
+  marker.ns = "hexacopter";
   marker.scale.x = 0.2;
   marker.scale.y = 0.2;
   marker.scale.z = 0.01;

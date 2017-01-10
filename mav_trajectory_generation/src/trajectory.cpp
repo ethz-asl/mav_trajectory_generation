@@ -129,6 +129,13 @@ Trajectory Trajectory::getTrajectoryWithSingleDimension(int dimension) const {
 
 Trajectory Trajectory::getAppendedTrajectory(
     const Trajectory& trajectory_to_append) const {
+  // Handle the case of one of the trajectories being empty.
+  if (N_ == 0 || D_ == 0) {
+    return trajectory_to_append;
+  }
+  if (trajectory_to_append.N() == 0 || trajectory_to_append.D() == 0) {
+    return *this;
+  }
   CHECK_EQ(N_, trajectory_to_append.N());
 
   // Create a new set of segments with just 1 dimension.
