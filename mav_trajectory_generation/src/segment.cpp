@@ -23,12 +23,12 @@
 namespace mav_trajectory_generation {
 
 Polynomial& Segment::operator[](size_t idx) {
-  CHECK_LT(idx, D_);
+  CHECK_LT(idx, static_cast<size_t>(D_));
   return polynomials_[idx];
 }
 
 const Polynomial& Segment::operator[](size_t idx) const {
-  CHECK_LT(idx, D_);
+  CHECK_LT(idx, static_cast<size_t>(D_));
   return polynomials_[idx];
 }
 
