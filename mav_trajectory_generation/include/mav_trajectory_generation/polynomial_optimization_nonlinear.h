@@ -58,11 +58,11 @@ struct NonlinearOptimizationParameters {
   /// Disabled if negative.
   double f_rel;
 
-  /// Stopping criteria, if state changes less than absolute value. Disabled if
+  /// Stopping criteria, if state changes less than relative value. Disabled if
   /// negative.
   double x_rel;
 
-  /// Stopping criteria, if state changes less than relative value. Disabled if
+  /// Stopping criteria, if state changes less than absolute value. Disabled if
   /// negative.
   double x_abs;
 
