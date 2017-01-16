@@ -169,7 +169,7 @@ TEST(MavPlanningUtils, PathPlanning_TestVertexGeneration1D) {
 }
 
 TEST(MavPlanningUtils, PathPlanning_TestVertexGeneration3D) {
-  Eigen::Vector3d pos_min, pos_max;
+  Eigen::VectorXd pos_min(3), pos_max(3);
   pos_min << -10.0, -20.0, -10.0;
   pos_max << 10.0, 20.0, 10.0;
   Vertex::Vector vertices;
@@ -354,7 +354,7 @@ TEST(MavPlanningUtils,
 
 TEST(MavPlanningUtils,
      PathPlanningUnconstrained_3D_100_segments_high_segment_times) {
-  Eigen::Vector3d pos_min, pos_max;
+  Eigen::VectorXd pos_min(3), pos_max(3);
   pos_min << -10.0, -20.0, -10.0;
   pos_max << 10.0, 20.0, 10.0;
   Vertex::Vector vertices;
@@ -494,7 +494,7 @@ TEST(MavPlanningUtils, PathOptimization_1D_segment_extrema_of_magnitude) {
 
 TEST(MavPlanningUtils,
      PathOptimization3D_segment_extrema_of_magnitude) {
-  Eigen::Vector3d pos_min, pos_max;
+  Eigen::VectorXd pos_min(3), pos_max(3);
   pos_min << -10.0, -9.0, -8.0;
   pos_max << 8.0, 9.0, 10.0;
   Vertex::Vector vertices;
@@ -583,7 +583,7 @@ TEST(MavPlanningUtils,
 }
 
 TEST(MavPlanningUtils, PathPlanningUnconstrained_3D_10_segments_nonlinear) {
-  Eigen::Vector3d pos_min, pos_max;
+  Eigen::VectorXd pos_min(3), pos_max(3);
   pos_min << -10.0, -20.0, -10.0;
   pos_max << 10.0, 20.0, 10.0;
   Vertex::Vector vertices;

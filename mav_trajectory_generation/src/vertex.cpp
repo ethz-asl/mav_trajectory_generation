@@ -24,7 +24,6 @@
 
 namespace mav_trajectory_generation {
 
-
 Vertex::Vector createRandomVertices(int maximum_derivative, size_t n_segments,
                                     const Eigen::VectorXd& pos_min,
                                     const Eigen::VectorXd& pos_max,
@@ -79,9 +78,9 @@ Vertex::Vector createRandomVertices(int maximum_derivative, size_t n_segments,
   return vertices;
 }
 
-inline Vertex::Vector createRandomVertices1D(int maximum_derivative,
-                                             size_t n_segments, double pos_min,
-                                             double pos_max, size_t seed) {
+Vertex::Vector createRandomVertices1D(int maximum_derivative, size_t n_segments,
+                                      double pos_min, double pos_max,
+                                      size_t seed) {
   return createRandomVertices(maximum_derivative, n_segments,
                               Eigen::VectorXd::Constant(1, pos_min),
                               Eigen::VectorXd::Constant(1, pos_max), seed);

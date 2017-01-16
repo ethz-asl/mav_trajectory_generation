@@ -130,7 +130,6 @@ std::vector<double> estimateSegmentTimes(const Vertex::Vector& vertices,
 // Input: maximum_position = Maximum position of the space to sample.
 // Input: seed = Initial seed for random number generation.
 // Output: return = Vector containing n_segment + 1 vertices.
-template <class Derived1, class Derived2>
 Vertex::Vector createRandomVertices(int maximum_derivative, size_t n_segments,
                                     const Eigen::VectorXd& minimum_position,
                                     const Eigen::VectorXd& maximum_position,
@@ -138,11 +137,9 @@ Vertex::Vector createRandomVertices(int maximum_derivative, size_t n_segments,
 
 // Conveninence function to create 1D vertices.
 // createRandomVertices
-inline Vertex::Vector createRandomVertices1D(int maximum_derivative,
-                                             size_t n_segments,
-                                             double minimum_position,
-                                             double maximum_position,
-                                             size_t seed = 0);
+Vertex::Vector createRandomVertices1D(int maximum_derivative, size_t n_segments,
+                                      double minimum_position,
+                                      double maximum_position, size_t seed = 0);
 }  // namespace mav_trajectory_generation
 
 #endif  // MAV_TRAJECTORY_GENERATION_VERTEX_H_
