@@ -89,7 +89,7 @@ void Trajectory::evaluateRange(double t_start, double t_end, double dt,
   double time_in_segment = t_start - accumulated_time;
 
   // Get all the samples, incrementing the segments as we go.
-  for (; accumulated_time < t_end; accumulated_time += dt) {
+  while (accumulated_time < t_end) {
     if (time_in_segment > segments_[i].getTime()) {
       time_in_segment = time_in_segment - segments_[i].getTime();
       i++;
@@ -106,6 +106,7 @@ void Trajectory::evaluateRange(double t_start, double t_end, double dt,
     }
 
     time_in_segment += dt;
+    accumulated_time += dt;
   }
 }
 
@@ -127,7 +128,7 @@ Trajectory Trajectory::getTrajectoryWithSingleDimension(int dimension) const {
   return traj;
 }
 
-Trajectory Trajectory::getAppendedTrajectory(
+Trajectory Trajectory::getTrajectoryWithAppendedDimension(
     const Trajectory& trajectory_to_append) const {
   // Handle the case of one of the trajectories being empty.
   if (N_ == 0 || D_ == 0) {

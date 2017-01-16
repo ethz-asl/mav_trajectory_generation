@@ -71,13 +71,14 @@ class Trajectory {
   // with a single dimension) or compositing (create a new trajectory with
   // another trajectory appended).
   Trajectory getTrajectoryWithSingleDimension(int dimension) const;
-  Trajectory getAppendedTrajectory(
+  Trajectory getTrajectoryWithAppendedDimension(
       const Trajectory& trajectory_to_append) const;
 
   // Evaluation functions.
   // Evaluate at a single time, and a single derivative. Return type of
   // dimension D.
-  Eigen::VectorXd evaluate(double t, int derivative_order) const;
+  Eigen::VectorXd evaluate(
+      double t, int derivative_order = derivative_order::POSITION) const;
 
   // Evaluates the trajectory in a specified range and derivative.
   // Outputs are a vector of the sampled values (size of VectorXd is D) by

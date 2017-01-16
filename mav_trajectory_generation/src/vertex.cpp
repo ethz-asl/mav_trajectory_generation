@@ -29,7 +29,7 @@ Vertex::Vector createRandomVertices(int maximum_derivative, size_t n_segments,
                                     const Eigen::VectorXd& pos_max,
                                     size_t seed) {
   CHECK_GE(static_cast<int>(n_segments), 1);
-  CHECK_EQ(pos_min.size(), pos_min.size());
+  CHECK_EQ(pos_min.size(), pos_max.size());
   CHECK_GT(maximum_derivative, 0);
 
   Vertex::Vector vertices;
