@@ -138,7 +138,7 @@ Trajectory Trajectory::getTrajectoryWithAppendedDimension(
     return *this;
   }
   CHECK_EQ(N_, trajectory_to_append.N());
-  CHECK_EQ(segments_.size(), static_cast<int>(trajectory_to_append.K()));
+  CHECK_EQ(static_cast<int>(segments_.size()), trajectory_to_append.K());
 
   // Create a new set of segments with just 1 dimension.
   Segment::Vector segments;
