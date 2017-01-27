@@ -76,8 +76,8 @@ void drawMavSampledTrajectory(
     visualization_msgs::MarkerArray* marker_array) {
   // This is just an empty extra marker that doesn't draw anything.
   mav_visualization::MarkerGroup dummy_marker;
-  return drawMavTrajectoryWithMavMarker(flat_states, distance, frame_id,
-                                        dummy_marker, marker_array);
+  return drawMavSampledTrajectoryWithMavMarker(flat_states, distance, frame_id,
+                                               dummy_marker, marker_array);
 }
 
 void drawMavTrajectoryWithMavMarker(
@@ -92,8 +92,8 @@ void drawMavTrajectoryWithMavMarker(
     return;
   }
   // Draw the trajectory.
-  drawMavTrajectoryWithMavMarker(flat_states, distance, frame_id,
-                                 additional_marker, marker_array);
+  drawMavSampledTrajectoryWithMavMarker(flat_states, distance, frame_id,
+                                        additional_marker, marker_array);
 }
 
 void drawMavSampledTrajectoryWithMavMarker(
