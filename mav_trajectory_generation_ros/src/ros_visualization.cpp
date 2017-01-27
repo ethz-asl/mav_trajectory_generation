@@ -70,13 +70,20 @@ void drawMavTrajectory(const Trajectory& trajectory, double distance,
                                         dummy_marker, marker_array);
 }
 
+void drawMavSampledTrajectory(
+    const mav_msgs::EigenTrajectoryPoint::Vector& flat_states, double distance,
+    const std::string& frame_id,
+    visualization_msgs::MarkerArray* marker_array) {
+  // This is just an empty extra marker that doesn't draw anything.
+  mav_visualization::MarkerGroup dummy_marker;
+  return drawMavSampledTrajectoryWithMavMarker(flat_states, distance, frame_id,
+                                               dummy_marker, marker_array);
+}
+
 void drawMavTrajectoryWithMavMarker(
     const Trajectory& trajectory, double distance, const std::string& frame_id,
     const mav_visualization::MarkerGroup& additional_marker,
     visualization_msgs::MarkerArray* marker_array) {
-  CHECK_NOTNULL(marker_array);
-  marker_array->markers.clear();
-
   // Sample the trajectory.
   mav_msgs::EigenTrajectoryPoint::Vector flat_states;
   bool success =
@@ -84,6 +91,18 @@ void drawMavTrajectoryWithMavMarker(
   if (!success) {
     return;
   }
+  // Draw the trajectory.
+  drawMavSampledTrajectoryWithMavMarker(flat_states, distance, frame_id,
+                                        additional_marker, marker_array);
+}
+
+void drawMavSampledTrajectoryWithMavMarker(
+    const mav_msgs::EigenTrajectoryPoint::Vector& flat_states, double distance,
+    const std::string& frame_id,
+    const mav_visualization::MarkerGroup& additional_marker,
+    visualization_msgs::MarkerArray* marker_array) {
+  CHECK_NOTNULL(marker_array);
+  marker_array->markers.clear();
 
   visualization_msgs::Marker line_strip;
   line_strip.type = visualization_msgs::Marker::LINE_STRIP;
