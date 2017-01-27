@@ -70,7 +70,7 @@ void drawMavTrajectory(const Trajectory& trajectory, double distance,
                                         dummy_marker, marker_array);
 }
 
-void drawMavTrajectory(
+void drawMavSampledTrajectory(
     const mav_msgs::EigenTrajectoryPoint::Vector& flat_states, double distance,
     const std::string& frame_id,
     visualization_msgs::MarkerArray* marker_array) {
@@ -96,7 +96,7 @@ void drawMavTrajectoryWithMavMarker(
                                  additional_marker, marker_array);
 }
 
-void drawMavTrajectoryWithMavMarker(
+void drawMavSampledTrajectoryWithMavMarker(
     const mav_msgs::EigenTrajectoryPoint::Vector& flat_states, double distance,
     const std::string& frame_id,
     const mav_visualization::MarkerGroup& additional_marker,
