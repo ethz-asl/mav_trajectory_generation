@@ -48,7 +48,7 @@ class Vertex {
   typedef std::map<int, ConstraintValue> Constraints;
 
   // Constructs an empty vertex and sets time_to_next and
-  // derivative_to_optimize to zero
+  // derivative_to_optimize to zero.
   Vertex(size_t dimension) : D_(dimension) {}
 
   int D() const { return D_; }
@@ -124,12 +124,12 @@ std::vector<double> estimateSegmentTimes(const Vertex::Vector& vertices,
 // constraint and the derivatives are left free.
 // Input: maximum_derivative = The maximum derivative to be set to zero for
 // beginning and end.
-// Input: s_segments = Number of segments of the resulting trajectory. Number
+// Input: n_segments = Number of segments of the resulting trajectory. Number
 // of vertices is n_segments + 1.
 // Input: minimum_position = Minimum position of the space to sample.
 // Input: maximum_position = Maximum position of the space to sample.
 // Input: seed = Initial seed for random number generation.
-// Output: return = Vector containing n_segment + 1 vertices.
+// Output: return = Vector containing n_segments + 1 vertices.
 Vertex::Vector createRandomVertices(int maximum_derivative, size_t n_segments,
                                     const Eigen::VectorXd& minimum_position,
                                     const Eigen::VectorXd& maximum_position,
