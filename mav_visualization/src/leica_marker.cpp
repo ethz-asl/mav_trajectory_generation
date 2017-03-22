@@ -52,7 +52,7 @@ void LeicaMarker::createLeica() {
   ++marker.id;
   markers_.push_back(marker);
 
-  // rotate by 15 deg around y and 120 deg around z: q=0.4957   0.1130    -0.0653    0.8586
+  // Rotate by 15 deg around y and 120 deg around z: q=0.4957   0.1130    -0.0653    0.8586
   marker.pose.orientation.w = 0.4957;
   marker.pose.orientation.x = 0.1130;
   marker.pose.orientation.y = -0.0653;
@@ -64,7 +64,7 @@ void LeicaMarker::createLeica() {
   ++marker.id;
   markers_.push_back(marker);
 
-  // rotate by 15 deg around y and -120 deg around z: q=-0.4957   0.1130   0.0653    0.8586
+  // Rotate by 15 deg around y and -120 deg around z: q=-0.4957   0.1130   0.0653    0.8586
   marker.pose.orientation.w = -0.4957;
   marker.pose.orientation.x = 0.1130;
   marker.pose.orientation.y = 0.0653;

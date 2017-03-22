@@ -31,7 +31,7 @@
 namespace mav_trajectory_generation {
 
 // Draws the trajectory of the MAV, with additional markers spaced by distance.
-// If distance = 0.0, then disables these additional markers.
+// If distance = 0.0, then these additional markers are disabled.
 void drawMavTrajectory(const Trajectory& trajectory, double distance,
                        const std::string& frame_id,
                        visualization_msgs::MarkerArray* marker_array);

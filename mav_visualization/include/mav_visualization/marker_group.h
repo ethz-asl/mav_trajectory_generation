@@ -17,12 +17,12 @@
 #ifndef MAV_VISUALIZATION_MARKER_GROUP_H_
 #define MAV_VISUALIZATION_MARKER_GROUP_H_
 
+#include <ros/ros.h>
+#include <visualization_msgs/MarkerArray.h>
 #include <Eigen/Core>
 #include <Eigen/Geometry>
-#include <ros/ros.h>
 #include <string>
 #include <vector>
-#include <visualization_msgs/MarkerArray.h>
 
 namespace mav_visualization {
 
