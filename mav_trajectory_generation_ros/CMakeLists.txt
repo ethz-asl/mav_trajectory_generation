@@ -19,10 +19,10 @@ cs_add_library(${PROJECT_NAME}
 ############
 # BINARIES #
 ############
-#cs_add_executable(polynomial_timing_evaluation
-#  src/polynomial_timing_evaluation.cpp
-#)
-#target_link_libraries(polynomial_timing_evaluation ${PROJECT_NAME})
+cs_add_executable(trajectory_sampler_node
+  src/trajectory_sampler_node.cpp
+)
+target_link_libraries(trajectory_sampler_node ${PROJECT_NAME})
 
 ##########
 # EXPORT #
