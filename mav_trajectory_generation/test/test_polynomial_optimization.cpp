@@ -22,6 +22,7 @@
 #include <random>
 #include <iostream>
 
+#include <eigen-checks/glog.h>
 #include <eigen-checks/gtest.h>
 #include <eigen-checks/entrypoint.h>
 
@@ -665,6 +666,68 @@ TEST(MavPlanningUtils, PathPlanningUnconstrained_3D_10_segments_nonlinear) {
 
   EXPECT_TRUE(checkCost(opt2.getPolynomialOptimizationRef().computeCost(),
                         segments2, derivative_to_optimize, 0.1));
+}
+
+TEST(MavPlanningUtils, 2_vertices_setup) {
+  const int kDim = 1;
+  // Create a known 1D spline.
+  Vertex start_vertex(kDim);
+  const double kStartX = 0.0;
+  start_vertex.addConstraint(derivative_order::POSITION, kStartX);
+  start_vertex.addConstraint(derivative_order::VELOCITY, 0.0);
+  start_vertex.addConstraint(derivative_order::ACCELERATION, 0.0);
+  start_vertex.addConstraint(derivative_order::JERK, 0.0);
+  start_vertex.addConstraint(derivative_order::SNAP, 0.0);
+
+  Vertex goal_vertex = start_vertex;
+  const double kGoalX = 5.0;
+  goal_vertex.addConstraint(derivative_order::POSITION, kGoalX);
+
+  const double kVMax = 2.0;
+  const double kSegmentTime = std::fabs(kGoalX - kStartX) * 2.0 / kVMax;
+
+  const int kDerivativeToOptimize = derivative_order::SNAP;
+  const int kNumCoefficients = 10;
+
+  // Setup optimization with intermediate vertex.
+  PolynomialOptimization<kNumCoefficients> opt_intermediate(kDim);
+  Vertex intermediate_vertex(kDim);
+  Vertex::Vector vertices_intermediate{start_vertex, intermediate_vertex,
+                                       goal_vertex};
+  std::vector<double> segment_times_intermediate{kSegmentTime / 2.0,
+                                                 kSegmentTime / 2.0};
+  opt_intermediate.setupFromVertices(
+      vertices_intermediate, segment_times_intermediate, kDerivativeToOptimize);
+  opt_intermediate.solveLinear();
+
+  Segment::Vector segments_intermediate;
+  opt_intermediate.getSegments(&segments_intermediate);
+  checkPath(vertices_intermediate, segments_intermediate);
+
+  // Setup optimization with two vertices.
+  PolynomialOptimization<kNumCoefficients> opt(kDim);
+  Vertex::Vector vertices{start_vertex, goal_vertex};
+  std::vector<double> segment_times {kSegmentTime};
+  opt.setupFromVertices(vertices, segment_times, kDerivativeToOptimize);
+  opt.solveLinear();
+
+  Segment::Vector segments;
+  opt.getSegments(&segments);
+  checkPath(vertices, segments);
+
+  // Matlab solution:
+  Eigen::VectorXd matlab_coeffs(kNumCoefficients);
+  matlab_coeffs << -0.000000000000004, 0.000000000000004, -0.000000000000006,
+      0.000000000000003, -0.000000000000001, 0.201600000000015,
+      -0.134400000000012, 0.034560000000004, -0.004032000000000,
+      0.000179200000000;
+  // Solution with intermediate vertex:
+  Eigen::VectorXd first_intermediate_coeffs =
+      segments_intermediate[0].getPolynomialsRef()[0].getCoefficients();
+  // Solution with two vertices:
+  Eigen::VectorXd coeffs = segments[0].getPolynomialsRef()[0].getCoefficients();
+
+
 }
 
 void createTestPolynomials() {
