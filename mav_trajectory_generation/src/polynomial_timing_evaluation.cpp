@@ -18,10 +18,10 @@
  * limitations under the License.
  */
 
+#include <chrono>
+#include <iostream>
 #include <limits>
 #include <random>
-#include <iostream>
-#include <chrono>
 
 #include <mav_trajectory_generation/polynomial_optimization_linear.h>
 #include <mav_trajectory_generation/timing.h>

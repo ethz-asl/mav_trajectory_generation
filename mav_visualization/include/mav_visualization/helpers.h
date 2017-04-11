@@ -18,8 +18,8 @@
 #ifndef MAV_VISUALIZATION_HELPERS_H_
 #define MAV_VISUALIZATION_HELPERS_H_
 
-#include <visualization_msgs/MarkerArray.h>
 #include <eigen_conversions/eigen_msg.h>
+#include <visualization_msgs/MarkerArray.h>
 
 namespace mav_visualization {
 
@@ -141,14 +141,14 @@ void drawAxesArrows(const Eigen::Vector3d& p, const Eigen::Quaterniond& q,
   origin.setZero();
 
   drawArrowPoints(origin + p, q * Eigen::Vector3d::UnitX() * scale + p,
-            createColorRGBA(1, 0, 0, alpha), diameter,
-            &marker_array->markers[0]);
+                  createColorRGBA(1, 0, 0, alpha), diameter,
+                  &marker_array->markers[0]);
   drawArrowPoints(origin + p, q * Eigen::Vector3d::UnitY() * scale + p,
-            createColorRGBA(0, 1, 0, alpha), diameter,
-            &marker_array->markers[1]);
+                  createColorRGBA(0, 1, 0, alpha), diameter,
+                  &marker_array->markers[1]);
   drawArrowPoints(origin + p, q * Eigen::Vector3d::UnitZ() * scale + p,
-            createColorRGBA(0, 0, 1, alpha), diameter,
-            &marker_array->markers[2]);
+                  createColorRGBA(0, 0, 1, alpha), diameter,
+                  &marker_array->markers[2]);
 }
 
 }  // namespace mav_visualization

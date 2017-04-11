@@ -21,9 +21,9 @@
 #ifndef MAV_TRAJECTORY_GENERATION_ROS_ROS_VISUALIZATION_H_
 #define MAV_TRAJECTORY_GENERATION_ROS_ROS_VISUALIZATION_H_
 
+#include <mav_msgs/eigen_mav_msgs.h>
 #include <mav_visualization/marker_group.h>
 #include <visualization_msgs/MarkerArray.h>
-#include <mav_msgs/eigen_mav_msgs.h>
 
 #include <mav_trajectory_generation/trajectory.h>
 #include <mav_trajectory_generation/vertex.h>

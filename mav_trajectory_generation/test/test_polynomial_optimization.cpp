@@ -18,13 +18,13 @@
  * limitations under the License.
  */
 
+#include <iostream>
 #include <limits>
 #include <random>
-#include <iostream>
 
+#include <eigen-checks/entrypoint.h>
 #include <eigen-checks/glog.h>
 #include <eigen-checks/gtest.h>
-#include <eigen-checks/entrypoint.h>
 
 #include "mav_trajectory_generation/polynomial_optimization_linear.h"
 #include "mav_trajectory_generation/polynomial_optimization_nonlinear.h"
@@ -92,9 +92,10 @@ void checkPath(const Vertex::Vector& vertices,
       std::stringstream segment_derivative;
       printSegment(segment_derivative, segment, derivative);
       EXPECT_TRUE(EIGEN_MATRIX_NEAR(desired, actual, tol))
-          << "[fixed constraint check t=0] at vertex " << i << " and constraint "
-          << positionDerivativeToString(derivative) << "\nsegment:\n" << segment
-          << segment_derivative.str();
+          << "[fixed constraint check t=0] at vertex " << i
+          << " and constraint " << positionDerivativeToString(derivative)
+          << "\nsegment:\n"
+          << segment << segment_derivative.str();
     }
     for (Vertex::Constraints::const_iterator it = v_end.cBegin();
          it != v_end.cEnd(); ++it) {
@@ -105,9 +106,10 @@ void checkPath(const Vertex::Vector& vertices,
       std::stringstream segment_derivative;
       printSegment(segment_derivative, segment, derivative);
       EXPECT_TRUE(EIGEN_MATRIX_NEAR(desired, actual, tol))
-          << "[fixed constraint check] at vertex " << i + 1 << " and constraint "
-          << positionDerivativeToString(derivative) << "\nsegment:\n" << segment
-          << segment_derivative.str();
+          << "[fixed constraint check] at vertex " << i + 1
+          << " and constraint " << positionDerivativeToString(derivative)
+          << "\nsegment:\n"
+          << segment << segment_derivative.str();
     }
 
     // Check if values at vertices are continuous.
@@ -224,8 +226,7 @@ TEST(MavTrajectoryGeneration, PathPlanningUnconstrained_1D_10_segments) {
   opt.getSegments(&segments);
 
   std::cout << "Base coefficients: "
-            << Polynomial::base_coefficients_.block(3, 0, 1, N)
-            << std::endl;
+            << Polynomial::base_coefficients_.block(3, 0, 1, N) << std::endl;
 
   checkPath(vertices, segments);
   double v_max = getMaximumMagnitude(segments, derivative_order::VELOCITY);
@@ -417,7 +418,8 @@ bool checkExtrema(const std::vector<double>& testee,
   return true;
 }
 
-TEST(MavTrajectoryGeneration, PathOptimization_1D_segment_extrema_of_magnitude) {
+TEST(MavTrajectoryGeneration,
+     PathOptimization_1D_segment_extrema_of_magnitude) {
   Vertex::Vector vertices;
   vertices = createRandomVertices1D(max_derivative, 100, -10, 10, 1234);
   const double approximate_v_max = 3.0;
@@ -493,8 +495,7 @@ TEST(MavTrajectoryGeneration, PathOptimization_1D_segment_extrema_of_magnitude) 
   EXPECT_NEAR(a_max_ref, a_max.value, 0.01);
 }
 
-TEST(MavTrajectoryGeneration,
-     PathOptimization3D_segment_extrema_of_magnitude) {
+TEST(MavTrajectoryGeneration, PathOptimization3D_segment_extrema_of_magnitude) {
   Eigen::VectorXd pos_min(3), pos_max(3);
   pos_min << -10.0, -9.0, -8.0;
   pos_max << 8.0, 9.0, 10.0;
@@ -583,7 +584,8 @@ TEST(MavTrajectoryGeneration,
   EXPECT_NEAR(a_max_ref, a_max.value, 0.01);
 }
 
-TEST(MavTrajectoryGeneration, PathPlanningUnconstrained_3D_10_segments_nonlinear) {
+TEST(MavTrajectoryGeneration,
+     PathPlanningUnconstrained_3D_10_segments_nonlinear) {
   Eigen::VectorXd pos_min(3), pos_max(3);
   pos_min << -10.0, -20.0, -10.0;
   pos_max << 10.0, 20.0, 10.0;
@@ -692,7 +694,7 @@ TEST(MavTrajectoryGeneration, 2_vertices_setup) {
   // Setup optimization with two vertices.
   PolynomialOptimization<kNumCoefficients> opt(kDim);
   Vertex::Vector vertices{start_vertex, goal_vertex};
-  std::vector<double> segment_times {kSegmentTime};
+  std::vector<double> segment_times{kSegmentTime};
   opt.setupFromVertices(vertices, segment_times, kDerivativeToOptimize);
   opt.solveLinear();
 

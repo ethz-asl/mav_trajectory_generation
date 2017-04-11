@@ -190,4 +190,3 @@ typedef Timer DebugTimer;
 }  // namespace mav_trajectory_generation
 
 #endif  // MAV_TRAJECTORY_GENERATION_TIMING_H_
-

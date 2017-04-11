@@ -41,13 +41,13 @@
 namespace mav_trajectory_generation {
 
 Eigen::VectorXcd findRootsJenkinsTraub(
-    const Eigen::VectorXd &coefficients_increasing) {
+    const Eigen::VectorXd& coefficients_increasing) {
   const Eigen::VectorXd coefficients_decreasing =
       coefficients_increasing.reverse();
 
   const int n_coefficients = coefficients_increasing.size();
-  double *roots_real = new double[n_coefficients];
-  double *roots_imag = new double[n_coefficients];
+  double* roots_real = new double[n_coefficients];
+  double* roots_imag = new double[n_coefficients];
 
   int ret =
       findRootsJenkinsTraub(coefficients_decreasing.data(), n_coefficients - 1,
@@ -69,16 +69,16 @@ Eigen::VectorXcd findRootsJenkinsTraub(
 
 namespace rpoly_impl {
 
-void quad(double a, double b1, double c, double *sr, double *si, double *lr,
-          double *li);
-void fxshfr(int l2, int *nz);
-void quadit(double *uu, double *vv, int *nz);
-void realit(double sss, int *nz, int *iflag);
-void calcsc(int *type);
-void nextk(int *type);
-void newest(int type, double *uu, double *vv);
-void quadsd(int n, double *u, double *v, double *p, double *q, double *a,
-            double *b);
+void quad(double a, double b1, double c, double* sr, double* si, double* lr,
+          double* li);
+void fxshfr(int l2, int* nz);
+void quadit(double* uu, double* vv, int* nz);
+void realit(double sss, int* nz, int* iflag);
+void calcsc(int* type);
+void nextk(int* type);
+void newest(int type, double* uu, double* vv);
+void quadsd(int n, double* u, double* v, double* p, double* q, double* a,
+            double* b);
 double *p, *qp, *k, *qk, *svk;
 double sr, si, u, v, a, b, c, d, a1, a2;
 double a3, a6, a7, e, f, g, h, szr, szi, lzr, lzi;
@@ -86,10 +86,10 @@ double eta, are, mre;
 int n, nn, nmi, zerok;
 static int itercnt;
 
-int rpoly(const double *op, int degree, double *zeror, double *zeroi,
+int rpoly(const double* op, int degree, double* zeror, double* zeroi,
           int info[]) {
   double t, aa, bb, cc, *temp, factor, rot;
-  double *pt;
+  double* pt;
   double lo, max, min, xx, yy, cosr, sinr, xxx, x, sc, bnd;
   double xm, ff, df, dx, infin, smalno, base;
   int cnt, nz, i, j, jj, l, nm1, zerok;
@@ -316,7 +316,7 @@ _99:
  *  iterations and returns with the number of zeros
  *  found.
  */
-void fxshfr(int l2, int *nz) {
+void fxshfr(int l2, int* nz) {
   double svu, svv, ui, vi, s;
   double betas, betav, oss, ovv, ss, vv, ts, tv;
   double ots, otv, tvv, tss;
@@ -428,7 +428,7 @@ void fxshfr(int l2, int *nz) {
  *  uu, vv - coefficients of starting quadratic.
  *  nz - number of zeros found.
  */
-void quadit(double *uu, double *vv, int *nz) {
+void quadit(double* uu, double* vv, int* nz) {
   double ui, vi;
   double mp, omp, ee, relstp, t, zm;
   int type, i, j, tried;
@@ -509,7 +509,7 @@ _50:
  *  nz  - number of zeros found
  *  iflag - flag to indicate a pair of zeros near real axis.
  */
-void realit(double sss, int *nz, int *iflag) {
+void realit(double sss, int* nz, int* iflag) {
   double pv, kv, t, s;
   double ms, mp, omp, ee;
   int i, j;
@@ -598,7 +598,7 @@ void realit(double sss, int *nz, int *iflag) {
  *  type - integer variable set here indicating how the
  *  calculations are normalized to avoid overflow.
  */
-void calcsc(int *type) {
+void calcsc(int* type) {
   /*  Synthetic division of k by the quadratic 1,u,v */
   quadsd(n - 1, &u, &v, k, qk, &c, &d);
   if (fabs(c) > fabs(k[n - 1] * 100.0 * eta)) goto _10;
@@ -632,7 +632,7 @@ _10:
 /*  Computes the next k polynomials using scalars
  *  computed in calcsc.
  */
-void nextk(int *type) {
+void nextk(int* type) {
   double temp;
   int i;
 
@@ -670,7 +670,7 @@ void nextk(int *type) {
 /*  Compute new estimates of the quadratic coefficients
  *  using the scalars computed in calcsc.
  */
-void newest(int type, double *uu, double *vv) {
+void newest(int type, double* uu, double* vv) {
   double a4, a5, b1, b2, c1, c2, c3, c4, temp;
 
   /* Use formulas appropriate to setting of type. */
@@ -708,8 +708,8 @@ void newest(int type, double *uu, double *vv) {
 /*  Divides p by the quadratic 1,u,v placing the quotient
  *  in q and the remainder in a,b.
  */
-void quadsd(int nn, double *u, double *v, double *p, double *q, double *a,
-            double *b) {
+void quadsd(int nn, double* u, double* v, double* p, double* q, double* a,
+            double* b) {
   double c;
   int i;
 
@@ -730,8 +730,8 @@ void quadsd(int nn, double *u, double *v, double *p, double *q, double *a,
  *  are complex. The smaller real zero is found directly from
  *  the product of the zeros c/a.
  */
-void quad(double a, double b1, double c, double *sr, double *si, double *lr,
-          double *li) {
+void quad(double a, double b1, double c, double* sr, double* si, double* lr,
+          double* li) {
   double b, d, e;
 
   if (a == 0.0) { /* less than two roots */
@@ -781,8 +781,8 @@ void quad(double a, double b1, double c, double *sr, double *si, double *lr,
 
 }  // end namespace rpoly_impl
 
-int findRootsJenkinsTraub(const double *coefficients_decreasing, int degree,
-                          double *roots_real, double *roots_imag, int info[]) {
+int findRootsJenkinsTraub(const double* coefficients_decreasing, int degree,
+                          double* roots_real, double* roots_imag, int info[]) {
   return rpoly_impl::rpoly(coefficients_decreasing, degree, roots_real,
                            roots_imag, info);
 }

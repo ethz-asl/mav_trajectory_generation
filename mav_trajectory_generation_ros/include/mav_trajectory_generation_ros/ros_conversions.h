@@ -21,8 +21,8 @@
 #ifndef MAV_TRAJECTORY_GENERATION_ROS_ROS_CONVERSIONS_H_
 #define MAV_TRAJECTORY_GENERATION_ROS_ROS_CONVERSIONS_H_
 
-#include <planning_msgs/conversions.h>
 #include <planning_msgs/PolynomialTrajectory4D.h>
+#include <planning_msgs/conversions.h>
 
 #include <mav_trajectory_generation/trajectory.h>
 
