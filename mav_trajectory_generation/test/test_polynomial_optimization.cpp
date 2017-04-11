@@ -689,21 +689,6 @@ TEST(MavPlanningUtils, 2_vertices_setup) {
   const int kDerivativeToOptimize = derivative_order::SNAP;
   const int kNumCoefficients = 10;
 
-  // Setup optimization with intermediate vertex.
-  PolynomialOptimization<kNumCoefficients> opt_intermediate(kDim);
-  Vertex intermediate_vertex(kDim);
-  Vertex::Vector vertices_intermediate{start_vertex, intermediate_vertex,
-                                       goal_vertex};
-  std::vector<double> segment_times_intermediate{kSegmentTime / 2.0,
-                                                 kSegmentTime / 2.0};
-  opt_intermediate.setupFromVertices(
-      vertices_intermediate, segment_times_intermediate, kDerivativeToOptimize);
-  opt_intermediate.solveLinear();
-
-  Segment::Vector segments_intermediate;
-  opt_intermediate.getSegments(&segments_intermediate);
-  checkPath(vertices_intermediate, segments_intermediate);
-
   // Setup optimization with two vertices.
   PolynomialOptimization<kNumCoefficients> opt(kDim);
   Vertex::Vector vertices{start_vertex, goal_vertex};
@@ -721,13 +706,12 @@ TEST(MavPlanningUtils, 2_vertices_setup) {
       0.000000000000003, -0.000000000000001, 0.201600000000015,
       -0.134400000000012, 0.034560000000004, -0.004032000000000,
       0.000179200000000;
-  // Solution with intermediate vertex:
-  Eigen::VectorXd first_intermediate_coeffs =
-      segments_intermediate[0].getPolynomialsRef()[0].getCoefficients();
   // Solution with two vertices:
   Eigen::VectorXd coeffs = segments[0].getPolynomialsRef()[0].getCoefficients();
 
-
+  // The matlab solution is only approximately valid, e.g., the first
+  // coefficient is not equal 0.0.
+  CHECK_EIGEN_MATRIX_EQUAL_DOUBLE(matlab_coeffs, coeffs);
 }
 
 void createTestPolynomials() {
