@@ -714,6 +714,36 @@ TEST(MavPlanningUtils, 2_vertices_setup) {
   CHECK_EIGEN_MATRIX_EQUAL_DOUBLE(matlab_coeffs, coeffs);
 }
 
+// Test 2 vertices setup
+TEST(MavPlanningUtils, 2_vertices_rand) {
+  const int kMaxDerivative = derivative_order::SNAP;
+  const size_t kNumSegments = 1;
+  Eigen::VectorXd min_pos, max_pos;
+  min_pos = Eigen::Vector3d::Constant(-50);
+  max_pos = -min_pos;
+  const int kSeed = 12345;
+  const size_t kNumSetups = 100;
+  for (size_t i = 0; i < kNumSetups; i++) {
+    Vertex::Vector vertices;
+    vertices = createRandomVertices(kMaxDerivative, kNumSegments, min_pos,
+                                    max_pos, kSeed);
+    const double kApproxVMax = 3.0;
+    const double kApproxAMax = 5.0;
+
+    std::vector<double> segment_times =
+        estimateSegmentTimes(vertices, kApproxVMax, kApproxAMax);
+
+    PolynomialOptimization<N> opt(3);
+    opt.setupFromVertices(vertices, segment_times);
+    opt.solveLinear();
+
+    Segment::Vector segments;
+    opt.getSegments(&segments);
+
+    checkPath(vertices, segments);
+  }
+}
+
 void createTestPolynomials() {
   Vertex::Vector vertices;
   vertices = createRandomVertices1D(max_derivative, 100, -50, 50, 12345);
