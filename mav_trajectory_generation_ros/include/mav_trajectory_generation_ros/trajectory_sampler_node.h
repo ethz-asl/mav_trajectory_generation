@@ -18,7 +18,6 @@
  * limitations under the License.
  */
 
-
 #ifndef TRAJECTORY_SAMPLER_NODE_H
 #define TRAJECTORY_SAMPLER_NODE_H
 

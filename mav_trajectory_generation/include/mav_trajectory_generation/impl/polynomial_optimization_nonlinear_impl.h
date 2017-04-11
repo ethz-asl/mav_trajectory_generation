@@ -513,5 +513,4 @@ inline std::string returnValueToString(int return_value) {
 }
 }  // namespace nlopt
 
-
 #endif  // MAV_TRAJECTORY_GENERATION_IMPL_POLYNOMIAL_OPTIMIZATION_NONLINEAR_IMPL_H_

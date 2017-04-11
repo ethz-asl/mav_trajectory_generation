@@ -220,4 +220,3 @@ void Timing::Reset() { Instance().tag_map_.clear(); }
 
 }  // namespace timing
 }  // namespace mav_trajectory_generation
-
