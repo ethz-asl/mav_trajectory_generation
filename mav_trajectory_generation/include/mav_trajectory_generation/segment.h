@@ -49,6 +49,11 @@ class Segment {
   }
   Segment(const Segment& segment) = default;
 
+  bool operator==(const Segment& rhs) const;
+  inline bool operator!=(const Segment& rhs) const {
+    return !operator==(rhs);
+  }
+
   int D() const { return D_; }
   int N() const { return N_; }
   double getTime() const { return time_; }

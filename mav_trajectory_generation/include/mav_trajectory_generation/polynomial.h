@@ -55,6 +55,13 @@ class Polynomial {
     CHECK_EQ(N_, coeffs.size()) << "Number of coefficients has to match.";
   }
 
+  inline bool operator==(const Polynomial& rhs) const {
+    return coefficients_ == rhs.coefficients_;
+  }
+  inline bool operator!=(const Polynomial& rhs) const {
+    return !operator==(rhs);
+  }
+
   /// Gets the number of coefficients (order + 1) of the polynomial.
   int N() const { return N_; }
 
