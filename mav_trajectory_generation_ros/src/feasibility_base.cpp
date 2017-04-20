@@ -22,11 +22,13 @@
 
 #include <Eigen/Geometry>
 
+#include <mav_msgs/default_values.h>
+
 namespace mav_trajectory_generation {
 
 InputConstraints::InputConstraints()
-    : f_min(0.5 * kGravity),
-      f_max(1.5 * kGravity),
+    : f_min(0.5 * mav_msgs::kGravity),
+      f_max(1.5 * mav_msgs::kGravity),
       v_max(4.0),
       omega_xy_max(M_PI),
       omega_z_max(M_PI / 2.0),

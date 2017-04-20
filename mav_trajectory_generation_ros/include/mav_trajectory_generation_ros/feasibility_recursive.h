@@ -39,10 +39,10 @@ namespace mav_trajectory_generation {
 class FeasibilityRecursive : public FeasibilityBase {
  public:
   // Checks a segment for input feasibility.
-  virtual bool checkInputFeasibility();
+  virtual bool checkInputFeasibility(const Trajectory& trajectory);
 
   // Checks if a segment stays within a bounding box.
-  virtual bool checkBoundingBoxFeasibility();
+  virtual bool checkBoundingBoxFeasibility(const Trajectory& trajectory);
 };
 }  // namespace mav_trajectory_generation
 

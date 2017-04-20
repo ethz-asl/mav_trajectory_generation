@@ -20,6 +20,8 @@
 
 #include "mav_trajectory_generation_ros/feasibility_sampling.h"
 
+#include <mav_msgs/conversions.h>
+
 #include "mav_trajectory_generation_ros/trajectory_sampling.h"
 
 namespace mav_trajectory_generation {
@@ -30,11 +32,19 @@ FeasibilitySampling::FeasibilitySampling(
     const InputConstraints& input_constraints)
     : FeasibilityBase(input_constraints) {}
 
-bool FeasibilitySampling::checkInputFeasibility() {
+bool FeasibilitySampling::checkInputFeasibility(const Trajectory& trajectory) {
+  if (!sampleTrajectory(trajectory)) {
+    return false;
+  }
+
   return true;
 }
 
-bool FeasibilitySampling::checkHalfPlaneFeasibility() {
+bool FeasibilitySampling::checkHalfPlaneFeasibility(
+    const Trajectory& trajectory) {
+  if (!sampleTrajectory(trajectory)) {
+    return false;
+  }
   return true;
 }
 
@@ -44,8 +54,14 @@ bool FeasibilitySampling::sampleTrajectory(const Trajectory& trajectory) {
     return true;
   }
   // Try to sample trajectory.
-  bool success =
-      sampleWholeTrajectory(trajectory, settings_.sampling_interval, &states_);
+  mav_msgs::EigenTrajectoryPointVector flat_states;
+  bool success = sampleWholeTrajectory(trajectory, settings_.sampling_interval,
+                                       &flat_states);
+  // Recover full state according to Mellinger.
+  states_.resize(flat_states.size());
+  for (size_t i = 0; i < flat_states.size(); i++) {
+    EigenMavStateFromEigenTrajectoryPoint(flat_states[i], &states_[i]);
+  }
   // Save trajectory if successful.
   if (!success) {
     return false;

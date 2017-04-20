@@ -39,10 +39,10 @@ class FeasibilitySampling : public FeasibilityBase {
   FeasibilitySampling();
   FeasibilitySampling(const InputConstraints& input_constraints);
   // Checks a trajectory for input feasibility.
-  virtual bool checkInputFeasibility();
+  virtual bool checkInputFeasibility(const Trajectory& trajectory);
 
-  // Checks if a segment stays within a set of half planes.
-  virtual bool checkHalfPlaneFeasibility();
+  // Checks if a trajectory stays within a set of half planes.
+  virtual bool checkHalfPlaneFeasibility(const Trajectory& trajectory);
 
   Settings settings_;
 
@@ -52,7 +52,7 @@ class FeasibilitySampling : public FeasibilityBase {
   // The current trajectory.
   Trajectory trajectory_;
   // The sampled states along the trajectory (differentially flat assumption).
-  mav_msgs::EigenTrajectoryPointVector states_;
+  mav_msgs::EigenMavState::Vector states_;
 };
 }  // namespace mav_trajectory_generation
 

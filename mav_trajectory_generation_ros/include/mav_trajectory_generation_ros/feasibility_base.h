@@ -26,9 +26,9 @@
 #include <Eigen/Core>
 #include <Eigen/StdVector>
 
-namespace mav_trajectory_generation {
-const double kGravity = 9.81;  // [m/s/s]
+#include <mav_trajectory_generation/trajectory.h>
 
+namespace mav_trajectory_generation {
 // Dynamic constraints of the MAV.
 struct InputConstraints {
   // Reasonable default constraints.
@@ -78,13 +78,13 @@ class FeasibilityBase {
   // User input constraints, no half plane constraints.
   FeasibilityBase(const InputConstraints& input_constraints);
   // Checks a segment for input feasibility.
-  inline virtual bool checkInputFeasibility() {
+  inline virtual bool checkInputFeasibility(const Trajectory& trajectory) {
     ROS_ERROR_STREAM("Input feasibility check not implemented.");
     return false;
   }
 
   // Checks if a segment stays within a set of half planes.
-  inline virtual bool checkHalfPlaneFeasibility() {
+  inline virtual bool checkHalfPlaneFeasibility(const Trajectory& trajectory) {
     ROS_ERROR_STREAM("Half plane feasibility check not implemented.");
     return false;
   }
