@@ -14,6 +14,8 @@ cs_add_library(${PROJECT_NAME}
   src/trajectory_sampling.cpp
   src/ros_conversions.cpp
   src/ros_visualization.cpp
+  src/feasibility_recursive.cpp
+  src/feasibility_sampling.cpp
 )
 
 ############
