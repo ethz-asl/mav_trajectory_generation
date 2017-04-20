@@ -20,6 +20,8 @@
 
 #include "mav_trajectory_generation_ros/feasibility_base.h"
 
+#include <Eigen/Geometry>
+
 namespace mav_trajectory_generation {
 
 InputConstraints::InputConstraints()
@@ -29,5 +31,18 @@ InputConstraints::InputConstraints()
       omega_xy_max(M_PI),
       omega_z_max(M_PI / 2.0),
       omega_dot_z_max(2.0 * M_PI){};
+
+HalfPlane::HalfPlane(const Eigen::Vector3d& point,
+                     const Eigen::Vector3d& normal)
+    : point_(point), normal_(normal){
+      CHECK_GT(normal.norm(), 0.0) << "Invalid normal.";
+      normal_.normalize();
+    };
+
+HalfPlane::HalfPlane(const Eigen::Vector3d& a, const Eigen::Vector3d& b,
+                     const Eigen::Vector3d& c) {
+  point_ = a;
+  normal_ = (b - a).cross(c - a).normalized();
+}
 
 }  // namespace mav_trajectory_generation

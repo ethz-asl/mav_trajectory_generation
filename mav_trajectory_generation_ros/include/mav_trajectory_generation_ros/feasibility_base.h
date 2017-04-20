@@ -21,9 +21,10 @@
 #ifndef MAV_TRAJECTORY_GENERATION_FEASIBILITY_BASE_H_
 #define MAV_TRAJECTORY_GENERATION_FEASIBILITY_BASE_H_
 
-#include <ros/ros.h>
 #include <Eigen/Core>
 #include <Eigen/StdVector>
+#include <glog/logging.h>
+#include <ros/ros.h>
 
 namespace mav_trajectory_generation {
 const double kGravity = 9.81;  // [m/s/s]
@@ -51,8 +52,9 @@ class HalfPlane {
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   typedef std::vector<HalfPlane, Eigen::aligned_allocator<HalfPlane>> Vector;
-  HalfPlane(const Eigen::Vector3d& point, const Eigen::Vector3d& normal)
-      : point_(point), normal_(normal){};
+  HalfPlane(const Eigen::Vector3d& point, const Eigen::Vector3d& normal);
+  // Define the half plane from 3 counter-clockwise points (seen from above).
+  HalfPlane(const Eigen::Vector3d& a, const Eigen::Vector3d& b, const Eigen::Vector3d& c);
 
  private:
   Eigen::Vector3d point_;
