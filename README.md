@@ -124,7 +124,7 @@ opt.getTrajectory(&trajectory);
 
 We then have two options to sample the trajectory.
 
-1. By evaluating directly from the class:
+1. By evaluating directly from the class.
 
 ```c++
 // Single sample:
@@ -141,13 +141,13 @@ std::vector<double> sampling_times; // Optional.
 trajectory.evaluateRange(t_start, t_end, dt, derivative_order, &result, &sampling_times);
 ```
 
-2. By conversion to ```mav_msgs::EigenTrajectoryPoint``` state(s):
+2. By conversion to ```mav_msgs::EigenTrajectoryPoint``` state(s). These functions support 3D or 4D trajectories (the 4th dimension is assumed to be yaw if it exists).
 
 ```c++
 #include <mav_trajectory_generation_ros/trajectory_sampling.h>
 
 mav_msgs::EigenTrajectoryPoint state;
-mav_msgs::EigenTrajectoryPointVector states;
+mav_msgs::EigenTrajectoryPoint::Vector states;
 
 // Single sample:
 double sampling_time = 2.0;
@@ -162,6 +162,38 @@ success = mav_trajectory_generation::sampleTrajectoryInRange(trajectory, t_start
 // Whole trajectory:
 double sampling_interval = 0.01;
 success = mav_trajectory_generation::sampleWholeTrajectory(trajectory, sampling_interval, &states);
+```
+
+## Visualizing Trajectories
+In this section, we describe how to visualize trajectories in [rviz](http://wiki.ros.org/rviz).
+
+For a simple visualization:
+
+```c++
+#include <mav_trajectory_generation_ros/ros_visualization.h>
+
+visualization_msgs::MarkerArray markers;
+double distance = 1.0; // Distance by which to seperate additional markers. Set 0.0 to disable.
+std::string frame_id = "world";
+
+// From Trajectory class:
+drawMavTrajectory(trajectory, distance, frame_id, &markers);
+
+// From mav_msgs::EigenTrajectoryPoint::Vector states:
+drawMavSampledTrajectory(states, distance, frame_id, &markers)
+```
+
+For a visualization including an additional marker at a set distance (e.g. hexacopter marker):
+
+
+```c++
+mav_visualization::HexacopterMarker hex(simple);
+
+// From Trajectory class:
+drawMavTrajectoryWithMavMarker(trajectory, distance, frame_id, hex &markers);
+
+// From mav_msgs::EigenTrajectoryPoint::Vector states:
+drawMavSampledTrajectoryWithMavMarker(states, distance, frame_id, hex, &markers)
 ```
 
 ## Bibliography
