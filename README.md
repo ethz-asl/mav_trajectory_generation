@@ -18,17 +18,14 @@ vertex            segment
 In the case of multi-dimensional vertices, the derivative constraints exist in all dimensions, with possibly different values.
 
 ## Linear Optimization
-In this section, we consider how to generate polynomial segments passing through a set of arbitrary vertices using the unconstrained linear optimization approach described in [1].
+In this section, we consider how to generate polynomial segments passing through a set of arbitrary vertices using the unconstrained **linear** optimization approach described in [1].
 
 Necessary includes:
 ```c++
 #include <mav_trajectory_generation/polynomial_optimization_linear.h>
 ```
 
-1. Create a list of three (x,y,z) vertices to fly through, e.g. (0,0,1) -> (1,2,3) -> (2,1,5), and define some parameters.
-
-  The ``dimension`` variable denotes the spatial dimension of the path (here, 3D).
-  The ``derivative_to_optimize`` should usually be set to the last derivative that should be continuous (here, snap).
+1. Create a list of three (x,y,z) vertices to fly through, e.g. (0,0,1) -> (1,2,3) -> (2,1,5), and define some parameters. The ``dimension`` variable denotes the spatial dimension of the path (here, 3D). The ``derivative_to_optimize`` should usually be set to the last derivative that should be continuous (here, snap).
 
 ```c++
 mav_trajectory_generation::Vertex::Vector vertices;
@@ -69,7 +66,54 @@ opt.setupFromVertices(vertices, segment_times, derivative_to_optimize);
 opt.solveLinear();
 ```
 
+5. Obtain the polynomial segments.
 
+```c++
+mav_trajectory_generation::Segment::Vector segments;
+opt.getSegments(&segments);
+```
+
+## Nonlinear Optimization
+In this section, we consider how to generate polynomial segments passing through a set of arbitrary vertices using the unconstrained **nonlinear** optimization approach described in [1]. The same approach is followed as in the previous section.
+
+Necessary includes:
+
+```c++
+#include <mav_trajectory_generation/polynomial_optimization_nonlinear.h>
+```
+
+1. Set up the vertices, parameters, constraints, and segment times by following Steps 1-3 in the **Linear Optimization** section.
+
+2. Set the parameters for nonlinear optimization.
+
+```c++
+NonlinearOptimizationParameters parameters;
+parameters.max_iterations = 1000;
+parameters.f_rel = 0.05;
+parameters.x_rel = 0.1;
+parameters.time_penalty = 500.0;
+parameters.initial_stepsize_rel = 0.1;
+parameters.inequality_constraint_tolerance = 0.1;
+```
+
+The above provides an example, but the default parameters should be reasonable enough to use without fine-tuning.
+
+3. Create an optimizer object and solve. The third argument of the optimization object (true/false) specifies whether the optimization is run over the segment times only.
+
+```c++
+const int N = 10;
+PolynomialOptimizationNonLinear<N> opt(dimension, parameters, false);
+opt.setupFromVertices(vertices, segment_times, derivative_to_optimize);
+opt.addMaximumMagnitudeConstraint(mav_trajectory_generation::derivative_order::VELOCITY, v_max);                                opt.addMaximumMagnitudeConstraint(mav_trajectory_generation::derivative_order::ACCELERATION, a_max);
+opt.optimize();
+```
+
+4. Obtain the polynomial segments.
+
+```c++
+mav_trajectory_generation::Segment::Vector segments;
+opt.getPolynomialOptimizationRef().getSegments(&segments);
+```
 
 ## Bibliography
 [1] C. Richter, A. Bry, and N. Roy, “Polynomial trajectory planning for quadrotor flight,” in International Conference on Robotics and Automation. Singapore: Springer, 2013.
