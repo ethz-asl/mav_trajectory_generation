@@ -82,9 +82,9 @@ Necessary includes:
 #include <mav_trajectory_generation/polynomial_optimization_nonlinear.h>
 ```
 
-1. Set up the vertices, parameters, constraints, and segment times by following Steps 1-3 in the **Linear Optimization** section.
+1. Set up the problem by following Steps 1-3 in the **Linear Optimization** section.
 
-2. Set the parameters for nonlinear optimization.
+2. Set the parameters for nonlinear optimization. Below is an example, but the default parameters should be reasonable enough to use without fine-tuning.
 
 ```c++
 NonlinearOptimizationParameters parameters;
@@ -95,8 +95,6 @@ parameters.time_penalty = 500.0;
 parameters.initial_stepsize_rel = 0.1;
 parameters.inequality_constraint_tolerance = 0.1;
 ```
-
-The above provides an example, but the default parameters should be reasonable enough to use without fine-tuning.
 
 3. Create an optimizer object and solve. The third argument of the optimization object (true/false) specifies whether the optimization is run over the segment times only.
 
@@ -113,6 +111,57 @@ opt.optimize();
 ```c++
 mav_trajectory_generation::Segment::Vector segments;
 opt.getPolynomialOptimizationRef().getSegments(&segments);
+```
+## Sampling Trajectories
+In this section, we consider methods of evaluating the trajectory at particular instances of time. To do this, we first need to convert our optimization result into the Trajectory class:
+
+```c++
+#include <mav_trajectory_generation/trajectory.h>
+
+mav_trajectory_generation::Trajectory trajectory;
+opt.getTrajectory(&trajectory);
+```
+
+We then have two options to sample the trajectory.
+
+1. By evaluating directly from the class:
+
+```c++
+// Single sample:
+double sampling_time = 2.0;
+int derivative_order = mav_trajectory_generation::derivative_order::POSITION;
+Eigen::VectorXd sample = trajectory.evaluate(sampling_time, derivative_order);
+
+// Sample range:
+double t_start = 2.0;
+double t_end = 10.0;
+double dt = 0.01;
+std::vector<Eigen::VectorXd> result;
+std::vector<double> sampling_times; // Optional.
+trajectory.evaluateRange(t_start, t_end, dt, derivative_order, &result, &sampling_times);
+```
+
+2. By conversion to ```mav_msgs::EigenTrajectoryPoint``` state(s):
+
+```c++
+#include <mav_trajectory_generation_ros/trajectory_sampling.h>
+
+mav_msgs::EigenTrajectoryPoint state;
+mav_msgs::EigenTrajectoryPointVector states;
+
+// Single sample:
+double sampling_time = 2.0;
+bool success = mav_trajectory_generation::sampleTrajectoryAtTime(trajectory, sample_time, &state);
+
+// Sample range:
+double t_start = 2.0;
+double duration = 10.0;
+double dt = 0.01;
+success = mav_trajectory_generation::sampleTrajectoryInRange(trajectory, t_start, duration, dt, &states);
+
+// Whole trajectory:
+double sampling_interval = 0.01;
+success = mav_trajectory_generation::sampleWholeTrajectory(trajectory, sampling_interval, &states);
 ```
 
 ## Bibliography
