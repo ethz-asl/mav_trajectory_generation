@@ -23,6 +23,7 @@
 #include <random>
 
 #include <eigen-checks/entrypoint.h>
+#include <eigen-checks/glog.h>
 #include <eigen-checks/gtest.h>
 
 #include "mav_trajectory_generation/polynomial_optimization_linear.h"
@@ -152,7 +153,7 @@ bool checkCost(double cost_to_check, const std::vector<Segment>& segments,
   return true;
 }
 
-TEST(MavPlanningUtils, PathPlanning_TestVertexGeneration1D) {
+TEST(MavTrajectoryGeneration, PathPlanning_TestVertexGeneration1D) {
   Vertex::Vector vertices;
   const double p_min = -50;
   const double p_max = 50;
@@ -170,7 +171,7 @@ TEST(MavPlanningUtils, PathPlanning_TestVertexGeneration1D) {
   }
 }
 
-TEST(MavPlanningUtils, PathPlanning_TestVertexGeneration3D) {
+TEST(MavTrajectoryGeneration, PathPlanning_TestVertexGeneration3D) {
   Eigen::VectorXd pos_min(3), pos_max(3);
   pos_min << -10.0, -20.0, -10.0;
   pos_max << 10.0, 20.0, 10.0;
@@ -192,7 +193,7 @@ TEST(MavPlanningUtils, PathPlanning_TestVertexGeneration3D) {
   }
 }
 
-TEST(MavPlanningUtils, PathPlanning_A_matrix_inversion) {
+TEST(MavTrajectoryGeneration, PathPlanning_A_matrix_inversion) {
   const double max_time = 60;
   for (double t = 1; t <= max_time; t += 1) {
     Eigen::Matrix<double, N, N> A, Ai, Ai_eigen;
@@ -204,7 +205,7 @@ TEST(MavPlanningUtils, PathPlanning_A_matrix_inversion) {
   }
 }
 
-TEST(MavPlanningUtils, PathPlanningUnconstrained_1D_10_segments) {
+TEST(MavTrajectoryGeneration, PathPlanningUnconstrained_1D_10_segments) {
   Vertex::Vector vertices;
   vertices = createRandomVertices1D(max_derivative, 10, -10, 10, 12);
   const double approximate_v_max = 3.0;
@@ -243,7 +244,7 @@ TEST(MavPlanningUtils, PathPlanningUnconstrained_1D_10_segments) {
       checkCost(opt.computeCost(), segments, derivative_to_optimize, 0.1));
 }
 
-TEST(MavPlanningUtils, PathPlanningUnconstrained_1D_50_segments) {
+TEST(MavTrajectoryGeneration, PathPlanningUnconstrained_1D_50_segments) {
   Vertex::Vector vertices;
   vertices = createRandomVertices1D(max_derivative, 50, -10, 10, 123);
   const double approximate_v_max = 3.0;
@@ -279,7 +280,7 @@ TEST(MavPlanningUtils, PathPlanningUnconstrained_1D_50_segments) {
       checkCost(opt.computeCost(), segments, derivative_to_optimize, 0.1));
 }
 
-TEST(MavPlanningUtils, PathPlanningUnconstrained_1D_100_segments) {
+TEST(MavTrajectoryGeneration, PathPlanningUnconstrained_1D_100_segments) {
   Vertex::Vector vertices;
   vertices = createRandomVertices1D(max_derivative, 100, -10, 10, 1234);
   const double approximate_v_max = 3.0;
@@ -315,7 +316,7 @@ TEST(MavPlanningUtils, PathPlanningUnconstrained_1D_100_segments) {
       checkCost(opt.computeCost(), segments, derivative_to_optimize, 0.1));
 }
 
-TEST(MavPlanningUtils,
+TEST(MavTrajectoryGeneration,
      PathPlanningUnconstrained_1D_100_segments_high_segment_times) {
   Vertex::Vector vertices;
   vertices = createRandomVertices1D(max_derivative, 100, -50, 50, 12345);
@@ -353,7 +354,7 @@ TEST(MavPlanningUtils,
       checkCost(opt.computeCost(), segments, derivative_to_optimize, 0.1));
 }
 
-TEST(MavPlanningUtils,
+TEST(MavTrajectoryGeneration,
      PathPlanningUnconstrained_3D_100_segments_high_segment_times) {
   Eigen::VectorXd pos_min(3), pos_max(3);
   pos_min << -10.0, -20.0, -10.0;
@@ -417,7 +418,8 @@ bool checkExtrema(const std::vector<double>& testee,
   return true;
 }
 
-TEST(MavPlanningUtils, PathOptimization_1D_segment_extrema_of_magnitude) {
+TEST(MavTrajectoryGeneration,
+     PathOptimization_1D_segment_extrema_of_magnitude) {
   Vertex::Vector vertices;
   vertices = createRandomVertices1D(max_derivative, 100, -10, 10, 1234);
   const double approximate_v_max = 3.0;
@@ -493,7 +495,7 @@ TEST(MavPlanningUtils, PathOptimization_1D_segment_extrema_of_magnitude) {
   EXPECT_NEAR(a_max_ref, a_max.value, 0.01);
 }
 
-TEST(MavPlanningUtils, PathOptimization3D_segment_extrema_of_magnitude) {
+TEST(MavTrajectoryGeneration, PathOptimization3D_segment_extrema_of_magnitude) {
   Eigen::VectorXd pos_min(3), pos_max(3);
   pos_min << -10.0, -9.0, -8.0;
   pos_max << 8.0, 9.0, 10.0;
@@ -582,7 +584,8 @@ TEST(MavPlanningUtils, PathOptimization3D_segment_extrema_of_magnitude) {
   EXPECT_NEAR(a_max_ref, a_max.value, 0.01);
 }
 
-TEST(MavPlanningUtils, PathPlanningUnconstrained_3D_10_segments_nonlinear) {
+TEST(MavTrajectoryGeneration,
+     PathPlanningUnconstrained_3D_10_segments_nonlinear) {
   Eigen::VectorXd pos_min(3), pos_max(3);
   pos_min << -10.0, -20.0, -10.0;
   pos_max << 10.0, 20.0, 10.0;
@@ -665,6 +668,82 @@ TEST(MavPlanningUtils, PathPlanningUnconstrained_3D_10_segments_nonlinear) {
 
   EXPECT_TRUE(checkCost(opt2.getPolynomialOptimizationRef().computeCost(),
                         segments2, derivative_to_optimize, 0.1));
+}
+
+TEST(MavTrajectoryGeneration, 2_vertices_setup) {
+  const int kDim = 1;
+  // Create a known 1D spline.
+  Vertex start_vertex(kDim);
+  const double kStartX = 0.0;
+  start_vertex.addConstraint(derivative_order::POSITION, kStartX);
+  start_vertex.addConstraint(derivative_order::VELOCITY, 0.0);
+  start_vertex.addConstraint(derivative_order::ACCELERATION, 0.0);
+  start_vertex.addConstraint(derivative_order::JERK, 0.0);
+  start_vertex.addConstraint(derivative_order::SNAP, 0.0);
+
+  Vertex goal_vertex = start_vertex;
+  const double kGoalX = 5.0;
+  goal_vertex.addConstraint(derivative_order::POSITION, kGoalX);
+
+  const double kVMax = 2.0;
+  const double kSegmentTime = std::fabs(kGoalX - kStartX) * 2.0 / kVMax;
+
+  const int kDerivativeToOptimize = derivative_order::SNAP;
+  const int kNumCoefficients = 10;
+
+  // Setup optimization with two vertices.
+  PolynomialOptimization<kNumCoefficients> opt(kDim);
+  Vertex::Vector vertices{start_vertex, goal_vertex};
+  std::vector<double> segment_times{kSegmentTime};
+  opt.setupFromVertices(vertices, segment_times, kDerivativeToOptimize);
+  opt.solveLinear();
+
+  Segment::Vector segments;
+  opt.getSegments(&segments);
+  checkPath(vertices, segments);
+
+  // Matlab solution:
+  Eigen::VectorXd matlab_coeffs(kNumCoefficients);
+  matlab_coeffs << -0.000000000000004, 0.000000000000004, -0.000000000000006,
+      0.000000000000003, -0.000000000000001, 0.201600000000015,
+      -0.134400000000012, 0.034560000000004, -0.004032000000000,
+      0.000179200000000;
+  // Solution with two vertices:
+  Eigen::VectorXd coeffs = segments[0].getPolynomialsRef()[0].getCoefficients();
+
+  // The matlab solution is only approximately valid, e.g., the first
+  // coefficient is not equal 0.0.
+  CHECK_EIGEN_MATRIX_EQUAL_DOUBLE(matlab_coeffs, coeffs);
+}
+
+// Test 2 vertices setup
+TEST(MavTrajectoryGeneration, 2_vertices_rand) {
+  const int kMaxDerivative = derivative_order::SNAP;
+  const size_t kNumSegments = 1;
+  Eigen::VectorXd min_pos, max_pos;
+  min_pos = Eigen::Vector3d::Constant(-50);
+  max_pos = -min_pos;
+  const int kSeed = 12345;
+  const size_t kNumSetups = 100;
+  for (size_t i = 0; i < kNumSetups; i++) {
+    Vertex::Vector vertices;
+    vertices = createRandomVertices(kMaxDerivative, kNumSegments, min_pos,
+                                    max_pos, kSeed);
+    const double kApproxVMax = 3.0;
+    const double kApproxAMax = 5.0;
+
+    std::vector<double> segment_times =
+        estimateSegmentTimes(vertices, kApproxVMax, kApproxAMax);
+
+    PolynomialOptimization<N> opt(3);
+    opt.setupFromVertices(vertices, segment_times);
+    opt.solveLinear();
+
+    Segment::Vector segments;
+    opt.getSegments(&segments);
+
+    checkPath(vertices, segments);
+  }
 }
 
 void createTestPolynomials() {

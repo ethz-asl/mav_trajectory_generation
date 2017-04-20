@@ -125,10 +125,10 @@ class PolynomialOptimization {
   // where x, y, z are polynomials describing the position or the derivative,
   // specified by Derivative.
   // Taking the derivative yields  2 x \dot{x} + 2 y \dot{y} + 2 z \dot{z},
-  // which needs to be zero at the extrema. The multiplication of two polynomials
-  // is a convolution of their coefficients. Re-ordering by their powers and
-  // addition yields a polynomial, for which we can compute the roots.
-  // Derivative = Derivative of position, in which to find the maxima.
+  // which needs to be zero at the extrema. The multiplication of two
+  // polynomials is a convolution of their coefficients. Re-ordering by their
+  // powers and addition yields a polynomial, for which we can compute the
+  // roots. Derivative = Derivative of position, in which to find the maxima.
   // Input: segment = Segment to find the maximum.
   // Input: t_start = Only maxima >= t_start are returned. Usually set to 0.
   // Input: t_stop = Only maxima <= t_stop are returned. Usually set to

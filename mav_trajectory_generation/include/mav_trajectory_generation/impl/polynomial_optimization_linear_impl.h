@@ -47,10 +47,6 @@ template <int _N>
 bool PolynomialOptimization<_N>::setupFromVertices(
     const Vertex::Vector& vertices, const std::vector<double>& times,
     int derivative_to_optimize) {
-  CHECK(vertices.size() > 2)
-      << "The case of 2 vertices is not implemented. As a workaround, "
-         "add another vertex in the middle with all constraints set free.";
-
   CHECK(derivative_to_optimize >= 0 &&
         derivative_to_optimize <= kHighestDerivativeToOptimize)
       << "You tried to optimize the " << derivative_to_optimize
