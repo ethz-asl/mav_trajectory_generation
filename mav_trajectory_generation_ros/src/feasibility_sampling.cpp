@@ -37,6 +37,18 @@ bool FeasibilitySampling::checkInputFeasibility(const Trajectory& trajectory) {
     return false;
   }
 
+  for (size_t i = 0; i < states_.size(); i++) {
+    double thrust = states_[i].acceleration_B.norm();
+    double v = states_[i].velocity_W.norm();
+    double omega_xy = states_[i].angular_velocity_B.block<2, 1>(0, 0).norm();
+    double omega_z = std::fabs(states_[i].angular_velocity_B(2));
+    if (thrust < input_constraints_.f_min ||
+        thrust > input_constraints_.f_max || v > input_constraints_.v_max ||
+        omega_xy > input_constraints_.omega_xy_max ||
+        omega_z > input_constraints_.omega_z_max) {
+      return false;
+    }
+  }
   return true;
 }
 
