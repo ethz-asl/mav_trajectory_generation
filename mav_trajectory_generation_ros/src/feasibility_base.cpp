@@ -18,22 +18,16 @@
  * limitations under the License.
  */
 
-#ifndef MAV_TRAJECTORY_GENERATION_FEASIBILITY_SAMPLING_H_
-#define MAV_TRAJECTORY_GENERATION_FEASIBILITY_SAMPLING_H_
-
 #include "mav_trajectory_generation_ros/feasibility_base.h"
 
 namespace mav_trajectory_generation {
 
-// Sampling based input and position feasibility checks.
-class FeasibilitySampling : public FeasibilityBase {
- public:
-  // Checks a segment for input feasibility.
-  virtual bool checkInputFeasibility();
+InputConstraints::InputConstraints()
+    : v_max(4.0),
+      f_min(0.5 * kGravity),
+      f_max(1.5 * kGravity),
+      omega_xy_max(M_PI),
+      omega_z_max(M_PI / 2.0),
+      omega_dot_z_max(2.0 * M_PI){};
 
-  // Checks if a segment stays within a set of half planes.
-  virtual bool checkHalfPlaneFeasibility();
-};
 }  // namespace mav_trajectory_generation
-
-#endif  // MAV_TRAJECTORY_GENERATION_FEASIBILITY_SAMPLING_H_
