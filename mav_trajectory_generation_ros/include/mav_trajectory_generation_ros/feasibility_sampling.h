@@ -21,6 +21,9 @@
 #ifndef MAV_TRAJECTORY_GENERATION_FEASIBILITY_SAMPLING_H_
 #define MAV_TRAJECTORY_GENERATION_FEASIBILITY_SAMPLING_H_
 
+#include <mav_msgs/eigen_mav_msgs.h>
+#include <mav_trajectory_generation/trajectory.h>
+
 #include "mav_trajectory_generation_ros/feasibility_base.h"
 
 namespace mav_trajectory_generation {
@@ -28,11 +31,28 @@ namespace mav_trajectory_generation {
 // Sampling based input and position feasibility checks.
 class FeasibilitySampling : public FeasibilityBase {
  public:
-  // Checks a segment for input feasibility.
+  struct Settings {
+    Settings();
+    double sampling_interval;
+  };
+
+  FeasibilitySampling();
+  FeasibilitySampling(const InputConstraints& input_constraints);
+  // Checks a trajectory for input feasibility.
   virtual bool checkInputFeasibility();
 
   // Checks if a segment stays within a set of half planes.
   virtual bool checkHalfPlaneFeasibility();
+
+  Settings settings_;
+
+ private:
+  // Sets and samples the whole trajectory if not done already.
+  bool sampleTrajectory(const Trajectory& trajectory);
+  // The current trajectory.
+  Trajectory trajectory_;
+  // The sampled states along the trajectory (differentially flat assumption).
+  mav_msgs::EigenTrajectoryPointVector states_;
 };
 }  // namespace mav_trajectory_generation
 

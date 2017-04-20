@@ -19,3 +19,39 @@
  */
 
 #include "mav_trajectory_generation_ros/feasibility_sampling.h"
+
+#include "mav_trajectory_generation_ros/trajectory_sampling.h"
+
+namespace mav_trajectory_generation {
+FeasibilitySampling::Settings::Settings() : sampling_interval(0.01) {}
+
+FeasibilitySampling::FeasibilitySampling() : FeasibilityBase() {}
+FeasibilitySampling::FeasibilitySampling(
+    const InputConstraints& input_constraints)
+    : FeasibilityBase(input_constraints) {}
+
+bool FeasibilitySampling::checkInputFeasibility() {
+  return true;
+}
+
+bool FeasibilitySampling::checkHalfPlaneFeasibility() {
+  return true;
+}
+
+bool FeasibilitySampling::sampleTrajectory(const Trajectory& trajectory) {
+  // Check if already sampled.
+  if (trajectory == trajectory_) {
+    return true;
+  }
+  // Try to sample trajectory.
+  bool success =
+      sampleWholeTrajectory(trajectory, settings_.sampling_interval, &states_);
+  // Save trajectory if successful.
+  if (!success) {
+    return false;
+  } else {
+    trajectory_ = trajectory;
+    return true;
+  }
+}
+}  // namespace mav_trajectory_generation

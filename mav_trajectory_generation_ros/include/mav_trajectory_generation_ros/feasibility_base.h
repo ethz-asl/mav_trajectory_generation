@@ -74,7 +74,7 @@ class HalfPlane {
 class FeasibilityBase {
  public:
   // Default input constraints, no half plane constraints.
-  FeasibilityBase();
+  FeasibilityBase() {};
   // User input constraints, no half plane constraints.
   FeasibilityBase(const InputConstraints& input_constraints);
   // Checks a segment for input feasibility.
@@ -91,7 +91,7 @@ class FeasibilityBase {
 
   // Input constraints.
   InputConstraints input_constraints_;
-  // Half plane constraints, e.g., the ground plane.
+  // Half plane constraints, e.g., the ground plane or a box.
   HalfPlane::Vector half_plane_constraints_;
 };
 }  // namespace mav_trajectory_generation
