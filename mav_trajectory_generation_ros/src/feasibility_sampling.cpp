@@ -27,10 +27,11 @@
 namespace mav_trajectory_generation {
 FeasibilitySampling::Settings::Settings() : sampling_interval(0.01) {}
 
-FeasibilitySampling::FeasibilitySampling() : FeasibilityBase() {}
+FeasibilitySampling::FeasibilitySampling(const Settings& settings)
+    : FeasibilityBase(), settings_(settings) {}
 FeasibilitySampling::FeasibilitySampling(
-    const InputConstraints& input_constraints)
-    : FeasibilityBase(input_constraints) {}
+    const Settings& settings, const InputConstraints& input_constraints)
+    : FeasibilityBase(input_constraints), settings_(settings) {}
 
 bool FeasibilitySampling::checkInputFeasibility(const Trajectory& trajectory) {
   if (!sampleTrajectory(trajectory)) {

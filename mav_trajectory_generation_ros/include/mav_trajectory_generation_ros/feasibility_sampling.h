@@ -36,15 +36,14 @@ class FeasibilitySampling : public FeasibilityBase {
     double sampling_interval;
   };
 
-  FeasibilitySampling();
-  FeasibilitySampling(const InputConstraints& input_constraints);
+  FeasibilitySampling(const Settings& settings);
+  FeasibilitySampling(const Settings& settings,
+                      const InputConstraints& input_constraints);
   // Checks a trajectory for input feasibility.
   virtual bool checkInputFeasibility(const Trajectory& trajectory);
 
   // Checks if a trajectory stays within a set of half planes.
   virtual bool checkHalfPlaneFeasibility(const Trajectory& trajectory);
-
-  Settings settings_;
 
  private:
   // Sets and samples the whole trajectory if not done already.
@@ -53,6 +52,8 @@ class FeasibilitySampling : public FeasibilityBase {
   Trajectory trajectory_;
   // The sampled states along the trajectory (differentially flat assumption).
   mav_msgs::EigenMavState::Vector states_;
+  // The user settings.
+  Settings settings_;
 };
 }  // namespace mav_trajectory_generation
 
