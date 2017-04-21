@@ -7,6 +7,41 @@ This README provides a brief overview of our trajectory generation utilities wit
 **Maintainer**: Rik Bähnemann, brik@ethz.ch  
 **Affiliation**: Autonomous Systems Lab, ETH Zurich
 
+## Installation Instructions (Ubuntu)
+To install this package with [ROS Indigo](http://wiki.ros.org/indigo/Installation/Ubuntu) or [ROS Kinetic](http://wiki.ros.org/kinetic/Installation/Ubuntu):
+
+1. Install additional system dependencies (swap indigo for kinetic as necessary):
+
+```
+sudo apt-get install python-wstool python-catkin-tools ros-indigo-cmake-modules
+```
+
+2. Set up a catkin workspace (if not already done):
+
+```
+mkdir -p ~/catkin_ws/src
+cd ~/catkin_ws
+catkin init
+catkin config --extend /opt/ros/indigo
+catkin config --cmake-args -DCMAKE_BUILD_TYPE=Release
+catkin config --merge-devel
+```
+
+3. Install the repository and its dependencies (with rosinstall):
+
+```
+cd src
+wstool init
+wstool set --git mav_trajectory_generation git@github.com:ethz-asl/mav_trajectory_generation.git -y
+wstool update
+wstool merge mav_trajectory_generation/install/mav_trajectory_generation.rosinstall
+wstool update -j8
+echo "source ~/catkin_ws/devel/setup.bash" >> ~/.bashrc
+source ~/.bashrc
+```
+4. Use [catkin_build](http://catkin-tools.readthedocs.io/en/latest/verbs/catkin_build.html) to build the repository.
+
+
 ## Basics
 A **vertex** describes the properties of a support point of a **polynomial** path. Pairs of vertices are connected together to form **segments**.
 Each vertex has a set of constraints: the values of position derivatives that must be matched during optimization procedures.
