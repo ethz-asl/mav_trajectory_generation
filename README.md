@@ -112,8 +112,8 @@ opt.optimize();
 mav_trajectory_generation::Segment::Vector segments;
 opt.getPolynomialOptimizationRef().getSegments(&segments);
 ```
-## Sampling Trajectories
-In this section, we consider methods of evaluating the trajectory at particular instances of time. To do this, we first need to convert our optimization result into the Trajectory class:
+## Creating Trajectories
+In this section, we consider how to use our trajectory optimization results. We first need to convert our optimization object into the Trajectory class:
 
 ```c++
 #include <mav_trajectory_generation/trajectory.h>
@@ -122,9 +122,20 @@ mav_trajectory_generation::Trajectory trajectory;
 opt.getTrajectory(&trajectory);
 ```
 
-We then have two options to sample the trajectory.
+We can also create new trajectories by splitting (getting a trajectory with a single dimension) or compositing (getting a trajectory by appending another trajectory:
 
-1. By evaluating directly from the class.
+```c++
+// Splitting:
+mav_trajectory_generation::Trajectory x_trajectory = trajectory.getTrajectoryWithSingleDimension(1);
+
+// Compositing:
+mav_trajectory_generation::Trajectory trajectory_with_yaw = trajectory.getTrajectoryWithAppendedDimension(yaw_trajectory);
+```
+
+## Sampling Trajectories
+In this section, we consider methods of evaluating the trajectory at particular instances of time. There are two methods of doing this.
+
+1. By evaluating directly from the Trajectory class.
 
 ```c++
 // Single sample:
