@@ -188,10 +188,10 @@ double distance = 1.0; // Distance by which to seperate additional markers. Set 
 std::string frame_id = "world";
 
 // From Trajectory class:
-drawMavTrajectory(trajectory, distance, frame_id, &markers);
+mav_trajectory_generation::drawMavTrajectory(trajectory, distance, frame_id, &markers);
 
 // From mav_msgs::EigenTrajectoryPoint::Vector states:
-drawMavSampledTrajectory(states, distance, frame_id, &markers)
+mav_trajectory_generation::drawMavSampledTrajectory(states, distance, frame_id, &markers)
 ```
 
 For a visualization including an additional marker at a set distance (e.g. hexacopter marker):
@@ -201,10 +201,10 @@ For a visualization including an additional marker at a set distance (e.g. hexac
 mav_visualization::HexacopterMarker hex(simple);
 
 // From Trajectory class:
-drawMavTrajectoryWithMavMarker(trajectory, distance, frame_id, hex &markers);
+mav_trajectory_generation::drawMavTrajectoryWithMavMarker(trajectory, distance, frame_id, hex &markers);
 
 // From mav_msgs::EigenTrajectoryPoint::Vector states:
-drawMavSampledTrajectoryWithMavMarker(states, distance, frame_id, hex, &markers)
+mav_trajectory_generation::drawMavSampledTrajectoryWithMavMarker(states, distance, frame_id, hex, &markers)
 ```
 
 ## Bibliography
