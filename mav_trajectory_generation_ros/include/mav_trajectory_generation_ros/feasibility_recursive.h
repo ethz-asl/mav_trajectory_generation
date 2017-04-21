@@ -18,8 +18,8 @@
  * limitations under the License.
  */
 
-#ifndef MAV_TRAJECTORY_GENERATION_FEASIBILITY_RECURSIVE_H_
-#define MAV_TRAJECTORY_GENERATION_FEASIBILITY_RECURSIVE_H_
+#ifndef MAV_TRAJECTORY_GENERATION_ROS_FEASIBILITY_RECURSIVE_H_
+#define MAV_TRAJECTORY_GENERATION_ROS_FEASIBILITY_RECURSIVE_H_
 
 #include "mav_trajectory_generation_ros/feasibility_base.h"
 
@@ -39,11 +39,11 @@ namespace mav_trajectory_generation {
 class FeasibilityRecursive : public FeasibilityBase {
  public:
   // Checks a segment for input feasibility.
-  virtual bool checkInputFeasibility(const Trajectory& trajectory);
+  virtual InputFeasibilityResult checkInputFeasibility(const Trajectory& trajectory);
 
   // Checks if a segment stays within a bounding box.
   virtual bool checkBoundingBoxFeasibility(const Trajectory& trajectory);
 };
 }  // namespace mav_trajectory_generation
 
-#endif  // MAV_TRAJECTORY_GENERATION_FEASIBILITY_RECURSIVE_H_
+#endif  // MAV_TRAJECTORY_GENERATION_ROS_FEASIBILITY_RECURSIVE_H_

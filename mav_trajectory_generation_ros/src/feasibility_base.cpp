@@ -26,6 +26,28 @@
 
 namespace mav_trajectory_generation {
 
+std::string getInputFeasibilityResultName(InputFeasibilityResult fr)  {
+  switch (fr) {
+    case InputFeasibilityResult::kInputFeasible:
+      return "Feasible";
+    case InputFeasibilityResult::kInputIndeterminable:
+      return "Indeterminable";
+    case InputFeasibilityResult::kInputInfeasibleThrustHigh:
+      return "InfeasibleThrustHigh";
+    case InputFeasibilityResult::kInputInfeasibleThrustLow:
+      return "InfeasibleThrustLow";
+    case InputFeasibilityResult::kInputInfeasibleVelocity:
+      return "InfeasibleVelocity";
+    case InputFeasibilityResult::kInputInfeasibleRollPitchRates:
+      return "InfeasibleRollPitchRates";
+    case InputFeasibilityResult::kInputInfeasibleYawRates:
+      return "InfeasibleYawRates";
+    case InputFeasibilityResult::kInputInfeasibleYawAcc:
+      return "InfeasibleYawAcc";
+  }
+  return "Unknown!";
+}
+
 InputConstraints::InputConstraints()
     : f_min(0.5 * mav_msgs::kGravity),
       f_max(1.5 * mav_msgs::kGravity),

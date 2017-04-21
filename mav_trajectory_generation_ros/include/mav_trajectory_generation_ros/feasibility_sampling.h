@@ -18,8 +18,8 @@
  * limitations under the License.
  */
 
-#ifndef MAV_TRAJECTORY_GENERATION_FEASIBILITY_SAMPLING_H_
-#define MAV_TRAJECTORY_GENERATION_FEASIBILITY_SAMPLING_H_
+#ifndef MAV_TRAJECTORY_GENERATION_ROS_FEASIBILITY_SAMPLING_H_
+#define MAV_TRAJECTORY_GENERATION_ROS_FEASIBILITY_SAMPLING_H_
 
 #include <mav_msgs/eigen_mav_msgs.h>
 #include <mav_trajectory_generation/trajectory.h>
@@ -40,7 +40,7 @@ class FeasibilitySampling : public FeasibilityBase {
   FeasibilitySampling(const Settings& settings,
                       const InputConstraints& input_constraints);
   // Checks a trajectory for input feasibility.
-  virtual bool checkInputFeasibility(const Trajectory& trajectory);
+  virtual InputFeasibilityResult checkInputFeasibility(const Trajectory& trajectory);
 
   // Checks if a trajectory stays within a set of half planes.
   virtual bool checkHalfPlaneFeasibility(const Trajectory& trajectory);
@@ -57,4 +57,4 @@ class FeasibilitySampling : public FeasibilityBase {
 };
 }  // namespace mav_trajectory_generation
 
-#endif  // MAV_TRAJECTORY_GENERATION_FEASIBILITY_SAMPLING_H_
+#endif  // MAV_TRAJECTORY_GENERATION_ROS_FEASIBILITY_SAMPLING_H_

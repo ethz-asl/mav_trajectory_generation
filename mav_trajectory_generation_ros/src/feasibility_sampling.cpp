@@ -33,9 +33,10 @@ FeasibilitySampling::FeasibilitySampling(
     const Settings& settings, const InputConstraints& input_constraints)
     : FeasibilityBase(input_constraints), settings_(settings) {}
 
-bool FeasibilitySampling::checkInputFeasibility(const Trajectory& trajectory) {
+InputFeasibilityResult FeasibilitySampling::checkInputFeasibility(
+    const Trajectory& trajectory) {
   if (!sampleTrajectory(trajectory)) {
-    return false;
+    return InputFeasibilityResult::kInputIndeterminable;
   }
 
   for (size_t i = 0; i < states_.size(); i++) {
@@ -43,14 +44,19 @@ bool FeasibilitySampling::checkInputFeasibility(const Trajectory& trajectory) {
     double v = states_[i].velocity_W.norm();
     double omega_xy = states_[i].angular_velocity_B.block<2, 1>(0, 0).norm();
     double omega_z = std::fabs(states_[i].angular_velocity_B(2));
-    if (thrust < input_constraints_.f_min ||
-        thrust > input_constraints_.f_max || v > input_constraints_.v_max ||
-        omega_xy > input_constraints_.omega_xy_max ||
-        omega_z > input_constraints_.omega_z_max) {
-      return false;
+    if (thrust < input_constraints_.f_min) {
+      return InputFeasibilityResult::kInputInfeasibleThrustLow;
+    } else if (thrust > input_constraints_.f_max) {
+      return InputFeasibilityResult::kInputInfeasibleThrustHigh;
+    } else if (v > input_constraints_.v_max) {
+      return InputFeasibilityResult::kInputInfeasibleVelocity;
+    } else if (omega_xy > input_constraints_.omega_xy_max) {
+      return InputFeasibilityResult::kInputInfeasibleRollPitchRates;
+    } else if (omega_z > input_constraints_.omega_z_max) {
+      return InputFeasibilityResult::kInputInfeasibleYawRates;
     }
   }
-  return true;
+return InputFeasibilityResult::kInputFeasible;
 }
 
 bool FeasibilitySampling::checkHalfPlaneFeasibility(

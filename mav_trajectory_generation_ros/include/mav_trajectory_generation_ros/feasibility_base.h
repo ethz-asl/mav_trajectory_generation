@@ -18,8 +18,8 @@
  * limitations under the License.
  */
 
-#ifndef MAV_TRAJECTORY_GENERATION_FEASIBILITY_BASE_H_
-#define MAV_TRAJECTORY_GENERATION_FEASIBILITY_BASE_H_
+#ifndef MAV_TRAJECTORY_GENERATION_ROS_FEASIBILITY_BASE_H_
+#define MAV_TRAJECTORY_GENERATION_ROS_FEASIBILITY_BASE_H_
 
 #include <glog/logging.h>
 #include <ros/ros.h>
@@ -29,6 +29,26 @@
 #include <mav_trajectory_generation/trajectory.h>
 
 namespace mav_trajectory_generation {
+enum InputFeasibilityResult {
+  kInputFeasible = 0,    // The trajectory is input feasible.
+  kInputIndeterminable,  // Cannot determine whether the trajectory is feasible
+                        // with respect to the inputs.
+  kInputInfeasibleThrustHigh,  // The trajectory is infeasible, failed max.
+                              // thrust test first.
+  kInputInfeasibleThrustLow,  // The trajectory is infeasible, failed min. thrust
+                             // test first.
+  kInputInfeasibleVelocity, // The Trajectory is infeasible, failed max. velocity test first.
+  kInputInfeasibleRollPitchRates,  // The trajectory is infeasible, failed max.
+                                  // roll/pitch rates test first.
+  kInputInfeasibleYawRates,  // The trajectory is infeasible, faild max. yaw
+                            // rates test first.
+  kInputInfeasibleYawAcc,    // The trajectory is infeasible, failed max. yaw
+                            // acceleration test first.
+};
+
+// Human readable InputFeasibilityResult.
+std::string getInputFeasibilityResultName(InputFeasibilityResult fr);
+
 // Dynamic constraints of the MAV.
 struct InputConstraints {
   // Reasonable default constraints.
@@ -74,13 +94,13 @@ class HalfPlane {
 class FeasibilityBase {
  public:
   // Default input constraints, no half plane constraints.
-  FeasibilityBase() {};
+  FeasibilityBase(){};
   // User input constraints, no half plane constraints.
   FeasibilityBase(const InputConstraints& input_constraints);
   // Checks a segment for input feasibility.
-  inline virtual bool checkInputFeasibility(const Trajectory& trajectory) {
+  inline virtual InputFeasibilityResult checkInputFeasibility(const Trajectory& trajectory) {
     ROS_ERROR_STREAM("Input feasibility check not implemented.");
-    return false;
+    return InputFeasibilityResult::kInputIndeterminable;
   }
 
   // Checks if a segment stays within a set of half planes.
@@ -96,4 +116,4 @@ class FeasibilityBase {
 };
 }  // namespace mav_trajectory_generation
 
-#endif  // MAV_TRAJECTORY_GENERATION_FEASIBILITY_BASE_H_
+#endif  // MAV_TRAJECTORY_GENERATION_ROS_FEASIBILITY_BASE_H_
