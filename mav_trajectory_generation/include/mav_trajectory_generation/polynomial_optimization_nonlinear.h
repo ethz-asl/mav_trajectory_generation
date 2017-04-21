@@ -209,18 +209,12 @@ class PolynomialOptimizationNonLinear {
   };
 
   // Objective function for the time-only version.
-   *
-   * \param[in] segment_times Segment times in the current iteration.
-   * \param[in] gradient Gradient of the objective function w.r.t. changes of
-   * parameters. We can't compute the
-   *            gradient analytically here. Thus, only gradient free
-   * optimization methods are possible.
-   * \param[in] data Custum data pointer. In our case, it's an ConstraintData
-   * object.
-   * \return Cost based on the parameters passed in.
-   *
-   * \sa PolynomialOptimizationNonLinear
-   */
+  // Input: segment_times = Segment times in the current iteration.
+  // Input: gradient = Gradient of the objective function w.r.t. changes of
+  // parameters. We can't compute the gradient analytically here.
+  // Thus, only gradient-free optimization methods are possible.
+  // Input: Custom data pointer = In our case, it's an ConstraintData object.
+  // Output: Cost = based on the parameters passed in.
   static double objectiveFunctionTime(const std::vector<double>& segment_times,
                                       std::vector<double>& gradient,
                                       void* data);
