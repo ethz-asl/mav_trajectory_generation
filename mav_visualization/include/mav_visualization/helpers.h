@@ -18,6 +18,8 @@
 #ifndef MAV_VISUALIZATION_HELPERS_H_
 #define MAV_VISUALIZATION_HELPERS_H_
 
+#include <Eigen/Eigenvalues>
+
 #include <eigen_conversions/eigen_msg.h>
 #include <visualization_msgs/MarkerArray.h>
 
@@ -42,14 +44,12 @@ inline geometry_msgs::Point createPoint(double x, double y, double z) {
   return p;
 }
 
-/**
- * \brief Draws a covariance ellipsoid
- * \param[out] marker The marker in which the ellipsoid should be drawn
- * \param[in] mu static 3 element vector, specifying the center of the ellipsoid
- * \param[in] cov static 3x3 covariance matrix
- * \param[in] color RGBA color of the ellipsoid
- * \param[in] n_sigma confidence area / scale of the ellipsoid
- */
+// Draws a covariance ellipsoid
+// Input: mu = static 3 element vector, specifying the ellipsoid center
+// Input: cov = static 3x3 covariance matrix
+// Input: color = RGBA color of the ellipsoid
+// Input: n_sigma = confidence area / scale of the ellipsoid
+// Output: marker = The marker in which the ellipsoid should be drawn
 void drawCovariance3D(const Eigen::Vector3d& mu, const Eigen::Matrix3d& cov,
                       const std_msgs::ColorRGBA& color, double n_sigma,
                       visualization_msgs::Marker* marker) {

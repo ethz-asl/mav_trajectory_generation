@@ -29,6 +29,6 @@ class HexacopterMarker : public MarkerGroup {
   void createHexacopter(bool simple = false);
 };
 
-}  // namespace mav_mav_visualization
+}  // namespace mav_visualization
 
 #endif  // MAV_VISUALIZATION_HEXACOPTER_MARKER_H_

@@ -28,7 +28,7 @@ void HexacopterMarker::createHexacopter(bool simple) {
   visualization_msgs::Marker marker;
   marker.id = 0;
 
-  // make rotors
+  // Make rotors.
   marker.type = visualization_msgs::Marker::CYLINDER;
   marker.ns = "hexacopter";
   marker.scale.x = 0.2;
@@ -82,7 +82,7 @@ void HexacopterMarker::createHexacopter(bool simple) {
   markers_.push_back(marker);
 
   if (simple) {
-    // make arms
+    // Make arms.
     marker.type = visualization_msgs::Marker::CUBE;
     marker.scale.x = 0.44;
     marker.scale.y = 0.02;
