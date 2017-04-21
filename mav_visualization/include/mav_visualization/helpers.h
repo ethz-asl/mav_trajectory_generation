@@ -18,6 +18,8 @@
 #ifndef MAV_VISUALIZATION_HELPERS_H_
 #define MAV_VISUALIZATION_HELPERS_H_
 
+#include <Eigen/Eigenvalues>
+
 #include <eigen_conversions/eigen_msg.h>
 #include <visualization_msgs/MarkerArray.h>
 
