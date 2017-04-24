@@ -218,6 +218,8 @@ success = mav_trajectory_generation::sampleWholeTrajectory(trajectory, sampling_
 ## Visualizing Trajectories
 In this section, we describe how to visualize trajectories in [rviz](http://wiki.ros.org/rviz).
 
+<p align="center"><img src="http://i68.tinypic.com/2cp5oxs.png" height="350"/></p>
+
 For a simple visualization:
 
 ```c++
