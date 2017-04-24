@@ -135,7 +135,7 @@ void drawArrowPoints(const Eigen::Vector3d& p1, const Eigen::Vector3d& p2,
 void drawAxesArrows(const Eigen::Vector3d& p, const Eigen::Quaterniond& q,
                     double scale, double diameter,
                     visualization_msgs::MarkerArray* marker_array) {
-  const double alpha = 1;
+  const double alpha = 1.0;
   marker_array->markers.resize(3);
   Eigen::Vector3d origin;
   origin.setZero();
