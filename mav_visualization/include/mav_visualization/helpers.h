@@ -134,23 +134,37 @@ void drawArrowPoints(const Eigen::Vector3d& p1, const Eigen::Vector3d& p2,
   marker->scale.z = 0;
 }
 
-void drawAxesArrows(const Eigen::Vector3d& p, const Eigen::Quaterniond& q,
-                    double scale, double diameter,
+void drawAxesArrowsWithColor(const Eigen::Vector3d& p, const Eigen::Quaterniond& q,
+                    double scale, double diameter, double colors[3][3], double alpha,
                     visualization_msgs::MarkerArray* marker_array) {
-  const double alpha = 1;
   marker_array->markers.resize(3);
   Eigen::Vector3d origin;
   origin.setZero();
 
-  drawArrowPoints(origin + p, q * Eigen::Vector3d::UnitX() * scale + p,
-                  createColorRGBA(1, 0, 0, alpha), diameter,
-                  &marker_array->markers[0]);
-  drawArrowPoints(origin + p, q * Eigen::Vector3d::UnitY() * scale + p,
-                  createColorRGBA(0, 1, 0, alpha), diameter,
-                  &marker_array->markers[1]);
-  drawArrowPoints(origin + p, q * Eigen::Vector3d::UnitZ() * scale + p,
-                  createColorRGBA(0, 0, 1, alpha), diameter,
-                  &marker_array->markers[2]);
+  drawArrowPoints(
+      origin + p, q * Eigen::Vector3d::UnitX() * scale + p,
+      createColorRGBA(colors[0][0], colors[0][1], colors[0][2], alpha),
+      diameter, &marker_array->markers[0]);
+  drawArrowPoints(
+      origin + p, q * Eigen::Vector3d::UnitY() * scale + p,
+      createColorRGBA(colors[1][0], colors[1][1], colors[1][2], alpha),
+      diameter, &marker_array->markers[1]);
+  drawArrowPoints(
+      origin + p, q * Eigen::Vector3d::UnitZ() * scale + p,
+      createColorRGBA(colors[2][0], colors[2][1], colors[2][2], alpha),
+      diameter, &marker_array->markers[2]);
+}
+
+void drawAxesArrows(const Eigen::Vector3d& p, const Eigen::Quaterniond& q,
+                    double scale, double diameter,
+                    visualization_msgs::MarkerArray* marker_array) {
+  const double alpha = 0.5;
+  double colors[3][3] = {
+      {1, 0, 0},  // red
+      {0, 1, 0},  // blue
+      {0, 0, 1}   // green
+  };
+  drawAxesArrowsWithColor(p, q, scale, diameter, colors, alpha, marker_array);
 }
 
 }  // namespace mav_visualization
