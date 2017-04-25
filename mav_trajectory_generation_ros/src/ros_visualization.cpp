@@ -35,7 +35,7 @@ void appendMarkers(const visualization_msgs::MarkerArray& markers_to_insert,
                    visualization_msgs::MarkerArray* marker_array) {
   marker_array->markers.reserve(marker_array->markers.size() +
                                 markers_to_insert.markers.size());
-  for (const auto marker : markers_to_insert.markers) {
+  for (const visualization_msgs::Marker& marker : markers_to_insert.markers) {
     marker_array->markers.push_back(marker);
     if (!marker_namespace.empty()) {
       marker_array->markers.back().ns = marker_namespace;
@@ -87,6 +87,7 @@ void drawMavTrajectoryWithMavMarker(
     visualization_msgs::MarkerArray* marker_array) {
   // Sample the trajectory.
   mav_msgs::EigenTrajectoryPoint::Vector flat_states;
+
   bool success =
       sampleWholeTrajectory(trajectory, kDefaultSamplingTime, &flat_states);
   if (!success) {
@@ -111,7 +112,7 @@ void drawMavSampledTrajectoryWithMavMarker(
   line_strip.scale.x = 0.01;
   line_strip.ns = "path";
 
-  double accumulated_distance = 0;
+  double accumulated_distance = 0.0;
   Eigen::Vector3d last_position = Eigen::Vector3d::Zero();
   for (size_t i = 0; i < flat_states.size(); ++i) {
     const mav_msgs::EigenTrajectoryPoint& flat_state = flat_states[i];
