@@ -22,18 +22,34 @@
 
 #include <eigen_conversions/eigen_msg.h>
 #include <visualization_msgs/MarkerArray.h>
+#include <std_msgs/ColorRGBA.h>
 
 namespace mav_visualization {
 
-// Helper function to create a std_msgs::ColorRGBA.
-inline std_msgs::ColorRGBA createColorRGBA(float r, float g, float b, float a) {
-  std_msgs::ColorRGBA c;
-  c.r = r;
-  c.g = g;
-  c.b = b;
-  c.a = a;
-  return c;
+class Color : public std_msgs::ColorRGBA {
+public:
+Color() : std_msgs::ColorRGBA() {}
+Color(double red, double green, double blue) : Color(red, green, blue, 1.0) {}
+Color(double red, double green, double blue, double alpha) : Color() {
+r = red;
+g = green;
+b = blue;
+a = alpha;
 }
+
+static const Color White() { return Color(1.0, 1.0, 1.0); }
+static const Color Black() { return Color(0.0, 0.0, 0.0); }
+static const Color Gray() { return Color(0.5, 0.5, 0.5); }
+static const Color Red() { return Color(1.0, 0.0, 0.0); }
+static const Color Green() { return Color(0.0, 1.0, 0.0); }
+static const Color Blue() { return Color(0.0, 0.0, 1.0); }
+static const Color Yellow() { return Color(1.0, 1.0, 0.0); }
+static const Color Orange() { return Color(1.0, 0.5, 0.0); }
+static const Color Purple() { return Color(0.5, 0.0, 1.0); }
+static const Color Chartreuse() { return Color(0.5, 1.0, 0.0); }
+static const Color Teal() { return Color(0.0, 1.0, 1.0); }
+static const Color Pink() { return Color(1.0, 0.0, 0.5); }
+};
 
 /// helper function to create a geometry_msgs::Point
 inline geometry_msgs::Point createPoint(double x, double y, double z) {
@@ -73,7 +89,6 @@ void drawCovariance3D(const Eigen::Vector3d& mu, const Eigen::Matrix3d& cov,
 void drawAxes(const Eigen::Vector3d& p, const Eigen::Quaterniond& q,
               double scale, double line_width,
               visualization_msgs::Marker* marker) {
-  const double alpha = 1.0;
   marker->colors.resize(6);
   marker->points.resize(6);
   marker->points[0] = createPoint(0, 0, 0);
@@ -83,13 +98,13 @@ void drawAxes(const Eigen::Vector3d& p, const Eigen::Quaterniond& q,
   marker->points[4] = createPoint(0, 0, 0);
   marker->points[5] = createPoint(0, 0, 1 * scale);
 
-  marker->color = createColorRGBA(0, 0, 0, alpha);
-  marker->colors[0] = createColorRGBA(1, 0, 0, alpha);
-  marker->colors[1] = createColorRGBA(1, 0, 0, alpha);
-  marker->colors[2] = createColorRGBA(0, 1, 0, alpha);
-  marker->colors[3] = createColorRGBA(0, 1, 0, alpha);
-  marker->colors[4] = createColorRGBA(0, 0, 1, alpha);
-  marker->colors[5] = createColorRGBA(0, 0, 1, alpha);
+  marker->color = Color::Black();
+  marker->colors[0] = Color::Red();
+  marker->colors[1] = Color::Red();
+  marker->colors[2] = Color::Green();
+  marker->colors[3] = Color::Green();
+  marker->colors[4] = Color::Blue();
+  marker->colors[5] = Color::Blue();
 
   marker->scale.x = line_width;  // rest is unused
   marker->type = visualization_msgs::Marker::LINE_LIST;
@@ -135,20 +150,16 @@ void drawArrowPoints(const Eigen::Vector3d& p1, const Eigen::Vector3d& p2,
 void drawAxesArrows(const Eigen::Vector3d& p, const Eigen::Quaterniond& q,
                     double scale, double diameter,
                     visualization_msgs::MarkerArray* marker_array) {
-  const double alpha = 1.0;
   marker_array->markers.resize(3);
   Eigen::Vector3d origin;
   origin.setZero();
 
   drawArrowPoints(origin + p, q * Eigen::Vector3d::UnitX() * scale + p,
-                  createColorRGBA(1, 0, 0, alpha), diameter,
-                  &marker_array->markers[0]);
+                  Color::Red(), diameter, &marker_array->markers[0]);
   drawArrowPoints(origin + p, q * Eigen::Vector3d::UnitY() * scale + p,
-                  createColorRGBA(0, 1, 0, alpha), diameter,
-                  &marker_array->markers[1]);
+                  Color::Green(), diameter, &marker_array->markers[1]);
   drawArrowPoints(origin + p, q * Eigen::Vector3d::UnitZ() * scale + p,
-                  createColorRGBA(0, 0, 1, alpha), diameter,
-                  &marker_array->markers[2]);
+                  Color::Blue(), diameter, &marker_array->markers[2]);
 }
 
 }  // namespace mav_visualization

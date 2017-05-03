@@ -108,7 +108,7 @@ void drawMavSampledTrajectoryWithMavMarker(
 
   visualization_msgs::Marker line_strip;
   line_strip.type = visualization_msgs::Marker::LINE_STRIP;
-  line_strip.color = mav_visualization::createColorRGBA(1, 0.5, 0, 1);
+  line_strip.color = mav_visualization::Color::Orange();
   line_strip.scale.x = 0.01;
   line_strip.ns = "path";
 
@@ -133,16 +133,16 @@ void drawMavSampledTrajectoryWithMavMarker(
       mav_visualization::drawArrowPoints(
           flat_state.position_W,
           flat_state.position_W + flat_state.acceleration_W,
-          mav_visualization::createColorRGBA((190.0 / 255.0), (81.0 / 255.0),
-                                             (80.0 / 255.0), 1),
+          mav_visualization::Color((190.0 / 255.0), (81.0 / 255.0),
+                                   (80.0 / 255.0)),
           0.3, &arrow);
       arrow.ns = positionDerivativeToString(derivative_order::ACCELERATION);
       marker_array->markers.push_back(arrow);
 
       mav_visualization::drawArrowPoints(
           flat_state.position_W, flat_state.position_W + flat_state.velocity_W,
-          mav_visualization::createColorRGBA((80.0 / 255.0), (172.0 / 255.0),
-                                             (196.0 / 255.0), 1),
+          mav_visualization::Color((80.0 / 255.0), (172.0 / 255.0),
+                                   (196.0 / 255.0)),
           0.3, &arrow);
       arrow.ns = positionDerivativeToString(derivative_order::VELOCITY);
       marker_array->markers.push_back(arrow);
@@ -172,7 +172,7 @@ void drawVertices(const Vertex::Vector& vertices, const std::string& frame_id,
   visualization_msgs::Marker& marker = marker_array->markers.front();
 
   marker.type = visualization_msgs::Marker::LINE_STRIP;
-  marker.color = mav_visualization::createColorRGBA(0.5, 1.0, 0, 1);
+  marker.color = mav_visualization::Color::Chartreuse();
   marker.scale.x = 0.01;
   marker.ns = "straight_path";
 
