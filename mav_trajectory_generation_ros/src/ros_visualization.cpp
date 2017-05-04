@@ -35,7 +35,7 @@ void appendMarkers(const visualization_msgs::MarkerArray& markers_to_insert,
                    visualization_msgs::MarkerArray* marker_array) {
   marker_array->markers.reserve(marker_array->markers.size() +
                                 markers_to_insert.markers.size());
-  for (const auto marker : markers_to_insert.markers) {
+  for (const visualization_msgs::Marker& marker : markers_to_insert.markers) {
     marker_array->markers.push_back(marker);
     if (!marker_namespace.empty()) {
       marker_array->markers.back().ns = marker_namespace;
@@ -87,6 +87,7 @@ void drawMavTrajectoryWithMavMarker(
     visualization_msgs::MarkerArray* marker_array) {
   // Sample the trajectory.
   mav_msgs::EigenTrajectoryPoint::Vector flat_states;
+
   bool success =
       sampleWholeTrajectory(trajectory, kDefaultSamplingTime, &flat_states);
   if (!success) {
@@ -107,11 +108,11 @@ void drawMavSampledTrajectoryWithMavMarker(
 
   visualization_msgs::Marker line_strip;
   line_strip.type = visualization_msgs::Marker::LINE_STRIP;
-  line_strip.color = mav_visualization::createColorRGBA(1, 0.5, 0, 1);
+  line_strip.color = mav_visualization::Color::Orange();
   line_strip.scale.x = 0.01;
   line_strip.ns = "path";
 
-  double accumulated_distance = 0;
+  double accumulated_distance = 0.0;
   Eigen::Vector3d last_position = Eigen::Vector3d::Zero();
   for (size_t i = 0; i < flat_states.size(); ++i) {
     const mav_msgs::EigenTrajectoryPoint& flat_state = flat_states[i];
@@ -132,16 +133,16 @@ void drawMavSampledTrajectoryWithMavMarker(
       mav_visualization::drawArrowPoints(
           flat_state.position_W,
           flat_state.position_W + flat_state.acceleration_W,
-          mav_visualization::createColorRGBA((190.0 / 255.0), (81.0 / 255.0),
-                                             (80.0 / 255.0), 1),
+          mav_visualization::Color((190.0 / 255.0), (81.0 / 255.0),
+                                   (80.0 / 255.0)),
           0.3, &arrow);
       arrow.ns = positionDerivativeToString(derivative_order::ACCELERATION);
       marker_array->markers.push_back(arrow);
 
       mav_visualization::drawArrowPoints(
           flat_state.position_W, flat_state.position_W + flat_state.velocity_W,
-          mav_visualization::createColorRGBA((80.0 / 255.0), (172.0 / 255.0),
-                                             (196.0 / 255.0), 1),
+          mav_visualization::Color((80.0 / 255.0), (172.0 / 255.0),
+                                   (196.0 / 255.0)),
           0.3, &arrow);
       arrow.ns = positionDerivativeToString(derivative_order::VELOCITY);
       marker_array->markers.push_back(arrow);
@@ -171,7 +172,7 @@ void drawVertices(const Vertex::Vector& vertices, const std::string& frame_id,
   visualization_msgs::Marker& marker = marker_array->markers.front();
 
   marker.type = visualization_msgs::Marker::LINE_STRIP;
-  marker.color = mav_visualization::createColorRGBA(0.5, 1.0, 0, 1);
+  marker.color = mav_visualization::Color::Chartreuse();
   marker.scale.x = 0.01;
   marker.ns = "straight_path";
 

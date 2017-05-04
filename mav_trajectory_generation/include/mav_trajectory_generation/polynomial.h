@@ -113,7 +113,9 @@ class Polynomial {
   // Evaluates the specified derivative of the polynomial at time t and returns
   // the result (only one value).
   double evaluate(double t, int derivative) const {
-    CHECK_LT(derivative, N_);
+    if (derivative >= N_) {
+      return 0.0;
+    }
     double result;
     const int tmp = N_ - 1;
     Eigen::RowVectorXd row = base_coefficients_.block(derivative, 0, 1, N_);

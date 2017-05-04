@@ -111,6 +111,7 @@ void Trajectory::evaluateRange(double t_start, double t_end, double dt,
       if (i >= segments_.size()) {
         break;
       }
+      continue;
     }
 
     result->push_back(segments_[i].evaluate(time_in_segment, derivative_order));
@@ -154,7 +155,7 @@ Trajectory Trajectory::getTrajectoryWithAppendedDimension(
   CHECK_EQ(N_, trajectory_to_append.N());
   CHECK_EQ(static_cast<int>(segments_.size()), trajectory_to_append.K());
 
-  // Create a new set of segments with just 1 dimension.
+  // Create a new set of segments with all of the dimensions.
   Segment::Vector segments;
   segments.reserve(segments_.size());
 
