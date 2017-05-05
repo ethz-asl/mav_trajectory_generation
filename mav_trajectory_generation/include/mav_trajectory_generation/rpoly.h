@@ -46,7 +46,13 @@ int findRootsJenkinsTraub(const double* coefficients_decreasing, int degree,
 // http://en.wikipedia.org/wiki/Jenkins–Traub_algorithm
 // Input: coefficients_increasing = Coefficients of the polynomial in
 // INDECREASING! order.
-// Output: return = Complex roots of the polynomial.
+// Output: roots = Complex roots of the polynomial.
+// Output: return = Root calculation success.
+bool findRootsJenkinsTraub(const Eigen::VectorXd& coefficients_increasing,
+                           Eigen::VectorXcd* roots);
+
+// Finds the roots of a polynomial with real coefficients, using the
+// Jenkins-Traub method. Convenience method.
 Eigen::VectorXcd findRootsJenkinsTraub(
     const Eigen::VectorXd& coefficients_increasing);
 

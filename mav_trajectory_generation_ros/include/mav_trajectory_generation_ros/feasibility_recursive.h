@@ -21,28 +21,61 @@
 #ifndef MAV_TRAJECTORY_GENERATION_ROS_FEASIBILITY_RECURSIVE_H_
 #define MAV_TRAJECTORY_GENERATION_ROS_FEASIBILITY_RECURSIVE_H_
 
+#include <mav_trajectory_generation/segment.h>
+
 #include "mav_trajectory_generation_ros/feasibility_base.h"
 
 namespace mav_trajectory_generation {
 
 /* Recursive input and position feasibility checks.
-* This implementation is based on [1] and extended to test yaw rates and
-* higher order polynomials.
-*
-* [1] Mueller, Mark W., Markus Hehn, and Raffaello D'Andrea. "A
-* Computationally Efficient Motion Primitive for Quadrocopter
-* Trajectory Generation." Robotics, IEEE Transactions on 31.6
-* (2015): 1294-1310.
-*
-* See also https://github.com/markwmuller/RapidQuadrocopterTrajectories
-*/
+ * This implementation is based on [1] and extended to test yaw rates and
+ * higher order polynomials.
+ *
+ * [1] Mueller, Mark W., Markus Hehn, and Raffaello D'Andrea. "A
+ * Computationally Efficient Motion Primitive for Quadrocopter
+ * Trajectory Generation." Robotics, IEEE Transactions on 31.6
+ * (2015): 1294-1310.
+ *
+ * See also https://github.com/markwmuller/RapidQuadrocopterTrajectories
+ */
 class FeasibilityRecursive : public FeasibilityBase {
  public:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+  typedef std::vector<Eigen::VectorXcd,
+                      Eigen::aligned_allocator<Eigen::VectorXcd>>
+      Roots;
+
+  struct Settings {
+    Settings();
+    // The minimum section length the binary search is going to check. If the
+    // trajectory is feasible with respect to an upper bound for this section
+    // length it is considered overall feasible.
+    double min_section_time_s;
+  };
+
+  FeasibilityRecursive(const Settings& settings);
+  FeasibilityRecursive(const Settings& settings,
+                       const InputConstraints& input_constraints);
+
   // Checks a segment for input feasibility.
-  virtual InputFeasibilityResult checkInputFeasibility(const Trajectory& trajectory);
+  virtual InputFeasibilityResult checkInputFeasibility(const Segment& segment);
 
   // Checks if a segment stays within a bounding box.
   virtual bool checkBoundingBoxFeasibility(const Trajectory& trajectory);
+
+ private:
+  // Recursive test to determine velocity, acceleration, and angular rate (roll,
+  // pitch) feasibility between t_1 and t_2.
+  InputFeasibilityResult recursiveFeasibility(const Segment& segment,
+                                              const Roots& roots_acc,
+                                              const Roots& roots_jerk,
+                                              const Roots& roots_snap,
+                                              double t_1, double t_2) const;
+
+  double evaluateThrust(const Segment& segment, double time) const;
+
+  // The user settings.
+  Settings settings_;
 };
 }  // namespace mav_trajectory_generation
 

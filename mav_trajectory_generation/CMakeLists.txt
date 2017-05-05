@@ -31,6 +31,11 @@ target_link_libraries(polynomial_timing_evaluation ${PROJECT_NAME})
 #########
 # TESTS #
 #########
+catkin_add_gtest(test_polynomial
+  test/test_polynomial.cpp
+)
+target_link_libraries(test_polynomial ${PROJECT_NAME} ${catkin_LIBRARIES})
+
 catkin_add_gtest(test_polynomial_optimization
   test/test_polynomial_optimization.cpp
 )

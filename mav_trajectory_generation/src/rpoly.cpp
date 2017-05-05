@@ -40,8 +40,8 @@
 
 namespace mav_trajectory_generation {
 
-Eigen::VectorXcd findRootsJenkinsTraub(
-    const Eigen::VectorXd& coefficients_increasing) {
+bool findRootsJenkinsTraub(const Eigen::VectorXd& coefficients_increasing,
+                           Eigen::VectorXcd* roots) {
   const Eigen::VectorXd coefficients_decreasing =
       coefficients_increasing.reverse();
 
@@ -49,21 +49,31 @@ Eigen::VectorXcd findRootsJenkinsTraub(
   double* roots_real = new double[n_coefficients];
   double* roots_imag = new double[n_coefficients];
 
+  std::cout << "Coefficients decreasing: " << coefficients_decreasing.transpose() << std::endl;
   int ret =
       findRootsJenkinsTraub(coefficients_decreasing.data(), n_coefficients - 1,
                             roots_real, roots_imag, NULL);
-
-  Eigen::VectorXcd roots;
-
-  if (ret > 0) {
-    roots.resize(ret);
+  if (ret != -1) {
+    roots->resize(ret);
     for (int i = 0; i < ret; ++i) {
-      roots[i] = std::complex<double>(roots_real[i], roots_imag[i]);
+      (*roots)[i] = std::complex<double>(roots_real[i], roots_imag[i]);
     }
   }
 
   delete[] roots_real;
   delete[] roots_imag;
+
+  if (ret == -1) {
+    return false;
+  } else {
+    return true;
+  }
+}
+
+Eigen::VectorXcd findRootsJenkinsTraub(
+    const Eigen::VectorXd& coefficients_increasing) {
+  Eigen::VectorXcd roots;
+  findRootsJenkinsTraub(coefficients_increasing, &roots);
   return roots;
 }
 

@@ -22,11 +22,9 @@
 
 #include <Eigen/Geometry>
 
-#include <mav_msgs/default_values.h>
-
 namespace mav_trajectory_generation {
 
-std::string getInputFeasibilityResultName(InputFeasibilityResult fr)  {
+std::string getInputFeasibilityResultName(InputFeasibilityResult fr) {
   switch (fr) {
     case InputFeasibilityResult::kInputFeasible:
       return "Feasible";
@@ -91,5 +89,25 @@ HalfPlane::HalfPlane(const Eigen::Vector3d& a, const Eigen::Vector3d& b,
 
 FeasibilityBase::FeasibilityBase(const InputConstraints& input_constraints)
     : input_constraints_(input_constraints) {}
+
+InputFeasibilityResult FeasibilityBase::checkInputFeasibility(
+    const Trajectory& trajectory) {
+  for (const Segment segment : trajectory.segments()) {
+    InputFeasibilityResult result = checkInputFeasibility(segment);
+    if (result != InputFeasibilityResult::kInputFeasible) {
+      return result;
+    }
+  }
+  return result;
+}
+
+bool FeasibilityBase::checkHalfPlaneFeasibility(const Trajectory& trajectory) {
+  for (const Segment segment : trajectory.segments()) {
+    if (!checkHalfPlaneFeasibility(segment)) {
+      return false;
+    }
+  }
+  return true;
+}
 
 }  // namespace mav_trajectory_generation

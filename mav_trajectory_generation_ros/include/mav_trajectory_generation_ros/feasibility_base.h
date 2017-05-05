@@ -32,18 +32,19 @@ namespace mav_trajectory_generation {
 enum InputFeasibilityResult {
   kInputFeasible = 0,    // The trajectory is input feasible.
   kInputIndeterminable,  // Cannot determine whether the trajectory is feasible
-                        // with respect to the inputs.
-  kInputInfeasibleThrustHigh,  // The trajectory is infeasible, failed max.
-                              // thrust test first.
-  kInputInfeasibleThrustLow,  // The trajectory is infeasible, failed min. thrust
-                             // test first.
-  kInputInfeasibleVelocity, // The Trajectory is infeasible, failed max. velocity test first.
+                         // with respect to the inputs.
+  kInputInfeasibleThrustHigh,      // The trajectory is infeasible, failed max.
+                                   // thrust test first.
+  kInputInfeasibleThrustLow,       // The trajectory is infeasible, failed min.
+                                   // thrust test first.
+  kInputInfeasibleVelocity,        // The Trajectory is infeasible, failed max.
+                                   // velocity test first.
   kInputInfeasibleRollPitchRates,  // The trajectory is infeasible, failed max.
-                                  // roll/pitch rates test first.
+                                   // roll/pitch rates test first.
   kInputInfeasibleYawRates,  // The trajectory is infeasible, faild max. yaw
-                            // rates test first.
+                             // rates test first.
   kInputInfeasibleYawAcc,    // The trajectory is infeasible, failed max. yaw
-                            // acceleration test first.
+                             // acceleration test first.
 };
 
 // Human readable InputFeasibilityResult.
@@ -97,14 +98,20 @@ class FeasibilityBase {
   FeasibilityBase(){};
   // User input constraints, no half plane constraints.
   FeasibilityBase(const InputConstraints& input_constraints);
+
+  // Checks a trajectory for input feasibility.
+  InputFeasibilityResult checkInputFeasibility(const Trajectory& trajectory);
   // Checks a segment for input feasibility.
-  inline virtual InputFeasibilityResult checkInputFeasibility(const Trajectory& trajectory) {
+  inline virtual InputFeasibilityResult checkInputFeasibility(
+      const Segment& segment) {
     ROS_ERROR_STREAM("Input feasibility check not implemented.");
     return InputFeasibilityResult::kInputIndeterminable;
   }
 
+  // Checks if a trajectory stays within a set of half planes.
+  bool checkHalfPlaneFeasibility(const Trajectory& trajectory);
   // Checks if a segment stays within a set of half planes.
-  inline virtual bool checkHalfPlaneFeasibility(const Trajectory& trajectory) {
+  inline virtual bool checkHalfPlaneFeasibility(const Segment& segment) {
     ROS_ERROR_STREAM("Half plane feasibility check not implemented.");
     return false;
   }

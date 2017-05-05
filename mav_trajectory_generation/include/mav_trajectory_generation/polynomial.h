@@ -85,7 +85,7 @@ class Polynomial {
       result.head(N_ - derivative) =
           coefficients_.tail(N_ - derivative)
               .cwiseProduct(
-                  base_coefficients_.block(derivative, derivative, 1, N_)
+                  base_coefficients_.block(derivative, derivative, 1, N_ - derivative)
                       .transpose());
       return result;
     }
@@ -147,6 +147,14 @@ class Polynomial {
     //      return es.eigenvalues();
     return findRootsJenkinsTraub(coefficients_);
   }
+
+  // Computes the minimum and maximum of a polynomial between time t_1 and t_2.
+  bool findMinMax(double t_1, double t_2, int derivative,
+                  const Eigen::VectorXcd& roots_of_derivative, double* min,
+                  double* max);
+  // Additionally computes the roots.
+  bool findMinMax(double t_1, double t_2, int derivative, double* min,
+                  double* max);
 
   // Computes the base coefficients with the according powers of t, as
   // e.g. needed for computation of (in)equality constraints.
