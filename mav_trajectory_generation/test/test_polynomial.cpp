@@ -29,19 +29,26 @@
 
 using namespace mav_trajectory_generation;
 
-const double kSamplingInterval = 0.01;
-const double kEqualityResolution = 1.0e-3;
+const double kSamplingInterval = 1.0e-3;
+const double kEqualityResolution = 1.0e-2;
 const int kDerivative = derivative_order::POSITION;
 
 void findMinMaxBySampling(const Polynomial& polynomial, double t_1, double t_2,
-                          double* min, double* max) {
+                          double* t_min, double* t_max, double* min,
+                          double* max) {
   double t = t_1;
   *min = std::numeric_limits<double>::max();
   *max = std::numeric_limits<double>::lowest();
   while (t <= t_2) {
     double candidate = polynomial.evaluate(t, kDerivative);
-    *min = std::min(*min, candidate);
-    *max = std::max(*max, candidate);
+    if (candidate < *min) {
+      *min = candidate;
+      *t_min = t;
+    }
+    if (candidate > *max) {
+      *max = candidate;
+      *t_max = t;
+    }
     t += kSamplingInterval;
   }
 }
@@ -60,13 +67,13 @@ bool approxEqual(double x_1, double x_2) {
 
 TEST(PolynomialTest, FindMinMax) {
   const double kTMin = -100.0;
-  const double kTMax = -100.0;
+  const double kTMax = 100.0;
   const double kCoeffMin = -100.0;
   const double kCoeffMax = 100.0;
 
   std::srand(1234567);
   static int num_failures = 0;
-  const int kNumPolynomials = 1e1;
+  const int kNumPolynomials = 1e3;
   for (size_t i = 0; i < kNumPolynomials; i++) {
     // Create random polynomial.
     int num_coeffs = std::rand() % (Polynomial::kMaxN - 1) + 1;
@@ -75,25 +82,37 @@ TEST(PolynomialTest, FindMinMax) {
       coeffs[i] = createRandomDouble(kCoeffMin, kCoeffMax);
     }
     Polynomial p(num_coeffs, coeffs);
-    std::cout << "poly: " << p.getCoefficients().transpose() << std::endl;
 
     // Calculate minimum and maximum.
-    double min_sampling, max_sampling, min_computing, max_computing;
+    double t_min_sampling, t_max_sampling, min_sampling, max_sampling,
+        t_min_computing, t_max_computing, min_computing, max_computing;
     double t_1 = createRandomDouble(kTMin, kTMax);
     double t_2 = createRandomDouble(t_1, kTMax);
-    findMinMaxBySampling(p, t_1, t_2, &min_sampling, &max_sampling);
-    if (!p.findMinMax(t_1, t_2, kDerivative, &min_computing, &max_computing)) {
+    findMinMaxBySampling(p, t_1, t_2, &t_min_sampling, &t_max_sampling,
+                         &min_sampling, &max_sampling);
+    if (!p.findMinMax(t_1, t_2, kDerivative, &t_min_computing, &t_max_computing,
+                      &min_computing, &max_computing)) {
+      std::cout << "Failed to compute roots for " << coeffs.transpose()
+                << std::endl;
       num_failures++;
       continue;
     }
-    std::cout << "min_sampling: " << min_sampling << std::endl;
-    std::cout << "min_computing: " << min_computing << std::endl;
-    std::cout << "max_sampling: " << max_sampling << std::endl;
-    std::cout << "max_computing: " << max_computing << std::endl;
-    EXPECT_TRUE(approxEqual(min_sampling, min_computing));
-    EXPECT_TRUE(approxEqual(max_sampling, max_computing));
+    if (!approxEqual(t_max_sampling, t_max_computing) ||
+        !approxEqual(t_min_sampling, t_min_computing)) {
+      std::cout << "t_min_sampling: " << t_min_sampling << std::endl;
+      std::cout << "t_min_computing: " << t_min_computing << std::endl;
+      std::cout << "min_sampling: " << min_sampling << std::endl;
+      std::cout << "min_computing: " << min_computing << std::endl;
+
+      std::cout << "t_max_sampling: " << t_max_sampling << std::endl;
+      std::cout << "t_max_computing: " << t_max_computing << std::endl;
+      std::cout << "max_sampling: " << max_sampling << std::endl;
+      std::cout << "max_computing: " << max_computing << std::endl;
+    }
+    EXPECT_TRUE(approxEqual(t_min_sampling, t_min_computing));
+    EXPECT_TRUE(approxEqual(t_max_sampling, t_max_computing));
   }
-  std::cout << "Failed computing the roots for " << num_failures << " / "
+  std::cout << "Failed to compute minimum for " << num_failures << " / "
             << kNumPolynomials << " polynomials." << std::endl;
 }
 
