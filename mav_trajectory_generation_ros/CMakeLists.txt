@@ -27,6 +27,14 @@ cs_add_executable(trajectory_sampler_node
 )
 target_link_libraries(trajectory_sampler_node ${PROJECT_NAME})
 
+#########
+# TESTS #
+#########
+catkin_add_gtest(test_feasibility
+  test/test_feasibility.cpp
+)
+target_link_libraries(test_feasibility ${PROJECT_NAME} ${catkin_LIBRARIES})
+
 ##########
 # EXPORT #
 ##########

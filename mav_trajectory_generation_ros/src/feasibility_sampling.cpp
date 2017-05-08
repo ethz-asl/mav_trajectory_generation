@@ -23,7 +23,6 @@
 #include <mav_msgs/conversions.h>
 #include <mav_msgs/eigen_mav_msgs.h>
 
-
 namespace mav_trajectory_generation {
 const double kNumNanosecondsPerSecond = 1.0e9;
 
@@ -50,7 +49,8 @@ InputFeasibilityResult FeasibilitySampling::checkInputFeasibility(
     Eigen::VectorXd acc = segment.evaluate(t, derivative_order::ACCELERATION);
     Eigen::VectorXd jerk = segment.evaluate(t, derivative_order::JERK);
     Eigen::VectorXd snap = segment.evaluate(t, derivative_order::SNAP);
-    int64_t time_from_start_ns = static_cast<int64_t>(t * kNumNanosecondsPerSecond);
+    int64_t time_from_start_ns =
+        static_cast<int64_t>(t * kNumNanosecondsPerSecond);
     mav_msgs::EigenTrajectoryPoint flat_state;
     flat_state.position_W = position.head<3>();
     flat_state.velocity_W = velocity.head<3>();
@@ -71,6 +71,8 @@ InputFeasibilityResult FeasibilitySampling::checkInputFeasibility(
     // Feasibility check:
     double thrust = state.acceleration_B.norm();
     double v = state.velocity_W.norm();
+    // Evaluate roll/pitch rate and yaw rate assuming independency (rigid body
+    // model).
     double omega_xy = state.angular_velocity_B.head<2>().norm();
     double omega_z = std::fabs(state.angular_velocity_B(2));
     double omega_z_dot = std::fabs(state.angular_acceleration_B(2));
