@@ -85,7 +85,8 @@ class Polynomial {
       result.head(N_ - derivative) =
           coefficients_.tail(N_ - derivative)
               .cwiseProduct(
-                  base_coefficients_.block(derivative, derivative, 1, N_ - derivative)
+                  base_coefficients_
+                      .block(derivative, derivative, 1, N_ - derivative)
                       .transpose());
       return result;
     }
