@@ -24,7 +24,7 @@
 
 namespace mav_trajectory_generation {
 
-bool Polynomial::findMinMax(double t_1, double t_2, int derivative,
+bool Polynomial::findMinMax(double t_1, double t_2, int order_to_evaluate,
                             const Eigen::VectorXcd& roots_of_derivative,
                             double* t_min, double* t_max, double* min,
                             double* max) {
@@ -50,7 +50,7 @@ bool Polynomial::findMinMax(double t_1, double t_2, int derivative,
       continue;
     }
     const double candidate =
-        evaluate(roots_of_derivative(i).real(), derivative);
+        evaluate(roots_of_derivative(i).real(), order_to_evaluate);
     if (candidate < *min) {
       *min = candidate;
       *t_min = roots_of_derivative(i).real();
@@ -61,8 +61,8 @@ bool Polynomial::findMinMax(double t_1, double t_2, int derivative,
     }
   }
   // Evaluate interval end points:
-  const double candidate_t_1 = evaluate(t_1, derivative);
-  const double candidate_t_2 = evaluate(t_2, derivative);
+  const double candidate_t_1 = evaluate(t_1, order_to_evaluate);
+  const double candidate_t_2 = evaluate(t_2, order_to_evaluate);
   if (candidate_t_1 < *min) {
     *min = candidate_t_1;
     *t_min = t_1;
@@ -83,14 +83,14 @@ bool Polynomial::findMinMax(double t_1, double t_2, int derivative,
   return true;
 }
 
-bool Polynomial::findMinMax(double t_1, double t_2, int derivative,
+bool Polynomial::findMinMax(double t_1, double t_2, int order_to_evaluate,
                             double* t_min, double* t_max, double* min,
                             double* max) {
   Eigen::VectorXcd roots_of_derivative;
-  if (findRootsJenkinsTraub(getCoefficients(derivative + 1),
+  if (findRootsJenkinsTraub(getCoefficients(order_to_evaluate + 1),
                             &roots_of_derivative) ||
-      N_ == 1) {
-    return findMinMax(t_1, t_2, derivative, roots_of_derivative, t_min, t_max,
+      N_ - order_to_evaluate < 3) {
+    return findMinMax(t_1, t_2, order_to_evaluate, roots_of_derivative, t_min, t_max,
                       min, max);
   } else {
     return false;

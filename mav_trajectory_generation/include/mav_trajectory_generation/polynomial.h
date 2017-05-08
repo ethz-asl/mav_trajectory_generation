@@ -150,13 +150,25 @@ class Polynomial {
   }
 
   // Computes the minimum and maximum of a polynomial between time t_1 and t_2.
-  bool findMinMax(double t_1, double t_2, int derivative,
+  bool findMinMax(double t_1, double t_2, int order_to_evaluate,
                   const Eigen::VectorXcd& roots_of_derivative, double* t_min,
                   double* t_max, double* min, double* max);
+  inline bool findMinMax(double t_1, double t_2, int order_to_evaluate,
+                         const Eigen::VectorXcd& roots_of_derivative,
+                         double* min, double* max) {
+    double t_min, t_max;
+    return findMinMax(t_1, t_2, order_to_evaluate, roots_of_derivative, &t_min,
+                      &t_max, min, max);
+  }
   // Computes the minimum and maximum of a polynomial between time t_1 and t_2.
   // Additionally computes the roots.
-  bool findMinMax(double t_1, double t_2, int derivative, double* t_min,
+  bool findMinMax(double t_1, double t_2, int order_to_evaluate, double* t_min,
                   double* t_max, double* min, double* max);
+  inline bool findMinMax(double t_1, double t_2, int order_to_evaluate,
+                         double* min, double* max) {
+    double t_min, t_max;
+    return findMinMax(t_1, t_2, order_to_evaluate, &t_min, &t_max, min, max);
+  }
 
   // Computes the base coefficients with the according powers of t, as
   // e.g. needed for computation of (in)equality constraints.
