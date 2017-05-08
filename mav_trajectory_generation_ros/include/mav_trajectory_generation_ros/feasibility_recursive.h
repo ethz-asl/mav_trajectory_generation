@@ -30,6 +30,10 @@ namespace mav_trajectory_generation {
 /* Recursive input and position feasibility checks.
  * This implementation is based on [1] and extended to test yaw rates and
  * higher order polynomials.
+ * The general idea is to check a segment for lower and upper bounds that can be
+ * found easily by evaluating the single axis minima and maxima.
+ * We extend checking for maximum velocity constraints and yaw rate and
+ * acceleration constraints.
  *
  * [1] Mueller, Mark W., Markus Hehn, and Raffaello D'Andrea. "A
  * Computationally Efficient Motion Primitive for Quadrocopter
@@ -59,9 +63,6 @@ class FeasibilityRecursive : public FeasibilityBase {
 
   // Checks a segment for input feasibility.
   virtual InputFeasibilityResult checkInputFeasibility(const Segment& segment);
-
-  // Checks if a segment stays within a bounding box.
-  virtual bool checkBoundingBoxFeasibility(const Trajectory& trajectory);
 
  private:
   // Recursive test to determine velocity, acceleration, and angular rate (roll,

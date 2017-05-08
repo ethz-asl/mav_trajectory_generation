@@ -59,14 +59,6 @@ InputFeasibilityResult FeasibilitySampling::checkInputFeasibility(
 return InputFeasibilityResult::kInputFeasible;
 }
 
-bool FeasibilitySampling::checkHalfPlaneFeasibility(
-    const Trajectory& trajectory) {
-  if (!sampleTrajectory(trajectory)) {
-    return false;
-  }
-  return true;
-}
-
 bool FeasibilitySampling::sampleTrajectory(const Trajectory& trajectory) {
   // Check if already sampled.
   if (trajectory == trajectory_) {

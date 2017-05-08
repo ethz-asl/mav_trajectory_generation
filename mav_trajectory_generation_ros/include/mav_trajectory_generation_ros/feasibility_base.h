@@ -95,7 +95,7 @@ class HalfPlane {
 class FeasibilityBase {
  public:
   // Default input constraints, no half plane constraints.
-  FeasibilityBase(){};
+  FeasibilityBase();
   // User input constraints, no half plane constraints.
   FeasibilityBase(const InputConstraints& input_constraints);
 
@@ -111,7 +111,7 @@ class FeasibilityBase {
   // Checks if a trajectory stays within a set of half planes.
   bool checkHalfPlaneFeasibility(const Trajectory& trajectory);
   // Checks if a segment stays within a set of half planes.
-  inline virtual bool checkHalfPlaneFeasibility(const Segment& segment) {
+  inline bool checkHalfPlaneFeasibility(const Segment& segment) {
     ROS_ERROR_STREAM("Half plane feasibility check not implemented.");
     return false;
   }
@@ -120,6 +120,7 @@ class FeasibilityBase {
   InputConstraints input_constraints_;
   // Half plane constraints, e.g., the ground plane or a box.
   HalfPlane::Vector half_plane_constraints_;
+  Eigen::Vector3d gravity_;
 };
 }  // namespace mav_trajectory_generation
 

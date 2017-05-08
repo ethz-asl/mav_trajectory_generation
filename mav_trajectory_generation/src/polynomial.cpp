@@ -27,7 +27,7 @@ namespace mav_trajectory_generation {
 bool Polynomial::findMinMax(double t_1, double t_2, int order_to_evaluate,
                             const Eigen::VectorXcd& roots_of_derivative,
                             double* t_min, double* t_max, double* min,
-                            double* max) {
+                            double* max) const {
   // Make sure user input is correct.
   if (t_1 > t_2) {
     const double temp = t_1;
@@ -85,7 +85,7 @@ bool Polynomial::findMinMax(double t_1, double t_2, int order_to_evaluate,
 
 bool Polynomial::findMinMax(double t_1, double t_2, int order_to_evaluate,
                             double* t_min, double* t_max, double* min,
-                            double* max) {
+                            double* max) const {
   Eigen::VectorXcd roots_of_derivative;
   if (findRootsJenkinsTraub(getCoefficients(order_to_evaluate + 1),
                             &roots_of_derivative) ||

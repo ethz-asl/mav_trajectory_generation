@@ -42,9 +42,6 @@ class FeasibilitySampling : public FeasibilityBase {
   // Checks a trajectory for input feasibility.
   virtual InputFeasibilityResult checkInputFeasibility(const Trajectory& trajectory);
 
-  // Checks if a trajectory stays within a set of half planes.
-  virtual bool checkHalfPlaneFeasibility(const Trajectory& trajectory);
-
  private:
   // Sets and samples the whole trajectory if not done already.
   bool sampleTrajectory(const Trajectory& trajectory);

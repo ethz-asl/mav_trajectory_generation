@@ -21,10 +21,10 @@
 #include "mav_trajectory_generation_ros/feasibility_recursive.h"
 
 #include <algorithm>
+#include <cmath>
 
 #include <Eigen/Core>
 
-#include <mav_msgs/default_values.h>
 #include <mav_trajectory_generation/motion_defines.h>
 
 namespace mav_trajectory_generation {
@@ -44,20 +44,29 @@ InputFeasibilityResult FeasibilityRecursive::checkInputFeasibility(
   }
 
   // Find roots to determine single axis minima / maxima:
-  const Roots roots_acc, roots_jerk, roots_snap;
+  Roots roots_acc, roots_jerk, roots_snap;
   roots_acc.resize(3);
   roots_jerk.resize(3);
   roots_snap.resize(3);
   for (size_t i = 0; i < 3; i++) {
-    roots_acc[i] = findRootsJenkinsTraub(segment[i].getCoefficients(),
-                                         derivative_order::ACCELERATION);
-    roots_jerk[i] = findRootsJenkinsTraub(segment[i].getCoefficients(),
-                                          derivative_order::JERK);
-    roots_snap[i] = findRootsJenkinsTraub(segment[i].getCoefficients(),
-                                          derivative_order::SNAP);
-    if (roots_acc[i].size() == 0 || roots_jerk[i].size() == 0 ||
-        roots_snap[i].size() == 0) {
-      // Failed root computation.
+    // Can not find roots for zero and one coefficient. Min/max lie on interval
+    // border.
+    if (segment.N() - derivative_order::ACCELERATION > 1 &&
+        !findRootsJenkinsTraub(
+            segment[i].getCoefficients(derivative_order::ACCELERATION),
+            &roots_acc[i])) {
+      return InputFeasibilityResult::kInputIndeterminable;
+    }
+    if (segment.N() - derivative_order::JERK > 1 &&
+        !findRootsJenkinsTraub(
+            segment[i].getCoefficients(derivative_order::JERK),
+            &roots_jerk[i])) {
+      return InputFeasibilityResult::kInputIndeterminable;
+    }
+    if (segment.N() - derivative_order::SNAP > 1 &&
+        !findRootsJenkinsTraub(
+            segment[i].getCoefficients(derivative_order::SNAP),
+            &roots_snap[i])) {
       return InputFeasibilityResult::kInputIndeterminable;
     }
   }
@@ -68,33 +77,61 @@ InputFeasibilityResult FeasibilityRecursive::checkInputFeasibility(
   double t_2 = segment.getTime();
   InputFeasibilityResult result = recursiveFeasibility(
       segment, roots_acc, roots_jerk, roots_snap, t_1, t_2);
+  if (result != InputFeasibilityResult::kInputFeasible) {
+    return result;
+  }
 
   if (segment.D() == 4) {
-    // Yaw feasibility (assumed independent in the rigid body model).
+    // Yaw feasibility (assumed independent of translation in the rigid body
+    // model). Check the single axis minimum / maximum yaw rate:
+    double yaw_rate_min, yaw_rate_max;
+    if (!segment[3].findMinMax(t_1, t_2, derivative_order::ANGULAR_VELOCITY,
+                               &yaw_rate_min, &yaw_rate_max)) {
+      return InputFeasibilityResult::kInputIndeterminable;
+    }
+    if (std::max(std::abs(yaw_rate_min), std::abs(yaw_rate_max)) >
+        input_constraints_.omega_z_max) {
+      return InputFeasibilityResult::kInputInfeasibleYawRates;
+    }
+    // Check the single axis minimum / maximum yaw acceleration:
+    double yaw_acc_min, yaw_acc_max;
+    if (!segment[3].findMinMax(t_1, t_2, derivative_order::ANGULAR_ACCELERATION,
+                               &yaw_acc_min, &yaw_acc_max)) {
+      return InputFeasibilityResult::kInputIndeterminable;
+    }
+    if (std::max(std::abs(yaw_acc_min), std::abs(yaw_acc_max)) >
+        input_constraints_.omega_dot_z_max) {
+      return InputFeasibilityResult::kInputInfeasibleYawAcc;
+    }
   }
+
+  // Segment definitely feasible.
   return result;
 }
 
 InputFeasibilityResult FeasibilityRecursive::recursiveFeasibility(
     const Segment& segment, const Roots& roots_acc, const Roots& roots_jerk,
     const Roots& roots_snap, double t_1, double t_2) const {
+  if (t_2 - t_1 < settings_.min_section_time_s) {
+    return InputFeasibilityResult::kInputIndeterminable;
+  }
   // Evaluate the thrust at the boundaries of the section:
   const double f_t_1 = evaluateThrust(segment, t_1);
   const double f_t_2 = evaluateThrust(segment, t_2);
-  if (std::max(f_t_1, f_t_2) > f_max) {
+  if (std::max(f_t_1, f_t_2) > input_constraints_.f_max) {
     return InputFeasibilityResult::kInputInfeasibleThrustHigh;
-  } else if (std::min(f_t_1, f_t_2) < f_min) {
+  } else if (std::min(f_t_1, f_t_2) < input_constraints_.f_min) {
     return InputFeasibilityResult::kInputInfeasibleThrustLow;
   }
 
   // Evaluate the velocity at the boundaries of the section:
   const double v_t_1 = segment.evaluate(t_1, derivative_order::VELOCITY).norm();
   const double v_t_2 = segment.evaluate(t_2, derivative_order::VELOCITY).norm();
-  if (std::max(v_t_1, v_t_2) > v_max) {
+  if (std::max(v_t_1, v_t_2) > input_constraints_.v_max) {
     return InputFeasibilityResult::kInputInfeasibleVelocity;
   }
 
-  // Upper and lower boundaries of thrust, velocity and jerk.
+  // Upper and lower bounds on thrust, velocity and jerk for this section.
   double f_min_sqr = 0.0;
   double f_max_sqr = 0.0;
   double v_max_sqr = 0.0;
@@ -103,14 +140,88 @@ InputFeasibilityResult FeasibilityRecursive::recursiveFeasibility(
   for (size_t i = 0; i < 3; i++) {
     // Find the minimum / maximum of each axis.
     double v_min, v_max, a_min, a_max, j_min, j_max;
+    segment[i].findMinMax(t_1, t_2, derivative_order::VELOCITY, roots_acc[i],
+                          &v_min, &v_max);
+    segment[i].findMinMax(t_1, t_2, derivative_order::ACCELERATION,
+                          roots_jerk[i], &a_min, &a_max);
+    segment[i].findMinMax(t_1, t_2, derivative_order::JERK, roots_snap[i],
+                          &j_min, &j_max);
 
+    // Distance from zero thrust point in this axis.
+    double f_i_min = a_min + gravity_[i];
+    double f_i_max = a_max + gravity_[i];
+    // Definitly infeasible:
+    // The thrust on a single axis is higher than the allowed total thrust.
+    if (std::max(std::pow(f_i_min, 2), std::pow(f_i_max, 2)) >
+        std::pow(input_constraints_.f_max, 2)) {
+      return InputFeasibilityResult::kInputInfeasibleThrustHigh;
+    }
+    // The velocity on a single axis is higher than the allowed total velocity.
+    if (std::max(std::pow(v_min, 2), std::pow(v_max, 2)) >
+        std::pow(input_constraints_.v_max, 2)) {
+      return InputFeasibilityResult::kInputInfeasibleVelocity;
+    }
+
+    // Add single axis extrema to lower bound on squared acceleration.
+    if (f_i_min * f_i_max < 0.0) {
+      // Sign of acceleration changes. The minimum squared value is zero.
+      f_min_sqr += 0.0;
+    } else {
+      f_min_sqr += std::pow(std::min(std::abs(f_i_min), std::abs(f_i_max)), 2);
+    }
+
+    // Add single axis extrema to upper bound on squared velocity, acceleration,
+    // and jerk.
+    f_max_sqr += std::pow(std::max(std::abs(f_i_min), std::abs(f_i_max)), 2);
+    v_max_sqr += std::pow(std::max(std::abs(v_min), std::abs(v_max)), 2);
+    j_max_sqr += std::pow(std::max(std::abs(j_min), std::abs(j_min)), 2);
   }
+
+  double f_lower_bound = std::sqrt(f_min_sqr);
+  double f_upper_bound = std::sqrt(f_max_sqr);
+  double v_upper_bound = std::sqrt(v_max_sqr);
+  double omega_xy_upper_bound;
+  // Divide-by-zero protection.
+  if (f_min_sqr > 1.0e-6) {
+    omega_xy_upper_bound = std::sqrt(j_max_sqr / f_min_sqr);
+  } else {
+    omega_xy_upper_bound = std::numeric_limits<double>::max();
+  }
+
+  // Definitely infeasible:
+  if (f_upper_bound < input_constraints_.f_min) {
+    return InputFeasibilityResult::kInputInfeasibleThrustLow;
+  }
+  if (f_lower_bound > input_constraints_.f_max) {
+    return InputFeasibilityResult::kInputInfeasibleThrustHigh;
+  }
+
+  // Possible infeasible (one of the bounds is exceeding the limits):
+  if (f_lower_bound < input_constraints_.f_min ||
+      f_upper_bound > input_constraints_.f_max ||
+      v_upper_bound > input_constraints_.v_max ||
+      omega_xy_upper_bound > input_constraints_.omega_xy_max) {
+    // Indeterminate. Must check more closely:
+    double t_half = (t_1 + t_2) / 2;
+    InputFeasibilityResult result_1 = recursiveFeasibility(
+        segment, roots_acc, roots_jerk, roots_snap, t_1, t_half);
+
+    if (result_1 == InputFeasibilityResult::kInputFeasible) {
+      // Continue with second half.
+      return recursiveFeasibility(segment, roots_acc, roots_jerk, roots_snap,
+                                  t_half, t_2);
+    } else {
+      // First half is already infeasible or inderterminate:
+      return result_1;
+    }
+  }
+  // Definitely feasible:
+  return InputFeasibilityResult::kInputFeasible;
 }
 
 double FeasibilityRecursive::evaluateThrust(const Segment& segment,
                                             double time) const {
-  return (segment.evaluate(time, derivative_order::ACCELERATION) +
-          Eigen::Vector3d(0.0, 0.0, mav_msgs::kGravity))
+  return (segment.evaluate(time, derivative_order::ACCELERATION) + gravity_)
       .norm();
 }
 }  // namespace mav_trajectory_generation

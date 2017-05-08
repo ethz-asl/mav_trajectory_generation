@@ -22,6 +22,8 @@
 
 #include <Eigen/Geometry>
 
+#include <mav_msgs/default_values.h>
+
 namespace mav_trajectory_generation {
 
 std::string getInputFeasibilityResultName(InputFeasibilityResult fr) {
@@ -87,13 +89,20 @@ HalfPlane::HalfPlane(const Eigen::Vector3d& a, const Eigen::Vector3d& b,
   normal_ = (b - a).cross(c - a).normalized();
 }
 
+FeasibilityBase::FeasibilityBase()
+    : gravity_((Eigen::Vector3d() << 0.0, 0.0, mav_msgs::kGravity).finished()) {
+}
+
 FeasibilityBase::FeasibilityBase(const InputConstraints& input_constraints)
-    : input_constraints_(input_constraints) {}
+    : input_constraints_(input_constraints),
+      gravity_((Eigen::Vector3d() << 0.0, 0.0, mav_msgs::kGravity).finished()) {
+}
 
 InputFeasibilityResult FeasibilityBase::checkInputFeasibility(
     const Trajectory& trajectory) {
+  InputFeasibilityResult result = InputFeasibilityResult::kInputIndeterminable;
   for (const Segment segment : trajectory.segments()) {
-    InputFeasibilityResult result = checkInputFeasibility(segment);
+    result = checkInputFeasibility(segment);
     if (result != InputFeasibilityResult::kInputFeasible) {
       return result;
     }
