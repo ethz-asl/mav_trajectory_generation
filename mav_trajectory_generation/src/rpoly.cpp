@@ -42,14 +42,18 @@ namespace mav_trajectory_generation {
 
 bool findRootsJenkinsTraub(const Eigen::VectorXd& coefficients_increasing,
                            Eigen::VectorXcd* roots) {
+  // Remove trailing zeros.
+  Eigen::VectorXd coefficients_increasing_min_order = coefficients_increasing;
+  if (!removeTrailingZeros(&coefficients_increasing_min_order)) {
+    return false;
+  }
   const Eigen::VectorXd coefficients_decreasing =
-      coefficients_increasing.reverse();
+      coefficients_increasing_min_order.reverse();
 
-  const int n_coefficients = coefficients_increasing.size();
+  const int n_coefficients = coefficients_decreasing.size();
   double* roots_real = new double[n_coefficients];
   double* roots_imag = new double[n_coefficients];
 
-  std::cout << "Coefficients decreasing: " << coefficients_decreasing.transpose() << std::endl;
   int ret =
       findRootsJenkinsTraub(coefficients_decreasing.data(), n_coefficients - 1,
                             roots_real, roots_imag, NULL);

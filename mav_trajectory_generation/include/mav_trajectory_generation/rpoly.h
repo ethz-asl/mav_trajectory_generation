@@ -51,6 +51,25 @@ int findRootsJenkinsTraub(const double* coefficients_decreasing, int degree,
 bool findRootsJenkinsTraub(const Eigen::VectorXd& coefficients_increasing,
                            Eigen::VectorXcd* roots);
 
+// Delete trailing zeros from a vector. Returns false if all zero.
+inline bool removeTrailingZeros(Eigen::VectorXd* coeffs) {
+  // Check if vector has all zero coefficients:
+  if (!((coeffs->array() != 0.0).any())) {
+    return false;
+  }
+
+  // Remove trailing zero-coefficients:
+  size_t last_non_zero_coefficient = 0;
+  for (size_t i = coeffs->size() - 1; i != -1; i--) {
+    if ((*coeffs)[i] != 0.0) {
+      last_non_zero_coefficient = i;
+      break;
+    }
+  }
+  coeffs->conservativeResize(last_non_zero_coefficient + 1);
+  return true;
+}
+
 // Finds the roots of a polynomial with real coefficients, using the
 // Jenkins-Traub method. Convenience method.
 Eigen::VectorXcd findRootsJenkinsTraub(
