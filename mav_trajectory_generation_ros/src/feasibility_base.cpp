@@ -54,17 +54,17 @@ InputConstraints::InputConstraints()
       v_max(4.0),
       omega_xy_max(M_PI),
       omega_z_max(M_PI / 2.0),
-      omega_dot_z_max(2.0 * M_PI) {}
+      omega_z_dot_max(2.0 * M_PI) {}
 
 InputConstraints::InputConstraints(double f_min, double f_max, double v_max,
                                    double omega_xy_max, double omega_z_max,
-                                   double omega_dot_z_max)
+                                   double omega_z_dot_max)
     : f_min(f_min),
       f_max(f_max),
       v_max(v_max),
       omega_xy_max(omega_xy_max),
       omega_z_max(omega_z_max),
-      omega_dot_z_max(omega_dot_z_max) {
+      omega_z_dot_max(omega_z_dot_max) {
   // Some sanity checks.
   CHECK_GT(f_min, 0.0);
   CHECK_GT(f_max, 0.0);
@@ -73,7 +73,7 @@ InputConstraints::InputConstraints(double f_min, double f_max, double v_max,
   CHECK_GT(v_max, 0.0);
   CHECK_GT(omega_xy_max, 0.0);
   CHECK_GT(omega_z_max, 0.0);
-  CHECK_GT(omega_dot_z_max, 0.0);
+  CHECK_GT(omega_z_dot_max, 0.0);
 }
 
 HalfPlane::HalfPlane(const Eigen::Vector3d& point,

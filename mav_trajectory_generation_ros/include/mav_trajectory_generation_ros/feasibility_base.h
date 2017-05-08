@@ -56,7 +56,7 @@ struct InputConstraints {
   InputConstraints();
   InputConstraints(double f_min, double f_max, double v_max,
                    double omega_xy_max, double omega_z_max,
-                   double omega_dot_z_max);
+                   double omega_z_dot_max);
 
   // TODO(rikba): Make class and use setter and getter to check user input,
   // e.g., 0 < f_min < f_max?
@@ -72,7 +72,7 @@ struct InputConstraints {
   // Maximum yaw rate [rad/s].
   double omega_z_max;
   // Maximum yaw acc [rad/s^2].
-  double omega_dot_z_max;
+  double omega_z_dot_max;
 };
 
 // A half plane is defined through a point and a normal.

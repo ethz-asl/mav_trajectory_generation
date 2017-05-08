@@ -21,10 +21,12 @@
 #include "mav_trajectory_generation_ros/feasibility_sampling.h"
 
 #include <mav_msgs/conversions.h>
+#include <mav_msgs/eigen_mav_msgs.h>
 
-#include "mav_trajectory_generation_ros/trajectory_sampling.h"
 
 namespace mav_trajectory_generation {
+const double kNumNanosecondsPerSecond = 1.0e9;
+
 FeasibilitySampling::Settings::Settings() : sampling_interval(0.01) {}
 
 FeasibilitySampling::FeasibilitySampling(const Settings& settings)
@@ -34,16 +36,44 @@ FeasibilitySampling::FeasibilitySampling(
     : FeasibilityBase(input_constraints), settings_(settings) {}
 
 InputFeasibilityResult FeasibilitySampling::checkInputFeasibility(
-    const Trajectory& trajectory) {
-  if (!sampleTrajectory(trajectory)) {
+    const Segment& segment) {
+  // Check user input.
+  if (segment.D() != 3 || segment.D() != 4) {
     return InputFeasibilityResult::kInputIndeterminable;
   }
 
-  for (size_t i = 0; i < states_.size(); i++) {
-    double thrust = states_[i].acceleration_B.norm();
-    double v = states_[i].velocity_W.norm();
-    double omega_xy = states_[i].angular_velocity_B.block<2, 1>(0, 0).norm();
-    double omega_z = std::fabs(states_[i].angular_velocity_B(2));
+  double t = 0.0;
+  while (t <= segment.getTime()) {
+    // Flat state:
+    Eigen::VectorXd position = segment.evaluate(t, derivative_order::POSITION);
+    Eigen::VectorXd velocity = segment.evaluate(t, derivative_order::VELOCITY);
+    Eigen::VectorXd acc = segment.evaluate(t, derivative_order::ACCELERATION);
+    Eigen::VectorXd jerk = segment.evaluate(t, derivative_order::JERK);
+    Eigen::VectorXd snap = segment.evaluate(t, derivative_order::SNAP);
+    int64_t time_from_start_ns = static_cast<int64_t>(t * kNumNanosecondsPerSecond);
+    mav_msgs::EigenTrajectoryPoint flat_state;
+    flat_state.position_W = position.head<3>();
+    flat_state.velocity_W = velocity.head<3>();
+    flat_state.acceleration_W = acc.head<3>();
+    flat_state.jerk_W = jerk.head<3>();
+    flat_state.snap_W = snap.head<3>();
+    flat_state.time_from_start_ns = time_from_start_ns;
+    if (segment.D() == 4) {
+      flat_state.setFromYaw(position(3));
+      flat_state.setFromYawRate(velocity(3));
+      flat_state.setFromYawAcc(acc(3));
+    }
+
+    // Full state:
+    mav_msgs::EigenMavState state;
+    EigenMavStateFromEigenTrajectoryPoint(flat_state, &state);
+
+    // Feasibility check:
+    double thrust = state.acceleration_B.norm();
+    double v = state.velocity_W.norm();
+    double omega_xy = state.angular_velocity_B.head<2>().norm();
+    double omega_z = std::fabs(state.angular_velocity_B(2));
+    double omega_z_dot = std::fabs(state.angular_acceleration_B(2));
     if (thrust < input_constraints_.f_min) {
       return InputFeasibilityResult::kInputInfeasibleThrustLow;
     } else if (thrust > input_constraints_.f_max) {
@@ -54,31 +84,13 @@ InputFeasibilityResult FeasibilitySampling::checkInputFeasibility(
       return InputFeasibilityResult::kInputInfeasibleRollPitchRates;
     } else if (omega_z > input_constraints_.omega_z_max) {
       return InputFeasibilityResult::kInputInfeasibleYawRates;
+    } else if (omega_z_dot > input_constraints_.omega_z_dot_max) {
+      return InputFeasibilityResult::kInputInfeasibleYawAcc;
     }
-  }
-return InputFeasibilityResult::kInputFeasible;
-}
 
-bool FeasibilitySampling::sampleTrajectory(const Trajectory& trajectory) {
-  // Check if already sampled.
-  if (trajectory == trajectory_) {
-    return true;
+    // Increment time.
+    t += settings_.sampling_interval;
   }
-  // Try to sample trajectory.
-  mav_msgs::EigenTrajectoryPointVector flat_states;
-  bool success = sampleWholeTrajectory(trajectory, settings_.sampling_interval,
-                                       &flat_states);
-  // Recover full state according to Mellinger.
-  states_.resize(flat_states.size());
-  for (size_t i = 0; i < flat_states.size(); i++) {
-    EigenMavStateFromEigenTrajectoryPoint(flat_states[i], &states_[i]);
-  }
-  // Save trajectory if successful.
-  if (!success) {
-    return false;
-  } else {
-    trajectory_ = trajectory;
-    return true;
-  }
+  return InputFeasibilityResult::kInputFeasible;
 }
 }  // namespace mav_trajectory_generation

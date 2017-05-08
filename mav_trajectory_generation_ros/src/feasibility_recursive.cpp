@@ -100,7 +100,7 @@ InputFeasibilityResult FeasibilityRecursive::checkInputFeasibility(
       return InputFeasibilityResult::kInputIndeterminable;
     }
     if (std::max(std::abs(yaw_acc_min), std::abs(yaw_acc_max)) >
-        input_constraints_.omega_dot_z_max) {
+        input_constraints_.omega_z_dot_max) {
       return InputFeasibilityResult::kInputInfeasibleYawAcc;
     }
   }

@@ -56,6 +56,8 @@ bool sampleTrajectoryAtTime(const Trajectory& trajectory, double sample_time,
         (trajectory.evaluate(sample_time, derivative_order::POSITION))(3));
     state->setFromYawRate(
         (trajectory.evaluate(sample_time, derivative_order::VELOCITY))(3));
+    state->setFromYawRate(
+        (trajectory.evaluate(sample_time, derivative_order::ACCELERATION))(3));
   }
   state->time_from_start_ns =
       static_cast<int64_t>(sample_time * kNumNanosecondsPerSecond);
@@ -109,6 +111,7 @@ bool sampleTrajectoryInRange(const Trajectory& trajectory, double min_time,
     if (trajectory.D() > 3) {
       state.setFromYaw(position[i](3));
       state.setFromYawRate(velocity[i](3));
+      state.setFromYawAcc(acceleration[i](3));
     }
   }
   return true;

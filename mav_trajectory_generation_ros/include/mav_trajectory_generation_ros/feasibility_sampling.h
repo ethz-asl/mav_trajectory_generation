@@ -39,16 +39,10 @@ class FeasibilitySampling : public FeasibilityBase {
   FeasibilitySampling(const Settings& settings);
   FeasibilitySampling(const Settings& settings,
                       const InputConstraints& input_constraints);
-  // Checks a trajectory for input feasibility.
-  virtual InputFeasibilityResult checkInputFeasibility(const Trajectory& trajectory);
+  // Checks a segment for input feasibility.
+  virtual InputFeasibilityResult checkInputFeasibility(const Segment& segment);
 
  private:
-  // Sets and samples the whole trajectory if not done already.
-  bool sampleTrajectory(const Trajectory& trajectory);
-  // The current trajectory.
-  Trajectory trajectory_;
-  // The sampled states along the trajectory (differentially flat assumption).
-  mav_msgs::EigenMavState::Vector states_;
   // The user settings.
   Settings settings_;
 };
