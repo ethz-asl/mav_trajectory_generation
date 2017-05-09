@@ -17,6 +17,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <random>
+
 #include <eigen-checks/gtest.h>
 
 #include <mav_trajectory_generation/polynomial_optimization_linear.h>
@@ -36,9 +41,24 @@ double createRandomDouble(double min, double max) {
          min;
 }
 
+void writeResultsToFile(const std::string& file_name, const std::vector<InputFeasibilityResult>& results) {
+  std::ofstream file;
+  file.open(file_name, std::ofstream::out | std::ofstream::trunc);
+  if (file.is_open()) {
+    for (const InputFeasibilityResult& result : results) {
+      file << getInputFeasibilityResultName(result) + "\n";
+    }
+    file.close();
+  }
+  else {
+    std::cout << "Unable to open file " << file_name << "." << std::endl;
+  }
+}
+
 TEST(PolynomialTest, CompareFeasibilityTests) {
+  std::srand(1234567);
   // Create random segments.
-  const int kNumSegments = 1e3;
+  const int kNumSegments = 1e1;
   const int kN = 12;
   const int kD = 4;
   Segment::Vector segments(kNumSegments, Segment(kN, kD));
@@ -49,7 +69,7 @@ TEST(PolynomialTest, CompareFeasibilityTests) {
     Vertex::Vector vertices_pos =
         createRandomVertices(derivative_order::SNAP, 1, kMinPos, kMaxPos);
     const double kApproxVMin = 2.0;
-    const double kApproxVMax = 5.0;
+    const double kApproxVMax = 3.0;
     double kApproxV = createRandomDouble(kApproxVMin, kApproxVMax);
     const double kApproxAMax = 5.0;
     std::vector<double> segment_times =
@@ -159,6 +179,26 @@ TEST(PolynomialTest, CompareFeasibilityTests) {
         result_recursive_10[i] == InputFeasibilityResult::kInputFeasible) {
       EXPECT_EQ(result_sampling_01[i], InputFeasibilityResult::kInputFeasible);
     }
+  }
+
+  // Write results to txt.
+  writeResultsToFile("result_sampling_01.txt", result_sampling_01);
+  writeResultsToFile("result_sampling_05.txt", result_sampling_05);
+  writeResultsToFile("result_sampling_10.txt", result_sampling_10);
+  writeResultsToFile("result_recursive_01.txt", result_recursive_01);
+  writeResultsToFile("result_recursive_05.txt", result_recursive_05);
+  writeResultsToFile("result_recursive_10.txt", result_recursive_10);
+
+  // Write timing to txt.
+  std::ofstream time_file;
+  std::string time_file_name("feasibility_times");
+  time_file.open("feasibility_times.txt",
+                 std::ofstream::out | std::ofstream::trunc);
+  if (time_file.is_open()) {
+    time_file << timing::Timing::Print() + "\n";
+    time_file.close();
+  } else {
+    std::cout << "Unable to open file " << time_file_name << "." << std::endl;
   }
 }
 
