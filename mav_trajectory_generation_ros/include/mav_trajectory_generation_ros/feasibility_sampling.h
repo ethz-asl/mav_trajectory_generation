@@ -21,6 +21,8 @@
 #ifndef MAV_TRAJECTORY_GENERATION_ROS_FEASIBILITY_SAMPLING_H_
 #define MAV_TRAJECTORY_GENERATION_ROS_FEASIBILITY_SAMPLING_H_
 
+#include <cmath>
+
 #include <mav_msgs/eigen_mav_msgs.h>
 #include <mav_trajectory_generation/trajectory.h>
 
@@ -31,9 +33,17 @@ namespace mav_trajectory_generation {
 // Sampling based input and position feasibility checks.
 class FeasibilitySampling : public FeasibilityBase {
  public:
-  struct Settings {
+  class Settings {
+   public:
     Settings();
-    double sampling_interval;
+
+    inline void setSamplingIntervalS(double sampling_interval_s) {
+      sampling_interval_s_ = std::abs(sampling_interval_s);
+    }
+    inline double getSamplingIntervalS() const { return sampling_interval_s_; }
+
+   private:
+    double sampling_interval_s_;
   };
 
   FeasibilitySampling() {}
@@ -43,7 +53,6 @@ class FeasibilitySampling : public FeasibilityBase {
   // Checks a segment for input feasibility.
   virtual InputFeasibilityResult checkInputFeasibility(const Segment& segment);
 
- private:
   // The user settings.
   Settings settings_;
 };

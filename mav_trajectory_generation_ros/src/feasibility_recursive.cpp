@@ -28,7 +28,7 @@
 #include <mav_trajectory_generation/motion_defines.h>
 
 namespace mav_trajectory_generation {
-FeasibilityRecursive::Settings::Settings() : min_section_time_s(0.05) {}
+FeasibilityRecursive::Settings::Settings() : min_section_time_s_(0.05) {}
 
 FeasibilityRecursive::FeasibilityRecursive(const Settings& settings)
     : FeasibilityBase(), settings_(settings) {}
@@ -90,7 +90,7 @@ InputFeasibilityResult FeasibilityRecursive::checkInputFeasibility(
       return InputFeasibilityResult::kInputIndeterminable;
     }
     if (std::max(std::abs(yaw_rate_min), std::abs(yaw_rate_max)) >
-        input_constraints_.omega_z_max) {
+        input_constraints_.getOmegaZMax()) {
       return InputFeasibilityResult::kInputInfeasibleYawRates;
     }
     // Check the single axis minimum / maximum yaw acceleration:
@@ -100,7 +100,7 @@ InputFeasibilityResult FeasibilityRecursive::checkInputFeasibility(
       return InputFeasibilityResult::kInputIndeterminable;
     }
     if (std::max(std::abs(yaw_acc_min), std::abs(yaw_acc_max)) >
-        input_constraints_.omega_z_dot_max) {
+        input_constraints_.getOmegaZDotMax()) {
       return InputFeasibilityResult::kInputInfeasibleYawAcc;
     }
   }
@@ -112,15 +112,15 @@ InputFeasibilityResult FeasibilityRecursive::checkInputFeasibility(
 InputFeasibilityResult FeasibilityRecursive::recursiveFeasibility(
     const Segment& segment, const Roots& roots_acc, const Roots& roots_jerk,
     const Roots& roots_snap, double t_1, double t_2) const {
-  if (t_2 - t_1 < settings_.min_section_time_s) {
+  if (t_2 - t_1 < settings_.getMinSectionTimeS()) {
     return InputFeasibilityResult::kInputIndeterminable;
   }
   // Evaluate the thrust at the boundaries of the section:
   const double f_t_1 = evaluateThrust(segment, t_1);
   const double f_t_2 = evaluateThrust(segment, t_2);
-  if (std::max(f_t_1, f_t_2) > input_constraints_.f_max) {
+  if (std::max(f_t_1, f_t_2) > input_constraints_.getFMax()) {
     return InputFeasibilityResult::kInputInfeasibleThrustHigh;
-  } else if (std::min(f_t_1, f_t_2) < input_constraints_.f_min) {
+  } else if (std::min(f_t_1, f_t_2) < input_constraints_.getFMin()) {
     return InputFeasibilityResult::kInputInfeasibleThrustLow;
   }
 
@@ -129,7 +129,7 @@ InputFeasibilityResult FeasibilityRecursive::recursiveFeasibility(
       segment.evaluate(t_1, derivative_order::VELOCITY).head<3>().norm();
   const double v_t_2 =
       segment.evaluate(t_2, derivative_order::VELOCITY).head<3>().norm();
-  if (std::max(v_t_1, v_t_2) > input_constraints_.v_max) {
+  if (std::max(v_t_1, v_t_2) > input_constraints_.getVMax()) {
     return InputFeasibilityResult::kInputInfeasibleVelocity;
   }
 
@@ -155,12 +155,12 @@ InputFeasibilityResult FeasibilityRecursive::recursiveFeasibility(
     // Definitly infeasible:
     // The thrust on a single axis is higher than the allowed total thrust.
     if (std::max(std::pow(f_i_min, 2), std::pow(f_i_max, 2)) >
-        std::pow(input_constraints_.f_max, 2)) {
+        std::pow(input_constraints_.getFMax(), 2)) {
       return InputFeasibilityResult::kInputInfeasibleThrustHigh;
     }
     // The velocity on a single axis is higher than the allowed total velocity.
     if (std::max(std::pow(v_min, 2), std::pow(v_max, 2)) >
-        std::pow(input_constraints_.v_max, 2)) {
+        std::pow(input_constraints_.getVMax(), 2)) {
       return InputFeasibilityResult::kInputInfeasibleVelocity;
     }
 
@@ -191,18 +191,18 @@ InputFeasibilityResult FeasibilityRecursive::recursiveFeasibility(
   }
 
   // Definitely infeasible:
-  if (f_upper_bound < input_constraints_.f_min) {
+  if (f_upper_bound < input_constraints_.getFMin()) {
     return InputFeasibilityResult::kInputInfeasibleThrustLow;
   }
-  if (f_lower_bound > input_constraints_.f_max) {
+  if (f_lower_bound > input_constraints_.getFMax()) {
     return InputFeasibilityResult::kInputInfeasibleThrustHigh;
   }
 
   // Possible infeasible (one of the bounds is exceeding the limits):
-  if (f_lower_bound < input_constraints_.f_min ||
-      f_upper_bound > input_constraints_.f_max ||
-      v_upper_bound > input_constraints_.v_max ||
-      omega_xy_upper_bound > input_constraints_.omega_xy_max) {
+  if (f_lower_bound < input_constraints_.getFMin() ||
+      f_upper_bound > input_constraints_.getFMax() ||
+      v_upper_bound > input_constraints_.getVMax() ||
+      omega_xy_upper_bound > input_constraints_.getOmegaXYMax()) {
     // Indeterminate. Must check more closely:
     double t_half = (t_1 + t_2) / 2;
     InputFeasibilityResult result_1 = recursiveFeasibility(

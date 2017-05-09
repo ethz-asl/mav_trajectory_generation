@@ -26,7 +26,7 @@
 namespace mav_trajectory_generation {
 const double kNumNanosecondsPerSecond = 1.0e9;
 
-FeasibilitySampling::Settings::Settings() : sampling_interval(0.01) {}
+FeasibilitySampling::Settings::Settings() : sampling_interval_s_(0.01) {}
 
 FeasibilitySampling::FeasibilitySampling(const Settings& settings)
     : FeasibilityBase(), settings_(settings) {}
@@ -76,22 +76,22 @@ InputFeasibilityResult FeasibilitySampling::checkInputFeasibility(
     double omega_xy = state.angular_velocity_B.head<2>().norm();
     double omega_z = std::fabs(state.angular_velocity_B(2));
     double omega_z_dot = std::fabs(state.angular_acceleration_B(2));
-    if (thrust < input_constraints_.f_min) {
+    if (thrust < input_constraints_.getFMin()) {
       return InputFeasibilityResult::kInputInfeasibleThrustLow;
-    } else if (thrust > input_constraints_.f_max) {
+    } else if (thrust > input_constraints_.getFMax()) {
       return InputFeasibilityResult::kInputInfeasibleThrustHigh;
-    } else if (v > input_constraints_.v_max) {
+    } else if (v > input_constraints_.getVMax()) {
       return InputFeasibilityResult::kInputInfeasibleVelocity;
-    } else if (omega_xy > input_constraints_.omega_xy_max) {
+    } else if (omega_xy > input_constraints_.getOmegaXYMax()) {
       return InputFeasibilityResult::kInputInfeasibleRollPitchRates;
-    } else if (omega_z > input_constraints_.omega_z_max) {
+    } else if (omega_z > input_constraints_.getOmegaZMax()) {
       return InputFeasibilityResult::kInputInfeasibleYawRates;
-    } else if (omega_z_dot > input_constraints_.omega_z_dot_max) {
+    } else if (omega_z_dot > input_constraints_.getOmegaZDotMax()) {
       return InputFeasibilityResult::kInputInfeasibleYawAcc;
     }
 
     // Increment time.
-    t += settings_.sampling_interval;
+    t += settings_.getSamplingIntervalS();
   }
   return InputFeasibilityResult::kInputFeasible;
 }

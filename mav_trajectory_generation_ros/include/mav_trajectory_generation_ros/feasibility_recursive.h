@@ -21,6 +21,8 @@
 #ifndef MAV_TRAJECTORY_GENERATION_ROS_FEASIBILITY_RECURSIVE_H_
 #define MAV_TRAJECTORY_GENERATION_ROS_FEASIBILITY_RECURSIVE_H_
 
+#include <cmath>
+
 #include <mav_trajectory_generation/segment.h>
 
 #include "mav_trajectory_generation_ros/feasibility_base.h"
@@ -49,12 +51,20 @@ class FeasibilityRecursive : public FeasibilityBase {
                       Eigen::aligned_allocator<Eigen::VectorXcd>>
       Roots;
 
-  struct Settings {
+  class Settings {
+   public:
     Settings();
+
+    inline void setMinSectionTimeS(double min_section_time_s) {
+      min_section_time_s_ = std::abs(min_section_time_s);
+    }
+    inline double getMinSectionTimeS() const { return min_section_time_s_; }
+
+   private:
     // The minimum section length the binary search is going to check. If the
     // trajectory is feasible with respect to an upper bound for this section
     // length it is considered overall feasible.
-    double min_section_time_s;
+    double min_section_time_s_;
   };
 
   FeasibilityRecursive() {}
@@ -65,6 +75,9 @@ class FeasibilityRecursive : public FeasibilityBase {
   // Checks a segment for input feasibility.
   virtual InputFeasibilityResult checkInputFeasibility(const Segment& segment);
 
+  
+  // The user settings.
+  Settings settings_;
  private:
   // Recursive test to determine velocity, acceleration, and angular rate (roll,
   // pitch) feasibility between t_1 and t_2.
@@ -75,9 +88,6 @@ class FeasibilityRecursive : public FeasibilityBase {
                                               double t_1, double t_2) const;
 
   double evaluateThrust(const Segment& segment, double time) const;
-
-  // The user settings.
-  Settings settings_;
 };
 }  // namespace mav_trajectory_generation
 
