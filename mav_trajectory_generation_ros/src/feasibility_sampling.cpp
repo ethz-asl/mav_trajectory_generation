@@ -31,6 +31,9 @@ FeasibilitySampling::Settings::Settings() : sampling_interval_s_(0.01) {}
 FeasibilitySampling::FeasibilitySampling(const Settings& settings)
     : FeasibilityBase(), settings_(settings) {}
 FeasibilitySampling::FeasibilitySampling(
+    const InputConstraints& input_constraints)
+    : FeasibilityBase(input_constraints) {}
+FeasibilitySampling::FeasibilitySampling(
     const Settings& settings, const InputConstraints& input_constraints)
     : FeasibilityBase(input_constraints), settings_(settings) {}
 

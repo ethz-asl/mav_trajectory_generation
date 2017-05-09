@@ -69,13 +69,14 @@ class FeasibilityRecursive : public FeasibilityBase {
 
   FeasibilityRecursive() {}
   FeasibilityRecursive(const Settings& settings);
+  FeasibilityRecursive(const InputConstraints& input_constraints);
   FeasibilityRecursive(const Settings& settings,
                        const InputConstraints& input_constraints);
 
   // Checks a segment for input feasibility.
   virtual InputFeasibilityResult checkInputFeasibility(const Segment& segment);
 
-  
+
   // The user settings.
   Settings settings_;
  private:

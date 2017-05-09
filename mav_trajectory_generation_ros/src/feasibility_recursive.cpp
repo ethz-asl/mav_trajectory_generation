@@ -33,6 +33,9 @@ FeasibilityRecursive::Settings::Settings() : min_section_time_s_(0.05) {}
 FeasibilityRecursive::FeasibilityRecursive(const Settings& settings)
     : FeasibilityBase(), settings_(settings) {}
 FeasibilityRecursive::FeasibilityRecursive(
+    const InputConstraints& input_constraints)
+    : FeasibilityBase(input_constraints) {}
+FeasibilityRecursive::FeasibilityRecursive(
     const Settings& settings, const InputConstraints& input_constraints)
     : FeasibilityBase(input_constraints), settings_(settings) {}
 

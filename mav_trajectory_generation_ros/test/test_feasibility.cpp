@@ -21,8 +21,8 @@
 
 #include <mav_trajectory_generation/polynomial_optimization_linear.h>
 #include <mav_trajectory_generation/segment.h>
-#include <mav_trajectory_generation/vertex.h>
 #include <mav_trajectory_generation/timing.h>
+#include <mav_trajectory_generation/vertex.h>
 
 #include "mav_trajectory_generation_ros/feasibility_recursive.h"
 #include "mav_trajectory_generation_ros/feasibility_sampling.h"
@@ -83,41 +83,83 @@ TEST(PolynomialTest, CompareFeasibilityTests) {
     EXPECT_EQ(trajectory.segments().size(), 1);
     segments[i] = trajectory.segments()[0];
   }
-  std::cout << "Created " << segments.size() << " random segments." << std::endl;
+  std::cout << "Created " << segments.size() << " random segments."
+            << std::endl;
 
-  // Check feasibility.
-  FeasibilitySampling feasibility_sampling;
-  FeasibilityRecursive feasibility_recursive;
+  // Set regular input constraints.
+  InputConstraints input_constraints;
+  input_constraints.setDefaultValues();
+
+  // Create feasibility checks with different user settings.
+  FeasibilitySampling feasibility_sampling_01(input_constraints);
+  feasibility_sampling_01.settings_.setSamplingIntervalS(0.01);
+  FeasibilitySampling feasibility_sampling_05(input_constraints);
+  feasibility_sampling_05.settings_.setSamplingIntervalS(0.05);
+  FeasibilitySampling feasibility_sampling_10(input_constraints);
+  feasibility_sampling_10.settings_.setSamplingIntervalS(0.10);
+
+  FeasibilityRecursive feasibility_recursive_01(input_constraints);
+  feasibility_recursive_01.settings_.setMinSectionTimeS(0.01);
+  FeasibilityRecursive feasibility_recursive_05(input_constraints);
+  feasibility_recursive_05.settings_.setMinSectionTimeS(0.05);
+  FeasibilityRecursive feasibility_recursive_10(input_constraints);
+  feasibility_recursive_10.settings_.setMinSectionTimeS(0.10);
 
   // Some statistics.
-  int num_feasible_recursive = 0;
-  int num_feasible_sampling = 0;
-  timing::Timer time_sampling("time_sampling", false);
-  timing::Timer time_recursive("time_recursive", false);
-  for (const Segment& segment : segments) {
+  std::vector<InputFeasibilityResult> result_sampling_01(kNumSegments);
+  std::vector<InputFeasibilityResult> result_sampling_05(kNumSegments);
+  std::vector<InputFeasibilityResult> result_sampling_10(kNumSegments);
 
-    time_sampling.Start();
-    InputFeasibilityResult result_sampling =
-        feasibility_sampling.checkInputFeasibility(segment);
-    time_sampling.Stop();
+  std::vector<InputFeasibilityResult> result_recursive_01(kNumSegments);
+  std::vector<InputFeasibilityResult> result_recursive_05(kNumSegments);
+  std::vector<InputFeasibilityResult> result_recursive_10(kNumSegments);
 
-    time_recursive.Start();
-    InputFeasibilityResult result_recursive =
-        feasibility_recursive.checkInputFeasibility(segment);
-    time_recursive.Stop();
+  timing::Timer time_sampling_01("time_sampling_01", false);
+  timing::Timer time_sampling_05("time_sampling_05", false);
+  timing::Timer time_sampling_10("time_sampling_10", false);
 
-    if (result_recursive == InputFeasibilityResult::kInputFeasible) {
-      num_feasible_recursive++;
-      EXPECT_EQ(result_sampling, result_recursive);
-    }
-    if (result_sampling == InputFeasibilityResult::kInputFeasible) {
-      num_feasible_sampling++;
+  timing::Timer time_recursive_01("time_recursive_01", false);
+  timing::Timer time_recursive_05("time_recursive_05", false);
+  timing::Timer time_recursive_10("time_recursive_10", false);
+  for (size_t i = 0; i < segments.size(); i++) {
+    time_sampling_01.Start();
+    result_sampling_01[i] =
+        feasibility_sampling_01.checkInputFeasibility(segments[i]);
+    time_sampling_01.Stop();
+
+    time_sampling_05.Start();
+    result_sampling_05[i] =
+        feasibility_sampling_05.checkInputFeasibility(segments[i]);
+    time_sampling_05.Stop();
+
+    time_sampling_10.Start();
+    result_sampling_10[i] =
+        feasibility_sampling_10.checkInputFeasibility(segments[i]);
+    time_sampling_10.Stop();
+
+    time_recursive_01.Start();
+    result_recursive_01[i] =
+        feasibility_recursive_01.checkInputFeasibility(segments[i]);
+    time_recursive_01.Stop();
+
+    time_recursive_05.Start();
+    result_recursive_05[i] =
+        feasibility_recursive_05.checkInputFeasibility(segments[i]);
+    time_recursive_05.Stop();
+
+    time_recursive_10.Start();
+    result_recursive_10[i] =
+        feasibility_recursive_10.checkInputFeasibility(segments[i]);
+    time_recursive_10.Stop();
+
+    // If the recursive test shows feasibility, the sampling test also needs to
+    // show feasibility.
+    if (result_recursive_01[i] == InputFeasibilityResult::kInputFeasible ||
+        result_recursive_05[i] == InputFeasibilityResult::kInputFeasible ||
+        result_recursive_10[i] == InputFeasibilityResult::kInputFeasible) {
+      EXPECT_EQ(result_sampling_01[i], InputFeasibilityResult::kInputFeasible);
     }
   }
-  std::cout << "Number of feasible trajectories in the recursive test: "
-            << num_feasible_recursive << " / " << kNumSegments << std::endl;
-  std::cout << "Number of feasible trajectories in the sampling test: "
-            << num_feasible_sampling << " / " << kNumSegments << std::endl;
 }
 
 int main(int argc, char** argv) {

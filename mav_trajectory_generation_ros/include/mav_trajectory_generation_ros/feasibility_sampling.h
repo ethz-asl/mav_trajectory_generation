@@ -48,6 +48,7 @@ class FeasibilitySampling : public FeasibilityBase {
 
   FeasibilitySampling() {}
   FeasibilitySampling(const Settings& settings);
+  FeasibilitySampling(const InputConstraints& input_constraints);
   FeasibilitySampling(const Settings& settings,
                       const InputConstraints& input_constraints);
   // Checks a segment for input feasibility.
