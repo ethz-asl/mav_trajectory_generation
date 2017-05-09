@@ -23,11 +23,14 @@
 #include <mav_trajectory_generation/segment.h>
 #include <mav_trajectory_generation/vertex.h>
 
+#include "mav_trajectory_generation_ros/feasibility_recursive.h"
+#include "mav_trajectory_generation_ros/feasibility_sampling.h"
+
 using namespace mav_trajectory_generation;
 
 TEST(PolynomialTest, CompareFeasibilityTests) {
   // Create random segments.
-  const int kNumSegments = 1e3;
+  const int kNumSegments = 1e1;
   const int kN = 12;
   const int kD = 4;
   Segment::Vector segments(kNumSegments, Segment(kN, kD));
@@ -67,8 +70,35 @@ TEST(PolynomialTest, CompareFeasibilityTests) {
     Trajectory trajectory =
         pos_trajectory.getTrajectoryWithAppendedDimension(yaw_trajectory);
 
+    EXPECT_EQ(trajectory.segments().size(), 1);
     segments[i] = trajectory.segments()[0];
   }
+
+  // Check feasibility.
+  FeasibilitySampling feasibility_sampling;
+  FeasibilityRecursive feasibility_recursive;
+
+  // Some statistics.
+  int num_feasible_recursive = 0;
+  int num_feasible_sampling = 0;
+  for (const Segment& segment : segments) {
+    std::cout << "segment D: " << segment.D() << std::endl;
+    InputFeasibilityResult result_sampling = feasibility_sampling.checkInputFeasibility(segment);
+    std::cout << "result_sampling: " << getInputFeasibilityResultName(result_sampling) << std::endl;
+    InputFeasibilityResult result_recursive = feasibility_recursive.checkInputFeasibility(segment);
+    std::cout << "result_recursive: " << getInputFeasibilityResultName(result_recursive) << std::endl;
+    if(result_recursive == InputFeasibilityResult::kInputFeasible) {
+      num_feasible_recursive++;
+      EXPECT_EQ(result_sampling, result_recursive);
+    }
+    if(result_sampling == InputFeasibilityResult::kInputFeasible) {
+      num_feasible_sampling++;
+    }
+  }
+  std::cout << "Number of feasible trajectories in the recursive test: "
+            << num_feasible_recursive << " / " << kNumSegments << std::endl;
+  std::cout << "Number of feasible trajectories in the sampling test: "
+            << num_feasible_sampling << " / " << kNumSegments << std::endl;
 }
 
 int main(int argc, char** argv) {

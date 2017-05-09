@@ -39,7 +39,7 @@ FeasibilityRecursive::FeasibilityRecursive(
 InputFeasibilityResult FeasibilityRecursive::checkInputFeasibility(
     const Segment& segment) {
   // Check user input.
-  if (segment.D() != 3 || segment.D() != 4) {
+  if (!(segment.D() == 3 || segment.D() == 4)) {
     return InputFeasibilityResult::kInputIndeterminable;
   }
 
@@ -125,8 +125,10 @@ InputFeasibilityResult FeasibilityRecursive::recursiveFeasibility(
   }
 
   // Evaluate the velocity at the boundaries of the section:
-  const double v_t_1 = segment.evaluate(t_1, derivative_order::VELOCITY).norm();
-  const double v_t_2 = segment.evaluate(t_2, derivative_order::VELOCITY).norm();
+  const double v_t_1 =
+      segment.evaluate(t_1, derivative_order::VELOCITY).head<3>().norm();
+  const double v_t_2 =
+      segment.evaluate(t_2, derivative_order::VELOCITY).head<3>().norm();
   if (std::max(v_t_1, v_t_2) > input_constraints_.v_max) {
     return InputFeasibilityResult::kInputInfeasibleVelocity;
   }
@@ -221,7 +223,8 @@ InputFeasibilityResult FeasibilityRecursive::recursiveFeasibility(
 
 double FeasibilityRecursive::evaluateThrust(const Segment& segment,
                                             double time) const {
-  return (segment.evaluate(time, derivative_order::ACCELERATION) + gravity_)
+  return (segment.evaluate(time, derivative_order::ACCELERATION).head<3>() +
+          gravity_)
       .norm();
 }
 }  // namespace mav_trajectory_generation

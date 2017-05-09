@@ -36,6 +36,7 @@ class FeasibilitySampling : public FeasibilityBase {
     double sampling_interval;
   };
 
+  FeasibilitySampling() {}
   FeasibilitySampling(const Settings& settings);
   FeasibilitySampling(const Settings& settings,
                       const InputConstraints& input_constraints);

@@ -57,6 +57,7 @@ class FeasibilityRecursive : public FeasibilityBase {
     double min_section_time_s;
   };
 
+  FeasibilityRecursive() {}
   FeasibilityRecursive(const Settings& settings);
   FeasibilityRecursive(const Settings& settings,
                        const InputConstraints& input_constraints);
