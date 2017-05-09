@@ -46,7 +46,7 @@ void writeResultsToFile(const std::string& file_name, const std::vector<InputFea
   file.open(file_name, std::ofstream::out | std::ofstream::trunc);
   if (file.is_open()) {
     for (const InputFeasibilityResult& result : results) {
-      file << getInputFeasibilityResultName(result) + "\n";
+      file << std::to_string(result) + "\n";
     }
     file.close();
   }
