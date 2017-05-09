@@ -22,15 +22,23 @@
 #include <mav_trajectory_generation/polynomial_optimization_linear.h>
 #include <mav_trajectory_generation/segment.h>
 #include <mav_trajectory_generation/vertex.h>
+#include <mav_trajectory_generation/timing.h>
 
 #include "mav_trajectory_generation_ros/feasibility_recursive.h"
 #include "mav_trajectory_generation_ros/feasibility_sampling.h"
 
 using namespace mav_trajectory_generation;
 
+double createRandomDouble(double min, double max) {
+  // No seed for repeatability.
+  return (max - min) * (static_cast<double>(std::rand()) /
+                        static_cast<double>(RAND_MAX)) +
+         min;
+}
+
 TEST(PolynomialTest, CompareFeasibilityTests) {
   // Create random segments.
-  const int kNumSegments = 1e1;
+  const int kNumSegments = 1e3;
   const int kN = 12;
   const int kD = 4;
   Segment::Vector segments(kNumSegments, Segment(kN, kD));
@@ -40,10 +48,12 @@ TEST(PolynomialTest, CompareFeasibilityTests) {
     const Eigen::VectorXd kMaxPos = -kMinPos;
     Vertex::Vector vertices_pos =
         createRandomVertices(derivative_order::SNAP, 1, kMinPos, kMaxPos);
-    const double kApproxVMax = 3.0;
+    const double kApproxVMin = 2.0;
+    const double kApproxVMax = 5.0;
+    double kApproxV = createRandomDouble(kApproxVMin, kApproxVMax);
     const double kApproxAMax = 5.0;
     std::vector<double> segment_times =
-        estimateSegmentTimes(vertices_pos, kApproxVMax, kApproxAMax);
+        estimateSegmentTimes(vertices_pos, kApproxV, kApproxAMax);
     PolynomialOptimization<kN> opt_pos(3);
     opt_pos.setupFromVertices(vertices_pos, segment_times,
                               derivative_order::SNAP);
@@ -60,7 +70,7 @@ TEST(PolynomialTest, CompareFeasibilityTests) {
         derivative_order::ANGULAR_ACCELERATION, 1, kMinYaw, kMaxYaw);
     PolynomialOptimization<kN> opt_yaw(1);
     opt_yaw.setupFromVertices(vertices_yaw, segment_times,
-                              derivative_order::ANGULAR_VELOCITY);
+                              derivative_order::ANGULAR_ACCELERATION);
     opt_yaw.solveLinear();
     Segment::Vector yaw_segments;
     opt_yaw.getSegments(&yaw_segments);
@@ -73,6 +83,7 @@ TEST(PolynomialTest, CompareFeasibilityTests) {
     EXPECT_EQ(trajectory.segments().size(), 1);
     segments[i] = trajectory.segments()[0];
   }
+  std::cout << "Created " << segments.size() << " random segments." << std::endl;
 
   // Check feasibility.
   FeasibilitySampling feasibility_sampling;
@@ -81,17 +92,25 @@ TEST(PolynomialTest, CompareFeasibilityTests) {
   // Some statistics.
   int num_feasible_recursive = 0;
   int num_feasible_sampling = 0;
+  timing::Timer time_sampling("time_sampling", false);
+  timing::Timer time_recursive("time_recursive", false);
   for (const Segment& segment : segments) {
-    std::cout << "segment D: " << segment.D() << std::endl;
-    InputFeasibilityResult result_sampling = feasibility_sampling.checkInputFeasibility(segment);
-    std::cout << "result_sampling: " << getInputFeasibilityResultName(result_sampling) << std::endl;
-    InputFeasibilityResult result_recursive = feasibility_recursive.checkInputFeasibility(segment);
-    std::cout << "result_recursive: " << getInputFeasibilityResultName(result_recursive) << std::endl;
-    if(result_recursive == InputFeasibilityResult::kInputFeasible) {
+
+    time_sampling.Start();
+    InputFeasibilityResult result_sampling =
+        feasibility_sampling.checkInputFeasibility(segment);
+    time_sampling.Stop();
+
+    time_recursive.Start();
+    InputFeasibilityResult result_recursive =
+        feasibility_recursive.checkInputFeasibility(segment);
+    time_recursive.Stop();
+
+    if (result_recursive == InputFeasibilityResult::kInputFeasible) {
       num_feasible_recursive++;
       EXPECT_EQ(result_sampling, result_recursive);
     }
-    if(result_sampling == InputFeasibilityResult::kInputFeasible) {
+    if (result_sampling == InputFeasibilityResult::kInputFeasible) {
       num_feasible_sampling++;
     }
   }
@@ -103,5 +122,9 @@ TEST(PolynomialTest, CompareFeasibilityTests) {
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
+
+  int result = RUN_ALL_TESTS();
+  timing::Timing::Print(std::cout);
+
+  return result;
 }
