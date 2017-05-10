@@ -2,22 +2,22 @@ function [ result_string ] = feasibilityResultToString( result_int )
 %FEASIBILITYRESULTTOSTRING According to feasibility_base.cpp.
 switch result_int
 case 0
-  result_string = "Feasible";
+  result_string = 'Feasible';
 case 1
-  result_string = "Indeterminable";
+  result_string = 'Indeterminable';
 case 2
-  result_string = "InfeasibleThrustHigh";
+  result_string = 'InfeasibleThrustHigh';
 case 3
-  result_string = "InfeasibleThrustLow";
+  result_string = 'InfeasibleThrustLow';
 case 4
-  result_string = "InfeasibleVelocity";
+  result_string = 'InfeasibleVelocity';
 case 5
-  result_string = "InfeasibleRollPitchRates";
+  result_string = 'InfeasibleRollPitchRates';
 case 6
-  result_string = "InfeasibleYawRates";
+  result_string = 'InfeasibleYawRates';
 case 7
-  result_string = "InfeasibleYawAcc";
+  result_string = 'InfeasibleYawAcc';
 otherwise
-  result_string = "Unknown!";
+  result_string = 'Unknown!';
 end
 
