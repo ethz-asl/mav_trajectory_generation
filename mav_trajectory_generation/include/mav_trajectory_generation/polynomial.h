@@ -42,7 +42,8 @@ class Polynomial {
 
   // Maximum degree of a polynomial for which the static derivative (basis
   // coefficient) matrix should be evaluated for.
-  static constexpr int kMaxN = 12;
+  // kMaxN = max. convolution size for N = 12.
+  static constexpr int kMaxN = 12 + 11 - 1;
   // One static shared across all members of the class, computed up to order
   // kMaxN.
   static Eigen::MatrixXd base_coefficients_;
@@ -159,7 +160,7 @@ class Polynomial {
   // Finds all candidates for the minimum and maximum between t_start and t_end
   // by evaluating the roots of the polynomial's derivative.
   void findMinMaxCandidates(
-      double t_start, double t_end, int derivative,
+      double t_start, double t_end,
       const Eigen::VectorXcd& roots_derivative_of_derivative,
       std::vector<double>* candidates) const;
 

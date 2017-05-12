@@ -96,7 +96,7 @@ bool Segment::computeMaximumMagnitudeCandidates(
       convolved_coefficients += Polynomial::convolve(d, dd);
     }
     Polynomial polynomial_convolved(convolved_coefficients);
-    if (!polynomial_convolved.findMinMaxCandidates(t_start, t_end, derivative,
+    if (!polynomial_convolved.findMinMaxCandidates(t_start, t_end, -1,
                                                    candidates)) {
       return false;
     }

@@ -26,7 +26,7 @@
 namespace mav_trajectory_generation {
 
 void Polynomial::findMinMaxCandidates(
-    double t_start, double t_end, int derivative,
+    double t_start, double t_end,
     const Eigen::VectorXcd& roots_derivative_of_derivative,
     std::vector<double>* candidates) const {
   CHECK_NOTNULL(candidates);
@@ -65,8 +65,8 @@ bool Polynomial::findMinMaxCandidates(double t_start, double t_end,
                              &roots_derivative_of_derivative)) {
     return false;
   } else {
-    findMinMaxCandidates(t_start, t_end, derivative,
-                         roots_derivative_of_derivative, candidates);
+    findMinMaxCandidates(t_start, t_end, roots_derivative_of_derivative,
+                         candidates);
     return true;
   }
 }
@@ -79,8 +79,8 @@ bool Polynomial::findMinMax(
   CHECK_NOTNULL(max);
   // Find candidates in interval t_start to t_end computing the roots.
   std::vector<double> candidates;
-  findMinMaxCandidates(t_start, t_end, derivative,
-                       roots_derivative_of_derivative, &candidates);
+  findMinMaxCandidates(t_start, t_end, roots_derivative_of_derivative,
+                       &candidates);
   // Evaluate minimum and maximum.
   return findMinMax(candidates, derivative, min, max);
 }
