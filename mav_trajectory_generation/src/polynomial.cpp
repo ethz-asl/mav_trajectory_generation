@@ -20,6 +20,8 @@
 
 #include "mav_trajectory_generation/polynomial.h"
 
+#include <algorithm>
+
 namespace mav_trajectory_generation {
 
 Eigen::MatrixXd computeBaseCoefficients(int N) {
@@ -37,6 +39,25 @@ Eigen::MatrixXd computeBaseCoefficients(int N) {
     order--;
   }
   return base_coefficients;
+}
+
+Eigen::VectorXd Polynomial::convolve(const Eigen::VectorXd& data,
+                                            const Eigen::VectorXd& kernel) {
+  const int convolution_dimension = data.size() + kernel.size() - 1;
+  Eigen::VectorXd convolved = Eigen::VectorXd::Zero(convolution_dimension);
+  Eigen::VectorXd kernel_reverse = kernel.reverse();
+
+  for (int i = 0; i < convolution_dimension; i++) {
+    const int data_idx = i - kernel.size() + 1;
+
+    int lower_bound = std::max(0, -data_idx);
+    int upper_bound = std::min(kernel.size(), data.size() - data_idx);
+
+    for (int kernel_idx = lower_bound; kernel_idx < upper_bound; ++kernel_idx) {
+      convolved[i] += kernel_reverse[kernel_idx] * data[data_idx + kernel_idx];
+    }
+  }
+  return convolved;
 }
 
 Eigen::MatrixXd Polynomial::base_coefficients_ =

@@ -55,6 +55,14 @@ class Polynomial {
     CHECK_EQ(N_, coeffs.size()) << "Number of coefficients has to match.";
   }
 
+  Polynomial(const Eigen::VectorXd& coeffs)
+      : N_(coeffs.size()), coefficients_(coeffs) {}
+
+  // The product of two polynomials is the convolution of their coefficients.
+  inline Polynomial operator*(const Polynomial& rhs) const {
+    return Polynomial(convolve(coefficients_, rhs.coefficients_));
+  }
+
   /// Gets the number of coefficients (order + 1) of the polynomial.
   int N() const { return N_; }
 
@@ -176,6 +184,11 @@ class Polynomial {
     baseCoeffsWithTime(N, derivative, t, &c);
     return c;
   }
+
+  // Discrete convolution of two vectors.
+  // convolve(d, k)[m] = sum(d[m - n] * k[n])
+  static Eigen::VectorXd convolve(const Eigen::VectorXd& data,
+                                  const Eigen::VectorXd& kernel);
 
  private:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
