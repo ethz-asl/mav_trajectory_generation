@@ -23,7 +23,6 @@
 
 #include <glog/logging.h>
 #include <Eigen/Core>
-#include <Eigen/StdVector>
 #include <chrono>
 #include <map>
 #include <vector>
