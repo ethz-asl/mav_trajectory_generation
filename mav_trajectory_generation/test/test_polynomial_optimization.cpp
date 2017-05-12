@@ -200,8 +200,8 @@ TEST(MavTrajectoryGeneration, PathPlanning_A_matrix_inversion) {
     PolynomialOptimization<N>::setupMappingMatrix(t, &A);
     PolynomialOptimization<N>::invertMappingMatrix(A, &Ai);
     Ai_eigen = A.inverse();
-    EXPECT_TRUE(EIGEN_MATRIX_NEAR(Ai, Ai_eigen, 1.0e-10)) << "time was " << t
-                                                          << std::endl;
+    EXPECT_TRUE(EIGEN_MATRIX_NEAR(Ai, Ai_eigen, 1.0e-10))
+        << "time was " << t << std::endl;
   }
 }
 
@@ -745,7 +745,7 @@ TEST(MavTrajectoryGeneration, 2_vertices_rand) {
     opt.getSegments(&segments);
 
     checkPath(vertices, segments);
-    }
+  }
 }
 
 void createTestPolynomials() {
