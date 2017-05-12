@@ -42,7 +42,8 @@ class Polynomial {
 
   // Maximum degree of a polynomial for which the static derivative (basis
   // coefficient) matrix should be evaluated for.
-  static constexpr int kMaxN = 12;
+  // kMaxN = max. convolution size for N = 12.
+  static constexpr int kMaxN = 12 + 11 - 1;
   // One static shared across all members of the class, computed up to order
   // kMaxN.
   static Eigen::MatrixXd base_coefficients_;
@@ -55,11 +56,18 @@ class Polynomial {
     CHECK_EQ(N_, coeffs.size()) << "Number of coefficients has to match.";
   }
 
+  Polynomial(const Eigen::VectorXd& coeffs)
+      : N_(coeffs.size()), coefficients_(coeffs) {}
+
   inline bool operator==(const Polynomial& rhs) const {
     return coefficients_ == rhs.coefficients_;
   }
   inline bool operator!=(const Polynomial& rhs) const {
     return !operator==(rhs);
+  }
+  // The product of two polynomials is the convolution of their coefficients.
+  inline Polynomial operator*(const Polynomial& rhs) const {
+    return Polynomial(convolve(coefficients_, rhs.coefficients_));
   }
 
   /// Gets the number of coefficients (order + 1) of the polynomial.
@@ -149,26 +157,37 @@ class Polynomial {
     return findRootsJenkinsTraub(coefficients_);
   }
 
-  // Computes the minimum and maximum of a polynomial between time t_1 and t_2.
-  bool findMinMax(double t_1, double t_2, int order_to_evaluate,
-                  const Eigen::VectorXcd& roots_of_derivative, double* t_min,
-                  double* t_max, double* min, double* max) const;
-  inline bool findMinMax(double t_1, double t_2, int order_to_evaluate,
-                         const Eigen::VectorXcd& roots_of_derivative,
-                         double* min, double* max) const {
-    double t_min, t_max;
-    return findMinMax(t_1, t_2, order_to_evaluate, roots_of_derivative, &t_min,
-                      &t_max, min, max);
-  }
-  // Computes the minimum and maximum of a polynomial between time t_1 and t_2.
-  // Additionally computes the roots.
-  bool findMinMax(double t_1, double t_2, int order_to_evaluate, double* t_min,
-                  double* t_max, double* min, double* max) const;
-  inline bool findMinMax(double t_1, double t_2, int order_to_evaluate,
-                         double* min, double* max) const {
-    double t_min, t_max;
-    return findMinMax(t_1, t_2, order_to_evaluate, &t_min, &t_max, min, max);
-  }
+  // Finds all candidates for the minimum and maximum between t_start and t_end
+  // by evaluating the roots of the polynomial's derivative.
+  void findMinMaxCandidates(
+      double t_start, double t_end,
+      const Eigen::VectorXcd& roots_derivative_of_derivative,
+      std::vector<double>* candidates) const;
+
+  // Finds all candidates for the minimum and maximum between t_start and t_end
+  // by evaluating the roots of the polynomial. Computes the roots explicitely.
+  bool findMinMaxCandidates(double t_start, double t_end, int derivative,
+                            std::vector<double>* candidates) const;
+
+  // Computes the minimum and maximum of a polynomial between time t_start and
+  // t_end. Returns the minimum and maximum as pair<t, value>.
+  bool findMinMax(double t_start, double t_end, int derivative,
+                  const Eigen::VectorXcd& roots_derivative_of_derivative,
+                  std::pair<double, double>* min,
+                  std::pair<double, double>* max) const;
+
+  // Computes the minimum and maximum of a polynomial between time t_start and
+  // t_end. Returns the minimum and maximum as pair<t, value>.
+  // This version finds the minimum and maximum candidates explicitely.
+  bool findMinMax(double t_start, double t_end, int derivative,
+                  std::pair<double, double>* min,
+                  std::pair<double, double>* max) const;
+
+  // Computes the minimum and maximum of a polynomial among a candidate set.
+  // Returns the minimum and maximum as pair<t, value>.
+  bool findMinMax(const std::vector<double>& candidates, int derivative,
+                  std::pair<double, double>* min,
+                  std::pair<double, double>* max) const;
 
   // Computes the base coefficients with the according powers of t, as
   // e.g. needed for computation of (in)equality constraints.
@@ -203,6 +222,15 @@ class Polynomial {
     Eigen::VectorXd c(N);
     baseCoeffsWithTime(N, derivative, t, &c);
     return c;
+  }
+
+  // Discrete convolution of two vectors.
+  // convolve(d, k)[m] = sum(d[m - n] * k[n])
+  static Eigen::VectorXd convolve(const Eigen::VectorXd& data,
+                                  const Eigen::VectorXd& kernel);
+
+  static inline int getConvolutionLength(int data_size, int kernel_size) {
+    return data_size + kernel_size - 1;
   }
 
  private:

@@ -21,6 +21,7 @@
 #ifndef MAV_TRAJECTORY_GENERATION_TRAJECTORY_H_
 #define MAV_TRAJECTORY_GENERATION_TRAJECTORY_H_
 
+#include "mav_trajectory_generation/extremum.h"
 #include "mav_trajectory_generation/segment.h"
 
 namespace mav_trajectory_generation {
@@ -91,6 +92,9 @@ class Trajectory {
   void evaluateRange(double t_start, double t_end, double dt,
                      int derivative_order, std::vector<Eigen::VectorXd>* result,
                      std::vector<double>* sampling_times = nullptr) const;
+
+  // Compute the analytic maximum of magnitude for a given derivative.
+  Extremum computeMaximumOfMagnitude(int derivative) const;
 
  private:
   int D_;            // Number of dimensions.

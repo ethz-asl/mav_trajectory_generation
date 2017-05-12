@@ -40,17 +40,39 @@
 
 namespace mav_trajectory_generation {
 
+int findLastNonZeroCoeff(const Eigen::VectorXd& coefficients) {
+  int last_non_zero_coefficient = -1;
+
+  // Find last non-zero coefficient:
+  for (size_t i = coefficients.size() - 1; i != -1; i--) {
+    if (coefficients(i) != 0.0) {
+      last_non_zero_coefficient = i;
+      break;
+    }
+  }
+  return last_non_zero_coefficient;
+}
+
 bool findRootsJenkinsTraub(const Eigen::VectorXd& coefficients_increasing,
                            Eigen::VectorXcd* roots) {
-  // Remove trailing zeros.
-  Eigen::VectorXd coefficients_increasing_min_order = coefficients_increasing;
-  if (!removeTrailingZeros(&coefficients_increasing_min_order)) {
-    return false;
+  // Remove trailing zeros and reverse coefficients.
+  const int last_non_zero_coefficient =
+      findLastNonZeroCoeff(coefficients_increasing);
+  if (last_non_zero_coefficient == -1) {
+    // The polynomial has all zero coefficients and has no roots.
+    roots->resize(0);
+    return true;
   }
-  const Eigen::VectorXd coefficients_decreasing =
-      coefficients_increasing_min_order.reverse();
+
+  Eigen::VectorXd coefficients_decreasing =
+      coefficients_increasing.head(last_non_zero_coefficient + 1).reverse();
 
   const int n_coefficients = coefficients_decreasing.size();
+  if (n_coefficients < 2) {
+    // The polynomial is 0th order and has no roots.
+    roots->resize(0);
+    return true;
+  }
   double* roots_real = new double[n_coefficients];
   double* roots_imag = new double[n_coefficients];
 
