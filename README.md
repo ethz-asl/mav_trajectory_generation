@@ -97,7 +97,7 @@ Necessary includes:
 ```c++
 mav_trajectory_generation::Vertex::Vector vertices;
 const int dimension = 3;
-const int derivative_to_optimize = mav_planning_utils::derivative_order::SNAP;
+const int derivative_to_optimize = mav_trajectory_generation::derivative_order::SNAP;
 mav_trajectory_generation::Vertex start(dimension), middle(3dimension end(dimension);
 ```
 
