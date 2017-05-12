@@ -87,22 +87,22 @@ InputFeasibilityResult FeasibilityRecursive::checkInputFeasibility(
   if (segment.D() == 4) {
     // Yaw feasibility (assumed independent of translation in the rigid body
     // model). Check the single axis minimum / maximum yaw rate:
-    double yaw_rate_min, yaw_rate_max;
+    std::pair<double, double> yaw_rate_min, yaw_rate_max;
     if (!segment[3].findMinMax(t_1, t_2, derivative_order::ANGULAR_VELOCITY,
                                &yaw_rate_min, &yaw_rate_max)) {
       return InputFeasibilityResult::kInputIndeterminable;
     }
-    if (std::max(std::abs(yaw_rate_min), std::abs(yaw_rate_max)) >
+    if (std::max(std::abs(yaw_rate_min.second), std::abs(yaw_rate_max.second)) >
         input_constraints_.getOmegaZMax()) {
       return InputFeasibilityResult::kInputInfeasibleYawRates;
     }
     // Check the single axis minimum / maximum yaw acceleration:
-    double yaw_acc_min, yaw_acc_max;
+    std::pair<double, double> yaw_acc_min, yaw_acc_max;
     if (!segment[3].findMinMax(t_1, t_2, derivative_order::ANGULAR_ACCELERATION,
                                &yaw_acc_min, &yaw_acc_max)) {
       return InputFeasibilityResult::kInputIndeterminable;
     }
-    if (std::max(std::abs(yaw_acc_min), std::abs(yaw_acc_max)) >
+    if (std::max(std::abs(yaw_acc_min.second), std::abs(yaw_acc_max.second)) >
         input_constraints_.getOmegaZDotMax()) {
       return InputFeasibilityResult::kInputInfeasibleYawAcc;
     }
@@ -144,7 +144,7 @@ InputFeasibilityResult FeasibilityRecursive::recursiveFeasibility(
 
   for (size_t i = 0; i < 3; i++) {
     // Find the minimum / maximum of each axis.
-    double v_min, v_max, a_min, a_max, j_min, j_max;
+    std::pair<double, double> v_min, v_max, a_min, a_max, j_min, j_max;
     segment[i].findMinMax(t_1, t_2, derivative_order::VELOCITY, roots_acc[i],
                           &v_min, &v_max);
     segment[i].findMinMax(t_1, t_2, derivative_order::ACCELERATION,
@@ -153,8 +153,8 @@ InputFeasibilityResult FeasibilityRecursive::recursiveFeasibility(
                           &j_min, &j_max);
 
     // Distance from zero thrust point in this axis.
-    double f_i_min = a_min + gravity_[i];
-    double f_i_max = a_max + gravity_[i];
+    double f_i_min = a_min.second + gravity_[i];
+    double f_i_max = a_max.second + gravity_[i];
     // Definitly infeasible:
     // The thrust on a single axis is higher than the allowed total thrust.
     if (std::max(std::pow(f_i_min, 2), std::pow(f_i_max, 2)) >
@@ -162,7 +162,7 @@ InputFeasibilityResult FeasibilityRecursive::recursiveFeasibility(
       return InputFeasibilityResult::kInputInfeasibleThrustHigh;
     }
     // The velocity on a single axis is higher than the allowed total velocity.
-    if (std::max(std::pow(v_min, 2), std::pow(v_max, 2)) >
+    if (std::max(std::pow(v_min.second, 2), std::pow(v_max.second, 2)) >
         std::pow(input_constraints_.getVMax(), 2)) {
       return InputFeasibilityResult::kInputInfeasibleVelocity;
     }
@@ -178,8 +178,10 @@ InputFeasibilityResult FeasibilityRecursive::recursiveFeasibility(
     // Add single axis extrema to upper bound on squared velocity, acceleration,
     // and jerk.
     f_max_sqr += std::pow(std::max(std::abs(f_i_min), std::abs(f_i_max)), 2);
-    v_max_sqr += std::pow(std::max(std::abs(v_min), std::abs(v_max)), 2);
-    j_max_sqr += std::pow(std::max(std::abs(j_min), std::abs(j_min)), 2);
+    v_max_sqr +=
+        std::pow(std::max(std::abs(v_min.second), std::abs(v_max.second)), 2);
+    j_max_sqr +=
+        std::pow(std::max(std::abs(j_min.second), std::abs(j_min.second)), 2);
   }
 
   double f_lower_bound = std::sqrt(f_min_sqr);
