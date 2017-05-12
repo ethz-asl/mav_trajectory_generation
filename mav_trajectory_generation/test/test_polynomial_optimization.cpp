@@ -678,8 +678,6 @@ TEST(MavTrajectoryGeneration, 2_vertices_setup) {
   start_vertex.addConstraint(derivative_order::POSITION, kStartX);
   start_vertex.addConstraint(derivative_order::VELOCITY, 0.0);
   start_vertex.addConstraint(derivative_order::ACCELERATION, 0.0);
-  start_vertex.addConstraint(derivative_order::JERK, 0.0);
-  start_vertex.addConstraint(derivative_order::SNAP, 0.0);
 
   Vertex goal_vertex = start_vertex;
   const double kGoalX = 5.0;
@@ -721,17 +719,21 @@ TEST(MavTrajectoryGeneration, 2_vertices_rand) {
   const int kMaxDerivative = derivative_order::SNAP;
   const size_t kNumSegments = 1;
   Eigen::VectorXd min_pos, max_pos;
-  min_pos = Eigen::Vector3d::Constant(-50);
+  min_pos = Eigen::Vector3d::Constant(-50.0);
   max_pos = -min_pos;
   const int kSeed = 12345;
-  const size_t kNumSetups = 100;
+  const size_t kNumSetups = 1e3;
   for (size_t i = 0; i < kNumSetups; i++) {
     Vertex::Vector vertices;
     vertices = createRandomVertices(kMaxDerivative, kNumSegments, min_pos,
-                                    max_pos, kSeed);
+                                    max_pos, kSeed + i);
+    // Remove constraint to have at least one free constraint.
+    for (Vertex& vertex : vertices) {
+      EXPECT_TRUE(vertex.removeConstraint(derivative_order::SNAP));
+    }
+
     const double kApproxVMax = 3.0;
     const double kApproxAMax = 5.0;
-
     std::vector<double> segment_times =
         estimateSegmentTimes(vertices, kApproxVMax, kApproxAMax);
 
@@ -743,7 +745,7 @@ TEST(MavTrajectoryGeneration, 2_vertices_rand) {
     opt.getSegments(&segments);
 
     checkPath(vertices, segments);
-  }
+    }
 }
 
 void createTestPolynomials() {
