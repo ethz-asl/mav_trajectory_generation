@@ -78,7 +78,7 @@ std::ostream& operator<<(std::ostream& stream,
 
 bool Segment::computeMaximumMagnitudeCandidates(
     int derivative, double t_start, double t_end,
-    std::vector<double>* candidates) {
+    std::vector<double>* candidates) const {
   CHECK_NOTNULL(candidates);
   if (D_ > 1) {
     const int n_d = N_ - derivative;
@@ -108,6 +108,28 @@ bool Segment::computeMaximumMagnitudeCandidates(
     }
   }
   return true;
+}
+
+Extremum Segment::computeMaximumOfMagnitude(
+    int derivative, std::vector<Extremum>* candidates) const {
+  if (candidates != nullptr) {
+    candidates->clear();
+  }
+  Extremum extremum;
+  std::vector<double> extrema_candidates;
+  extrema_candidates.reserve(N_ - 1);
+  computeMaximumMagnitudeCandidates(derivative, &extrema_candidates);
+
+  for (const double& t : extrema_candidates) {
+    const Extremum candidate(t, evaluate(t, derivative).norm(), 0);
+    if (candidate > extremum) {
+      extremum = candidate;
+    }
+    if (candidates != nullptr) {
+      candidates->emplace_back(candidate);
+    }
+  }
+  return extremum;
 }
 
 }  // namespace mav_trajectory_generation

@@ -30,6 +30,7 @@
 
 #include "mav_trajectory_generation/motion_defines.h"
 #include "mav_trajectory_generation/polynomial.h"
+#include "mav_trajectory_generation/extremum.h"
 
 namespace mav_trajectory_generation {
 
@@ -90,13 +91,25 @@ class Segment {
   // were found by Jenkins-Traub.
   bool computeMaximumMagnitudeCandidates(int derivative, double t_start,
                                          double t_end,
-                                         std::vector<double>* candidates);
+                                         std::vector<double>* candidates) const;
+
   // Convenience method with t_start = 0.0 and t_end = segment_time.
   inline bool computeMaximumMagnitudeCandidates(
-      int derivative, std::vector<double>* candidates) {
+      int derivative, std::vector<double>* candidates) const {
     return computeMaximumMagnitudeCandidates(derivative, 0.0, time_,
                                              candidates);
   }
+
+  // Computes the global maximum of the magnitude of the path in the
+  // specified derivative.
+  // This uses computeSegmentMaximumMagnitudeCandidates to compute the
+  // candidates for each segment.
+  // Derivative = Derivative of position, in which to find the maxima.
+  // Output: candidates = Vector containing the candidate times for the global
+  // maximum, i.e. all local maxima. Optional, can be set to nullptr if not
+  // needed. Output: return = The global maximum of the path.
+  Extremum computeMaximumOfMagnitude(
+      int derivative, std::vector<Extremum>* candidates = nullptr) const;
 
  protected:
   Polynomial::Vector polynomials_;

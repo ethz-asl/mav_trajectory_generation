@@ -35,6 +35,7 @@ struct Extremum {
       : time(_time), value(_value), segment_idx(_segment_idx) {}
 
   bool operator<(const Extremum& rhs) const { return value < rhs.value; }
+  bool operator>(const Extremum& rhs) const { return value > rhs.value; }
 
   double
       time;  // Time where the extremum occurs, relative to the segment start.
