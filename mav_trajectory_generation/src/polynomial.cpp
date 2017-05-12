@@ -34,7 +34,7 @@ void Polynomial::findMinMaxCandidates(
   candidates->reserve(roots_derivative_of_derivative.size() + 2);
   candidates->push_back(t_start);
   candidates->push_back(t_end);
-  for (size_t i = 2; i < roots_derivative_of_derivative.size(); i++) {
+  for (size_t i = 0; i < roots_derivative_of_derivative.size(); i++) {
     // Only real roots are considered as critical points.
     if (std::abs(roots_derivative_of_derivative[i].imag()) >
         std::numeric_limits<double>::epsilon()) {
@@ -105,24 +105,24 @@ bool Polynomial::findMinMax(const std::vector<double>& candidates,
   CHECK_NOTNULL(min);
   CHECK_NOTNULL(max);
   if (candidates.empty()) {
-    LOG(WARNING) << "Cannot find extrema from empty candidates vector.";
+    LOG(WARNING) << "Cannot find extrema from an empty candidates vector.";
     return false;
   }
   min->first = candidates[0];
   min->second = std::numeric_limits<double>::max();
   max->first = candidates[0];
-  max->second = std::numeric_limits<double>::min();
+  max->second = std::numeric_limits<double>::lowest();
 
   for (const double& t : candidates) {
     const double value = evaluate(t, derivative);
-  if (value < min->second) {
+    if (value < min->second) {
       min->first = t;
       min->second = value;
-  }
-  if (value > max->second) {
+    }
+    if (value > max->second) {
       max->first = t;
       max->second = value;
-  }
+    }
   }
   return true;
 }

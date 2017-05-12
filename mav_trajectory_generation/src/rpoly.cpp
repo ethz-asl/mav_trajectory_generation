@@ -38,8 +38,6 @@
 
 #include "mav_trajectory_generation/rpoly.h"
 
-#include <glog/logging.h>
-
 namespace mav_trajectory_generation {
 
 int findLastNonZeroCoeff(const Eigen::VectorXd& coefficients) {
@@ -61,15 +59,20 @@ bool findRootsJenkinsTraub(const Eigen::VectorXd& coefficients_increasing,
   const int last_non_zero_coefficient =
       findLastNonZeroCoeff(coefficients_increasing);
   if (last_non_zero_coefficient == -1) {
-    LOG(WARNING)
-        << "The polynomial has all zero coefficients. Cannot find roots.";
-    return false;
+    // The polynomial has all zero coefficients and has no roots.
+    roots->resize(0);
+    return true;
   }
 
   Eigen::VectorXd coefficients_decreasing =
       coefficients_increasing.head(last_non_zero_coefficient + 1).reverse();
 
   const int n_coefficients = coefficients_decreasing.size();
+  if (n_coefficients < 2) {
+    // The polynomial is 0th order and has no roots.
+    roots->resize(0);
+    return true;
+  }
   double* roots_real = new double[n_coefficients];
   double* roots_imag = new double[n_coefficients];
 
