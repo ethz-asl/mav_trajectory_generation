@@ -83,19 +83,23 @@ class Segment {
   // roots. Derivative = Derivative of position, in which to find the maxima.
   // Input: segment = Segment to find the maximum.
   // Input: t_start = Only maxima >= t_start are returned. Usually set to 0.
-  // Input: t_stop = Only maxima <= t_stop are returned. Usually set to
+  // Input: derivative = Only maxima <= t_stop are returned. Usually set to
   // segment time.
+  // Input: dimensions = Vector containing the dimensions that are evaluated.
+  // Usually [0, 1, 2] for position.
   // Output: candidates = Vector containing the candidate times for a maximum.
   // Returns whether the computation succeeded -- false means no candidates
   // were found by Jenkins-Traub.
-  bool computeMaximumMagnitudeCandidates(int derivative, double t_start,
-                                         double t_end,
-                                         std::vector<double>* candidates) const;
+  bool computeMaximumMagnitudeCandidates(
+      int derivative, double t_start, double t_end,
+      const std::vector<int>& dimensions,
+      std::vector<double>* candidates) const;
 
   // Convenience method with t_start = 0.0 and t_end = segment_time.
   inline bool computeMaximumMagnitudeCandidates(
-      int derivative, std::vector<double>* candidates) const {
-    return computeMaximumMagnitudeCandidates(derivative, 0.0, time_,
+      int derivative, const std::vector<int>& dimensions,
+      std::vector<double>* candidates) const {
+    return computeMaximumMagnitudeCandidates(derivative, 0.0, time_, dimensions,
                                              candidates);
   }
 
@@ -103,12 +107,17 @@ class Segment {
   // specified derivative.
   // This uses computeSegmentMaximumMagnitudeCandidates to compute the
   // candidates for each segment.
-  // Derivative = Derivative of position, in which to find the maxima.
+  // Input: derivative = Derivative of position, in which to find the maxima.
+  // Input: dimensions = Vector containing the dimensions that are evaluated.
+  // Usually [0, 1, 2] for position.
+  // Output: extremum = The global maximum of the path.
   // Output: candidates = Vector containing the candidate times for the global
   // maximum, i.e. all local maxima. Optional, can be set to nullptr if not
-  // needed. Output: return = The global maximum of the path.
-  Extremum computeMaximumOfMagnitude(
-      int derivative, std::vector<Extremum>* candidates = nullptr) const;
+  // needed.
+  // Output: return = root search may fail.
+  bool computeMaximumOfMagnitude(
+      int derivative, const std::vector<int>& dimensions,
+      Extremum* extremum, std::vector<Extremum>* candidates = nullptr) const;
 
  protected:
   Polynomial::Vector polynomials_;

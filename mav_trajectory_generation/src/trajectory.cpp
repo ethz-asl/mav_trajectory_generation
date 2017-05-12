@@ -176,18 +176,25 @@ Trajectory Trajectory::getTrajectoryWithAppendedDimension(
   return traj;
 }
 
-Extremum Trajectory::computeMaximumOfMagnitude(int derivative) const {
+bool Trajectory::computeMaximumOfMagnitude(int derivative,
+                                           const std::vector<int>& dimensions,
+                                           Extremum* extremum) const {
+  CHECK_NOTNULL(extremum);
+  *extremum = Extremum();
+
   int segment_idx = 0;
-  Extremum extremum;
   for (const Segment& s : segments_) {
-    Extremum candidate = s.computeMaximumOfMagnitude(derivative);
-    if (candidate > extremum) {
-      extremum = candidate;
-      extremum.segment_idx = segment_idx;
+    Extremum candidate;
+    if (!s.computeMaximumOfMagnitude(derivative, dimensions, &candidate)) {
+      return false;
+    }
+    if (candidate > *extremum) {
+      *extremum = candidate;
+      extremum->segment_idx = segment_idx;
     }
     ++segment_idx;
   }
-  return extremum;
+  return true;
 }
 
 }  // namespace mav_trajectory_generation

@@ -93,8 +93,12 @@ class Trajectory {
                      int derivative_order, std::vector<Eigen::VectorXd>* result,
                      std::vector<double>* sampling_times = nullptr) const;
 
-  // Compute the analytic maximum of magnitude for a given derivative.
-  Extremum computeMaximumOfMagnitude(int derivative) const;
+  // Compute the analytic maximum of magnitude for a given derivative and
+  // dimensions,e.g., [0, 1, 2] for position.
+  // Returns false in case of extrumum calculation failure.
+  bool computeMaximumOfMagnitude(int derivative,
+                                 const std::vector<int>& dimensions,
+                                 Extremum* extremum) const;
 
  private:
   int D_;            // Number of dimensions.
