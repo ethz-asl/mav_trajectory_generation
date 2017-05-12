@@ -23,7 +23,6 @@
 
 #include <glog/logging.h>
 #include <Eigen/Sparse>
-#include <Eigen/StdVector>
 #include <tuple>
 
 #include "mav_trajectory_generation/extremum.h"

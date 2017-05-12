@@ -200,8 +200,8 @@ TEST(MavTrajectoryGeneration, PathPlanning_A_matrix_inversion) {
     PolynomialOptimization<N>::setupMappingMatrix(t, &A);
     PolynomialOptimization<N>::invertMappingMatrix(A, &Ai);
     Ai_eigen = A.inverse();
-    EXPECT_TRUE(EIGEN_MATRIX_NEAR(Ai, Ai_eigen, 1.0e-10)) << "time was " << t
-                                                          << std::endl;
+    EXPECT_TRUE(EIGEN_MATRIX_NEAR(Ai, Ai_eigen, 1.0e-10))
+        << "time was " << t << std::endl;
   }
 }
 
@@ -718,20 +718,20 @@ TEST(MavTrajectoryGeneration, 2_vertices_setup) {
 
 // Test 2 vertices setup
 TEST(MavTrajectoryGeneration, 2_vertices_rand) {
-  const int kMaxDerivative = derivative_order::SNAP;
+  const int kMaxDerivative = derivative_order::ACCELERATION;
   const size_t kNumSegments = 1;
   Eigen::VectorXd min_pos, max_pos;
-  min_pos = Eigen::Vector3d::Constant(-50);
+  min_pos = Eigen::Vector3d::Constant(-50.0);
   max_pos = -min_pos;
   const int kSeed = 12345;
-  const size_t kNumSetups = 100;
+  const size_t kNumSetups = 1e2;
   for (size_t i = 0; i < kNumSetups; i++) {
     Vertex::Vector vertices;
     vertices = createRandomVertices(kMaxDerivative, kNumSegments, min_pos,
-                                    max_pos, kSeed);
+                                    max_pos, kSeed + i);
+
     const double kApproxVMax = 3.0;
     const double kApproxAMax = 5.0;
-
     std::vector<double> segment_times =
         estimateSegmentTimes(vertices, kApproxVMax, kApproxAMax);
 

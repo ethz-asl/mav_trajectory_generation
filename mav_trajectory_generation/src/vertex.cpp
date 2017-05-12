@@ -92,6 +92,17 @@ void Vertex::addConstraint(int derivative_order,
   constraints_[derivative_order] = constraint;
 }
 
+bool Vertex::removeConstraint(int type) {
+  Constraints::iterator it = constraints_.find(type);
+  if (it != constraints_.end()) {
+    constraints_.erase(it);
+    return true;
+  } else {
+    // Constraint not found.
+    return false;
+  }
+}
+
 void Vertex::makeStartOrEnd(const Eigen::VectorXd& constraint,
                             int up_to_derivative) {
   addConstraint(derivative_order::POSITION, constraint);
@@ -158,9 +169,9 @@ std::vector<double> estimateSegmentTimes(const Vertex::Vector& vertices,
     vertices[i].getConstraint(derivative_order::POSITION, &start);
     vertices[i + 1].getConstraint(derivative_order::POSITION, &end);
     double distance = (end - start).norm();
-    double t = distance / v_max * 2 * (1.0 +
-                                       magic_fabian_constant * v_max / a_max *
-                                           exp(-distance / v_max * 2));
+    double t = distance / v_max * 2 *
+               (1.0 + magic_fabian_constant * v_max / a_max *
+                          exp(-distance / v_max * 2));
     segment_times.push_back(t);
   }
   return segment_times;
