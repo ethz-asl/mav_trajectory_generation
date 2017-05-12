@@ -678,6 +678,8 @@ TEST(MavTrajectoryGeneration, 2_vertices_setup) {
   start_vertex.addConstraint(derivative_order::POSITION, kStartX);
   start_vertex.addConstraint(derivative_order::VELOCITY, 0.0);
   start_vertex.addConstraint(derivative_order::ACCELERATION, 0.0);
+  start_vertex.addConstraint(derivative_order::JERK, 0.0);
+  start_vertex.addConstraint(derivative_order::SNAP, 0.0);
 
   Vertex goal_vertex = start_vertex;
   const double kGoalX = 5.0;
