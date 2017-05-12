@@ -329,7 +329,7 @@ template <int _N>
 bool PolynomialOptimization<_N>::solveLinear() {
   CHECK(derivative_to_optimize_ >= 0 &&
         derivative_to_optimize_ <= kHighestDerivativeToOptimize);
-  // Catch fully constraint case:
+  // Catch the fully constrained case:
   if (n_free_constraints_ == 0) {
     LOG(WARNING) << "No free constraints set in the vertices. Polynomial can "
                     "not be optimized. Outputting fully constrained polynomial.";

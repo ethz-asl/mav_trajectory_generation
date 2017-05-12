@@ -718,21 +718,17 @@ TEST(MavTrajectoryGeneration, 2_vertices_setup) {
 
 // Test 2 vertices setup
 TEST(MavTrajectoryGeneration, 2_vertices_rand) {
-  const int kMaxDerivative = derivative_order::SNAP;
+  const int kMaxDerivative = derivative_order::ACCELERATION;
   const size_t kNumSegments = 1;
   Eigen::VectorXd min_pos, max_pos;
   min_pos = Eigen::Vector3d::Constant(-50.0);
   max_pos = -min_pos;
   const int kSeed = 12345;
-  const size_t kNumSetups = 1e3;
+  const size_t kNumSetups = 1e2;
   for (size_t i = 0; i < kNumSetups; i++) {
     Vertex::Vector vertices;
     vertices = createRandomVertices(kMaxDerivative, kNumSegments, min_pos,
                                     max_pos, kSeed + i);
-    // Remove constraint to have at least one free constraint.
-    for (Vertex& vertex : vertices) {
-      EXPECT_TRUE(vertex.removeConstraint(derivative_order::SNAP));
-    }
 
     const double kApproxVMax = 3.0;
     const double kApproxAMax = 5.0;
