@@ -92,6 +92,17 @@ void Vertex::addConstraint(int derivative_order,
   constraints_[derivative_order] = constraint;
 }
 
+bool Vertex::removeConstraint(int type) {
+  Constraints::iterator it = constraints_.find(type);
+  if (it != constraints_.end()) {
+    constraints_.erase(it);
+    return true;
+  } else {
+    // Constraint not found.
+    return false;
+  }
+}
+
 void Vertex::makeStartOrEnd(const Eigen::VectorXd& constraint,
                             int up_to_derivative) {
   addConstraint(derivative_order::POSITION, constraint);
