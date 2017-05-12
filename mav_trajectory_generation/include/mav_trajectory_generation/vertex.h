@@ -56,13 +56,17 @@ class Vertex {
   // Adds a constraint for the specified derivative order with the given
   // value. If this is a multi-dimensional vertex, all dimensions are
   // set to the same value.
-  void addConstraint(int derivative_order, double value) {
+  inline void addConstraint(int derivative_order, double value) {
     constraints_[derivative_order] = ConstraintValue::Constant(D_, value);
   }
 
   // Adds a constraint for the derivative specified in type with the given
   // values in the constraint vector. The dimension has to match the derivative.
   void addConstraint(int type, const Eigen::VectorXd& constraint);
+
+  // Removes a constraint for the derivative specified in type. Returns false if
+  // constraint was not set.
+  bool removeConstraint(int type);
 
   // Sets a constraint for position and sets all derivatives up to
   // (including) up_to_derivative to zero. Convenience method for
