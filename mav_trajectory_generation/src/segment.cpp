@@ -22,6 +22,19 @@
 
 namespace mav_trajectory_generation {
 
+bool Segment::operator==(const Segment& rhs) const {
+  if (D_ != rhs.D_ || time_ != rhs.time_) {
+    return false;
+  } else {
+    for (size_t i = 0; i < D(); i++) {
+      if (polynomials_[i] != rhs[i]) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
 Polynomial& Segment::operator[](size_t idx) {
   CHECK_LT(idx, static_cast<size_t>(D_));
   return polynomials_[idx];
@@ -61,6 +74,40 @@ std::ostream& operator<<(std::ostream& stream,
   for (const Segment& s : segments) stream << s << std::endl;
 
   return stream;
+}
+
+bool Segment::computeMaximumMagnitudeCandidates(
+    int derivative, double t_start, double t_end,
+    std::vector<double>* candidates) {
+  CHECK_NOTNULL(candidates);
+  if (D_ > 1) {
+    const int n_d = N_ - derivative;
+    const int n_dd = n_d - 1;
+    const int convolved_coefficients_length =
+        Polynomial::getConvolutionLength(n_d, n_dd);
+    Eigen::VectorXd convolved_coefficients(convolved_coefficients_length);
+    convolved_coefficients.setZero();
+    for (const Polynomial& p : polynomials_) {
+      // Our coefficients are INCREASING, so when you take the derivative,
+      // only the lower powers of t have non-zero coefficients.
+      // So we take the head.
+      Eigen::VectorXd d = p.getCoefficients(derivative).head(n_d);
+      Eigen::VectorXd dd = p.getCoefficients(derivative + 1).head(n_dd);
+      convolved_coefficients += Polynomial::convolve(d, dd);
+    }
+    Polynomial polynomial_convolved(convolved_coefficients);
+    if (!polynomial_convolved.findMinMaxCandidates(t_start, t_end, derivative,
+                                                   candidates)) {
+      return false;
+    }
+  } else {
+    // For dimension == 1  we can simply evaluate the roots of the derivative.
+    if (!polynomials_[0].findMinMaxCandidates(t_start, t_end, derivative,
+                                              candidates)) {
+      return false;
+    }
+  }
+  return true;
 }
 
 }  // namespace mav_trajectory_generation

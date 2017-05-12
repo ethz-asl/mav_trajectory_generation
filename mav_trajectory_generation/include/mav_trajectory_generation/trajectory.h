@@ -32,6 +32,11 @@ class Trajectory {
   Trajectory() : D_(0), N_(0) {}
   ~Trajectory() {}
 
+  bool operator==(const Trajectory& rhs) const;
+  inline bool operator!=(const Trajectory& rhs) const {
+    return !operator==(rhs);
+  }
+
   int D() const { return D_; }
   int N() const { return N_; }
   int K() const { return segments_.size(); }

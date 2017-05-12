@@ -22,6 +22,20 @@
 
 namespace mav_trajectory_generation {
 
+bool Trajectory::operator==(const Trajectory& rhs) const {
+  if (segments_.size() != rhs.segments_.size()) {
+    // Different number of segments.
+    return false;
+  } else {
+    for (size_t i = 0; i < K(); i++) {
+      if (segments_ != rhs.segments_) {
+        return false;
+      }
+    }
+    return true;
+  }
+}
+
 Eigen::VectorXd Trajectory::evaluate(double t, int derivative_order) const {
   double accumulated_time = 0.0;
 

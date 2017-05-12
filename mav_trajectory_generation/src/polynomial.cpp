@@ -21,8 +21,111 @@
 #include "mav_trajectory_generation/polynomial.h"
 
 #include <algorithm>
+#include <limits>
 
 namespace mav_trajectory_generation {
+
+void Polynomial::findMinMaxCandidates(
+    double t_start, double t_end, int derivative,
+    const Eigen::VectorXcd& roots_derivative_of_derivative,
+    std::vector<double>* candidates) const {
+  CHECK_NOTNULL(candidates);
+  candidates->clear();
+  candidates->reserve(roots_derivative_of_derivative.size() + 2);
+  candidates->push_back(t_start);
+  candidates->push_back(t_end);
+  for (size_t i = 2; i < roots_derivative_of_derivative.size(); i++) {
+    // Only real roots are considered as critical points.
+    if (std::abs(roots_derivative_of_derivative[i].imag()) >
+        std::numeric_limits<double>::epsilon()) {
+      continue;
+    }
+    const double candidate = roots_derivative_of_derivative[i].real();
+    // Do not evaluate points outside the domain.
+    if (candidate < std::min(t_start, t_end) ||
+        candidate > std::max(t_start, t_end)) {
+      continue;
+    } else {
+      candidates->push_back(candidate);
+    }
+  }
+}
+
+bool Polynomial::findMinMaxCandidates(double t_start, double t_end,
+                                      int derivative,
+                                      std::vector<double>* candidates) const {
+  CHECK_NOTNULL(candidates);
+  candidates->clear();
+  if (N_ - derivative - 1 < 0) {
+    LOG(WARNING) << "N - derivative - 1 has to be at least 0.";
+    return false;
+  }
+  Eigen::VectorXcd roots_derivative_of_derivative;
+  if (!findRootsJenkinsTraub(getCoefficients(derivative + 1),
+                             &roots_derivative_of_derivative)) {
+    return false;
+  } else {
+    findMinMaxCandidates(t_start, t_end, derivative,
+                         roots_derivative_of_derivative, candidates);
+    return true;
+  }
+}
+
+bool Polynomial::findMinMax(
+    double t_start, double t_end, int derivative,
+    const Eigen::VectorXcd& roots_derivative_of_derivative,
+    std::pair<double, double>* min, std::pair<double, double>* max) const {
+  CHECK_NOTNULL(min);
+  CHECK_NOTNULL(max);
+  // Find candidates in interval t_start to t_end computing the roots.
+  std::vector<double> candidates;
+  findMinMaxCandidates(t_start, t_end, derivative,
+                       roots_derivative_of_derivative, &candidates);
+  // Evaluate minimum and maximum.
+  return findMinMax(candidates, derivative, min, max);
+}
+
+bool Polynomial::findMinMax(double t_start, double t_end, int derivative,
+                            std::pair<double, double>* min,
+                            std::pair<double, double>* max) const {
+  CHECK_NOTNULL(min);
+  CHECK_NOTNULL(max);
+  // Find candidates in interval t_start to t_end by computing the roots.
+  std::vector<double> candidates;
+  if (!findMinMaxCandidates(t_start, t_end, derivative, &candidates)) {
+    return false;
+  }
+  // Evaluate minimum and maximum.
+  return findMinMax(candidates, derivative, min, max);
+}
+
+bool Polynomial::findMinMax(const std::vector<double>& candidates,
+                            int derivative, std::pair<double, double>* min,
+                            std::pair<double, double>* max) const {
+  CHECK_NOTNULL(min);
+  CHECK_NOTNULL(max);
+  if (candidates.empty()) {
+    LOG(WARNING) << "Cannot find extrema from empty candidates vector.";
+    return false;
+  }
+  min->first = candidates[0];
+  min->second = std::numeric_limits<double>::max();
+  max->first = candidates[0];
+  max->second = std::numeric_limits<double>::min();
+
+  for (const double& t : candidates) {
+    const double value = evaluate(t, derivative);
+  if (value < min->second) {
+      min->first = t;
+      min->second = value;
+  }
+  if (value > max->second) {
+      max->first = t;
+      max->second = value;
+  }
+  }
+  return true;
+}
 
 Eigen::MatrixXd computeBaseCoefficients(int N) {
   Eigen::MatrixXd base_coefficients(N, N);
@@ -42,8 +145,9 @@ Eigen::MatrixXd computeBaseCoefficients(int N) {
 }
 
 Eigen::VectorXd Polynomial::convolve(const Eigen::VectorXd& data,
-                                            const Eigen::VectorXd& kernel) {
-  const int convolution_dimension = data.size() + kernel.size() - 1;
+                                     const Eigen::VectorXd& kernel) {
+  const int convolution_dimension =
+      getConvolutionLength(data.size(), kernel.size());
   Eigen::VectorXd convolved = Eigen::VectorXd::Zero(convolution_dimension);
   Eigen::VectorXd kernel_reverse = kernel.reverse();
 
