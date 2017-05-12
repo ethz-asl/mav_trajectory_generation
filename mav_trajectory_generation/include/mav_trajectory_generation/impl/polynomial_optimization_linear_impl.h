@@ -332,7 +332,7 @@ bool PolynomialOptimization<_N>::solveLinear() {
   // Catch fully constraint case:
   if (n_free_constraints_ == 0) {
     LOG(WARNING) << "No free constraints set in the vertices. Polynomial can "
-                    "not be optimized. Outputting fully constraint polynomial.";
+                    "not be optimized. Outputting fully constrained polynomial.";
     updateSegmentsFromCompactConstraints();
     return true;
   }
