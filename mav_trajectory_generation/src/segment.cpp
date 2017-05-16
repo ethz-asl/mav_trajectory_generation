@@ -20,6 +20,8 @@
 
 #include "mav_trajectory_generation/segment.h"
 
+#include <cmath>
+
 namespace mav_trajectory_generation {
 
 bool Segment::operator==(const Segment& rhs) const {
@@ -136,8 +138,14 @@ bool Segment::computeMaximumOfMagnitude(
     return false;
   }
 
-  for (const double& t : extrema_candidates) {
-    const Extremum candidate(t, evaluate(t, derivative).norm(), 0);
+  for (double t : extrema_candidates) {
+    double value = 0.0;
+    for (int dim : dimensions) {
+      value += std::pow(polynomials_[dim].evaluate(t, derivative), 2);
+    }
+    value = std::sqrt(value);
+
+    const Extremum candidate(t, value, 0);
     if (candidate > *extremum) {
       *extremum = candidate;
     }

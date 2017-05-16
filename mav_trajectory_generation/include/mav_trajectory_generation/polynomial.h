@@ -65,6 +65,9 @@ class Polynomial {
   inline bool operator!=(const Polynomial& rhs) const {
     return !operator==(rhs);
   }
+  inline Polynomial operator+(const Polynomial& rhs) const {
+    return Polynomial(coefficients_ + rhs.coefficients_);
+  }
   // The product of two polynomials is the convolution of their coefficients.
   inline Polynomial operator*(const Polynomial& rhs) const {
     return Polynomial(convolve(coefficients_, rhs.coefficients_));

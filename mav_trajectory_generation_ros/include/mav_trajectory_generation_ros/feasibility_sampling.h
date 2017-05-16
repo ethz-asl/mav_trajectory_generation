@@ -23,14 +23,13 @@
 
 #include <cmath>
 
-#include <mav_msgs/eigen_mav_msgs.h>
-#include <mav_trajectory_generation/trajectory.h>
+#include <mav_trajectory_generation/segment.h>
 
 #include "mav_trajectory_generation_ros/feasibility_base.h"
 
 namespace mav_trajectory_generation {
 
-// Sampling based input and position feasibility checks.
+// Sampling based input feasibility checks.
 class FeasibilitySampling : public FeasibilityBase {
  public:
   class Settings {

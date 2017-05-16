@@ -29,7 +29,7 @@
 
 namespace mav_trajectory_generation {
 
-/* Recursive input and position feasibility checks.
+/* Recursive input feasibility checks.
  * This implementation is based on [1] and extended to test yaw rates and
  * higher order polynomials.
  * The general idea is to check a segment for lower and upper bounds that can be
