@@ -76,9 +76,9 @@ class FeasibilityRecursive : public FeasibilityBase {
   // Checks a segment for input feasibility.
   virtual InputFeasibilityResult checkInputFeasibility(const Segment& segment);
 
-
   // The user settings.
   Settings settings_;
+  
  private:
   // Recursive test to determine velocity, acceleration, and angular rate (roll,
   // pitch) feasibility between t_1 and t_2.

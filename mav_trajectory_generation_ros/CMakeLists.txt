@@ -11,6 +11,7 @@ add_definitions(-std=c++11)
 # LIBRARIES #
 #############
 cs_add_library(${PROJECT_NAME}
+  src/feasibility_analytic.cpp
   src/feasibility_base.cpp
   src/feasibility_recursive.cpp
   src/feasibility_sampling.cpp

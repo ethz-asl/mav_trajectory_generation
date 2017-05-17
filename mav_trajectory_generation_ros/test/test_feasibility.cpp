@@ -31,6 +31,7 @@
 
 #include "mav_trajectory_generation_ros/feasibility_recursive.h"
 #include "mav_trajectory_generation_ros/feasibility_sampling.h"
+#include "mav_trajectory_generation_ros/feasibility_analytic.h"
 
 using namespace mav_trajectory_generation;
 
@@ -125,6 +126,13 @@ TEST(PolynomialTest, CompareFeasibilityTests) {
   FeasibilityRecursive feasibility_recursive_10(input_constraints);
   feasibility_recursive_10.settings_.setMinSectionTimeS(0.10);
 
+  FeasibilityAnalytic feasibility_analytic_01(input_constraints);
+  feasibility_analytic_01.settings_.setMinSectionTimeS(0.01);
+  FeasibilityAnalytic feasibility_analytic_05(input_constraints);
+  feasibility_analytic_05.settings_.setMinSectionTimeS(0.05);
+  FeasibilityAnalytic feasibility_analytic_10(input_constraints);
+  feasibility_analytic_10.settings_.setMinSectionTimeS(0.10);
+
   // Some statistics.
   std::vector<InputFeasibilityResult> result_sampling_01(kNumSegments);
   std::vector<InputFeasibilityResult> result_sampling_05(kNumSegments);
@@ -134,6 +142,10 @@ TEST(PolynomialTest, CompareFeasibilityTests) {
   std::vector<InputFeasibilityResult> result_recursive_05(kNumSegments);
   std::vector<InputFeasibilityResult> result_recursive_10(kNumSegments);
 
+  std::vector<InputFeasibilityResult> result_analytic_01(kNumSegments);
+  std::vector<InputFeasibilityResult> result_analytic_05(kNumSegments);
+  std::vector<InputFeasibilityResult> result_analytic_10(kNumSegments);
+
   timing::Timer time_sampling_01("time_sampling_01", false);
   timing::Timer time_sampling_05("time_sampling_05", false);
   timing::Timer time_sampling_10("time_sampling_10", false);
@@ -141,7 +153,12 @@ TEST(PolynomialTest, CompareFeasibilityTests) {
   timing::Timer time_recursive_01("time_recursive_01", false);
   timing::Timer time_recursive_05("time_recursive_05", false);
   timing::Timer time_recursive_10("time_recursive_10", false);
+
+  timing::Timer time_analytic_01("time_analytic_01", false);
+  timing::Timer time_analytic_05("time_analytic_05", false);
+  timing::Timer time_analytic_10("time_analytic_10", false);
   for (size_t i = 0; i < segments.size(); i++) {
+    // Sampling.
     time_sampling_01.Start();
     result_sampling_01[i] =
         feasibility_sampling_01.checkInputFeasibility(segments[i]);
@@ -157,6 +174,7 @@ TEST(PolynomialTest, CompareFeasibilityTests) {
         feasibility_sampling_10.checkInputFeasibility(segments[i]);
     time_sampling_10.Stop();
 
+    // Recursive.
     time_recursive_01.Start();
     result_recursive_01[i] =
         feasibility_recursive_01.checkInputFeasibility(segments[i]);
@@ -172,12 +190,57 @@ TEST(PolynomialTest, CompareFeasibilityTests) {
         feasibility_recursive_10.checkInputFeasibility(segments[i]);
     time_recursive_10.Stop();
 
+    // Analtic.
+    time_analytic_01.Start();
+    result_analytic_01[i] =
+        feasibility_analytic_01.checkInputFeasibility(segments[i]);
+    time_analytic_01.Stop();
+
+    time_analytic_05.Start();
+    result_analytic_05[i] =
+        feasibility_analytic_05.checkInputFeasibility(segments[i]);
+    time_analytic_05.Stop();
+
+    time_analytic_10.Start();
+    result_analytic_10[i] =
+        feasibility_analytic_10.checkInputFeasibility(segments[i]);
+    time_analytic_10.Stop();
+
     // If the recursive test shows feasibility, the sampling test also needs to
     // show feasibility.
     if (result_recursive_01[i] == InputFeasibilityResult::kInputFeasible ||
         result_recursive_05[i] == InputFeasibilityResult::kInputFeasible ||
         result_recursive_10[i] == InputFeasibilityResult::kInputFeasible) {
       EXPECT_EQ(result_sampling_01[i], InputFeasibilityResult::kInputFeasible);
+    }
+
+    // If the analytic test shows feasibility all other tests should show
+    // feasibility or indeterminability.
+    if (result_analytic_01[i] == InputFeasibilityResult::kInputFeasible) {
+      EXPECT_TRUE(
+          result_analytic_05[i] == InputFeasibilityResult::kInputFeasible ||
+          result_analytic_05[i] == InputFeasibilityResult::kInputIndeterminable);
+      EXPECT_TRUE(
+          result_analytic_10[i] == InputFeasibilityResult::kInputFeasible ||
+          result_analytic_10[i] == InputFeasibilityResult::kInputIndeterminable);
+
+      EXPECT_TRUE(
+          result_recursive_01[i] == InputFeasibilityResult::kInputFeasible ||
+          result_recursive_01[i] == InputFeasibilityResult::kInputIndeterminable);
+      EXPECT_TRUE(
+          result_recursive_05[i] == InputFeasibilityResult::kInputFeasible ||
+          result_recursive_05[i] == InputFeasibilityResult::kInputIndeterminable);
+      EXPECT_TRUE(
+          result_recursive_10[i] == InputFeasibilityResult::kInputFeasible ||
+          result_recursive_10[i] == InputFeasibilityResult::kInputIndeterminable);
+
+      // The sampling test needs to show feasibility even.
+      EXPECT_TRUE(
+          result_sampling_01[i] == InputFeasibilityResult::kInputFeasible);
+      EXPECT_TRUE(
+          result_sampling_05[i] == InputFeasibilityResult::kInputFeasible);
+      EXPECT_TRUE(
+          result_sampling_10[i] == InputFeasibilityResult::kInputFeasible);
     }
   }
 
@@ -188,6 +251,9 @@ TEST(PolynomialTest, CompareFeasibilityTests) {
   writeResultsToFile("result_recursive_01.txt", result_recursive_01);
   writeResultsToFile("result_recursive_05.txt", result_recursive_05);
   writeResultsToFile("result_recursive_10.txt", result_recursive_10);
+  writeResultsToFile("result_analytic_01.txt", result_recursive_01);
+  writeResultsToFile("result_analytic_05.txt", result_recursive_05);
+  writeResultsToFile("result_analytic_10.txt", result_recursive_10);
 
   // Write timing to txt.
   std::ofstream time_file;

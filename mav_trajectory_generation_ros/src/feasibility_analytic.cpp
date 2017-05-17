@@ -48,15 +48,16 @@ InputFeasibilityResult FeasibilityAnalytic::checkInputFeasibility(
   std::vector<Extremum> thrust_candidates;
   Segment thrust_segment(segment.N() - 2, kPosDim.size());
   InputFeasibilityResult thrust_result =
-      analyticThrustFeasibility(&segment, &thrust_candidates, &thrust_segment);
+      analyticThrustFeasibility(segment, &thrust_candidates, &thrust_segment);
   if (thrust_result != InputFeasibilityResult::kInputFeasible) {
     return thrust_result;
   }
 
   // Velocity:
   std::vector<Extremum> velocity_candidates;
-  if (!segment.findMinMaxMagnitudeCandidates(derivative_order::VELOCITY,
-                                             kPosDim, &velocity_candidates)) {
+  if (!segment.findMinMaxMagnitudeCandidates(derivative_order::VELOCITY, 0.0,
+                                             segment.getTime(), kPosDim,
+                                             &velocity_candidates)) {
     return InputFeasibilityResult::kInputIndeterminable;
   }
   const double v_max =
@@ -68,7 +69,8 @@ InputFeasibilityResult FeasibilityAnalytic::checkInputFeasibility(
 
   // Roll / Pitch rates using recursive test:
   std::vector<Extremum> jerk_candidates;
-  if (!segment.findMinMaxMagnitudeCandidates(derivative_order::JERK, kPosDim,
+  if (!segment.findMinMaxMagnitudeCandidates(derivative_order::JERK,
+                                             0.0, segment.getTime(), kPosDim,
                                              &jerk_candidates)) {
     return InputFeasibilityResult::kInputIndeterminable;
   }
@@ -84,7 +86,7 @@ InputFeasibilityResult FeasibilityAnalytic::checkInputFeasibility(
   if (segment.D() == 4) {
     // Check the single axis minimum / maximum yaw rate:
     std::pair<double, double> yaw_rate_min, yaw_rate_max;
-    if (!segment[3].findMinMax(t_1, t_2, derivative_order::ANGULAR_VELOCITY,
+    if (!segment[3].findMinMax(0.0, segment.getTime(), derivative_order::ANGULAR_VELOCITY,
                                &yaw_rate_min, &yaw_rate_max)) {
       return InputFeasibilityResult::kInputIndeterminable;
     }
@@ -94,7 +96,7 @@ InputFeasibilityResult FeasibilityAnalytic::checkInputFeasibility(
     }
     // Check the single axis minimum / maximum yaw acceleration:
     std::pair<double, double> yaw_acc_min, yaw_acc_max;
-    if (!segment[3].findMinMax(t_1, t_2, derivative_order::ANGULAR_ACCELERATION,
+    if (!segment[3].findMinMax(0.0, segment.getTime(), derivative_order::ANGULAR_ACCELERATION,
                                &yaw_acc_min, &yaw_acc_max)) {
       return InputFeasibilityResult::kInputIndeterminable;
     }
@@ -107,12 +109,12 @@ InputFeasibilityResult FeasibilityAnalytic::checkInputFeasibility(
   return InputFeasibilityResult::kInputFeasible;
 }
 
-InputFeasibilityResult analyticThrustFeasibility(
+InputFeasibilityResult FeasibilityAnalytic::analyticThrustFeasibility(
     const Segment& segment, std::vector<Extremum>* thrust_candidates,
     Segment* thrust_segment) const {
   // Create thrust segment, f = ddx + g.
   thrust_segment->setTime(segment.getTime());
-  for (size_t i = 0; i < thrust_segment->size(); i++) {
+  for (size_t i = 0; i < thrust_segment->D(); i++) {
     Eigen::VectorXd thrust_coeffs =
         segment[i]
             .getCoefficients(derivative_order::ACCELERATION)
@@ -123,8 +125,8 @@ InputFeasibilityResult analyticThrustFeasibility(
   }
 
   // Compute the thrust magnitude extrema candidates.
-  if (!thrust_segment.findMinMaxMagnitudeCandidates(
-          0, 0.0, thrust_segment.getTime(), kPosDim, thrust_candidates)) {
+  if (!thrust_segment->findMinMaxMagnitudeCandidates(
+          0, 0.0, thrust_segment->getTime(), kPosDim, thrust_candidates)) {
     return InputFeasibilityResult::kInputIndeterminable;
   }
   // Evaluate the candidates.
@@ -163,8 +165,8 @@ InputFeasibilityResult FeasibilityAnalytic::recursiveRollPitchFeasibility(
   // Upper bound on angular rates according to Müller [1].
   double omega_xy_upper_bound;
   // Divide-by-zero protection.
-  if (f_min > 1.0e-6) {
-    omega_xy_upper_bound = std::sqrt(j_max / f_min);
+  if (f_min.value > 1.0e-6) {
+    omega_xy_upper_bound = std::sqrt(j_max.value / f_min.value);
   } else {
     omega_xy_upper_bound = std::numeric_limits<double>::max();
   }
@@ -179,7 +181,7 @@ InputFeasibilityResult FeasibilityAnalytic::recursiveRollPitchFeasibility(
 
     if (result_1 == InputFeasibilityResult::kInputFeasible) {
       // Continue with second half.
-      return recursiveFeasibility(pos_segment, thrust_segment,
+      return recursiveRollPitchFeasibility(pos_segment, thrust_segment,
                                   thrust_candidates, jerk_candidates, t_half,
                                   t_2);
     } else {

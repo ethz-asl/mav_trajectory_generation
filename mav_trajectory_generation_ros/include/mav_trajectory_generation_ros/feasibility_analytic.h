@@ -61,6 +61,9 @@ class FeasibilityAnalytic : public FeasibilityBase {
   // Checks a segment for input feasibility.
   virtual InputFeasibilityResult checkInputFeasibility(const Segment& segment);
 
+  // The user settings.
+  Settings settings_;
+
  private:
   InputFeasibilityResult analyticThrustFeasibility(
       const Segment& segment, std::vector<Extremum>* thrust_candidates,
@@ -72,8 +75,11 @@ class FeasibilityAnalytic : public FeasibilityBase {
    * Trajectory Generation." Robotics, IEEE Transactions on 31.6
    * (2015): 1294-1310.
    */
-  InputFeasibilityResult recursiveRollPitchFeasibility(const Segment& segment,
-  double f_min, double j_max, double t_1, double t_2) const;
+  InputFeasibilityResult recursiveRollPitchFeasibility(
+      const Segment& pos_segment, const Segment& thrust_segment,
+      const std::vector<Extremum>& thrust_candidates,
+      const std::vector<Extremum>& jerk_candidates, double t_1,
+      double t_2) const;
 };
 }  // namespace mav_trajectory_generation
 

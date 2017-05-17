@@ -445,10 +445,11 @@ TEST(MavTrajectoryGeneration,
     opt.computeSegmentMaximumMagnitudeCandidates<1>(s, 0, s.getTime(), &res);
     time_analytic.Stop();
 
-    std::vector<double> res_template_free;
+    std::vector<Extremum> candidates_template_free;
     std::vector<int> dimensions = {0};
     time_analytic_template_free.Start();
-    s.computeMaximumMagnitudeCandidates(1, dimensions, &res_template_free);
+    s.findMinMaxMagnitudeCandidates(1, 0.0, s.getTime(), dimensions,
+                                    &candidates_template_free);
     time_analytic_template_free.Stop();
 
     std::vector<double> res_sampling;
@@ -481,9 +482,9 @@ TEST(MavTrajectoryGeneration,
     }
     EXPECT_TRUE(success);
 
-    EXPECT_EQ(res.size(), res_template_free.size() - 2);
+    EXPECT_EQ(res.size(), candidates_template_free.size() - 2);
     for (size_t i = 0; i < res.size(); i++) {
-      EXPECT_EQ(res[i], res_template_free[i+2]);
+      EXPECT_EQ(res[i], candidates_template_free[i+2].time);
     }
 
     ++segment_idx;
@@ -537,10 +538,11 @@ TEST(MavTrajectoryGeneration, PathOptimization3D_segment_extrema_of_magnitude) {
     opt.computeSegmentMaximumMagnitudeCandidates<1>(s, 0, s.getTime(), &res);
     time_analytic.Stop();
 
-    std::vector<double> res_template_free;
+    std::vector<Extremum> candidates_template_free;
     std::vector<int> dimensions = {0, 1, 2};
     time_analytic_template_free.Start();
-    s.computeMaximumMagnitudeCandidates(1, dimensions, &res_template_free);
+    s.findMinMaxMagnitudeCandidates(1, 0.0, s.getTime(), dimensions,
+                                    &candidates_template_free);
     time_analytic_template_free.Stop();
 
     std::vector<double> res_sampling;
@@ -583,9 +585,9 @@ TEST(MavTrajectoryGeneration, PathOptimization3D_segment_extrema_of_magnitude) {
     }
     EXPECT_TRUE(success);
 
-    EXPECT_EQ(res.size(), res_template_free.size() - 2);
+    EXPECT_EQ(res.size(), candidates_template_free.size() - 2);
     for (size_t i = 0; i < res.size(); i++) {
-      EXPECT_EQ(res[i], res_template_free[i+2]);
+      EXPECT_EQ(res[i], candidates_template_free[i+2].time);
     }
     ++segment_idx;
   }
