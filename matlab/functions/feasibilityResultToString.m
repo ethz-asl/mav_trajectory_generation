@@ -6,17 +6,17 @@ case 0
 case 1
   result_string = 'Indeterminable';
 case 2
-  result_string = 'InfeasibleThrustHigh';
+  result_string = 'ThrustHigh';
 case 3
-  result_string = 'InfeasibleThrustLow';
+  result_string = 'ThrustLow';
 case 4
-  result_string = 'InfeasibleVelocity';
+  result_string = 'VelocityHigh';
 case 5
-  result_string = 'InfeasibleRollPitchRates';
+  result_string = 'RollPitchRatesHigh';
 case 6
-  result_string = 'InfeasibleYawRates';
+  result_string = 'YawRatesHigh';
 case 7
-  result_string = 'InfeasibleYawAcc';
+  result_string = 'YawAccHigh';
 otherwise
   result_string = 'Unknown!';
 end

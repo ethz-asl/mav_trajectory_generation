@@ -95,8 +95,8 @@ void InputConstraints::setOmegaZDotMax(double omega_z_dot_max) {
 void InputConstraints::setDefaultValues() {
   setFMin(0.5 * mav_msgs::kGravity);
   setFMax(1.5 * mav_msgs::kGravity);
-  setVMax(2.5);
-  setOmegaXYMax(M_PI);
+  setVMax(3.0);
+  setOmegaXYMax(M_PI / 2.0);
   setOmegaZMax(M_PI / 2.0);
   setOmegaZDotMax(2.0 * M_PI);
 }

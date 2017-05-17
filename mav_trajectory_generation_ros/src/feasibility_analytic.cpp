@@ -67,20 +67,6 @@ InputFeasibilityResult FeasibilityAnalytic::checkInputFeasibility(
     return InputFeasibilityResult::kInputInfeasibleVelocity;
   }
 
-  // Roll / Pitch rates using recursive test:
-  std::vector<Extremum> jerk_candidates;
-  if (!segment.findMinMaxMagnitudeCandidates(derivative_order::JERK,
-                                             0.0, segment.getTime(), kPosDim,
-                                             &jerk_candidates)) {
-    return InputFeasibilityResult::kInputIndeterminable;
-  }
-  InputFeasibilityResult omega_xy_result =
-      recursiveRollPitchFeasibility(segment, thrust_segment, thrust_candidates,
-                                    jerk_candidates, 0.0, segment.getTime());
-  if (omega_xy_result != InputFeasibilityResult::kInputFeasible) {
-    return omega_xy_result;
-  }
-
   // Yaw feasibility (assumed independent of translation in the rigid body
   // model)
   if (segment.D() == 4) {
@@ -104,6 +90,20 @@ InputFeasibilityResult FeasibilityAnalytic::checkInputFeasibility(
         input_constraints_.getOmegaZDotMax()) {
       return InputFeasibilityResult::kInputInfeasibleYawAcc;
     }
+  }
+
+  // Roll / Pitch rates using recursive test:
+  std::vector<Extremum> jerk_candidates;
+  if (!segment.findMinMaxMagnitudeCandidates(derivative_order::JERK,
+                                             0.0, segment.getTime(), kPosDim,
+                                             &jerk_candidates)) {
+    return InputFeasibilityResult::kInputIndeterminable;
+  }
+  InputFeasibilityResult omega_xy_result =
+      recursiveRollPitchFeasibility(segment, thrust_segment, thrust_candidates,
+                                    jerk_candidates, 0.0, segment.getTime());
+  if (omega_xy_result != InputFeasibilityResult::kInputFeasible) {
+    return omega_xy_result;
   }
 
   return InputFeasibilityResult::kInputFeasible;

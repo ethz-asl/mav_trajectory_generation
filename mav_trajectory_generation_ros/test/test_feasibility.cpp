@@ -59,22 +59,46 @@ void writeResultsToFile(const std::string& file_name, const std::vector<InputFea
 TEST(PolynomialTest, CompareFeasibilityTests) {
   std::srand(1234567);
   // Create random segments.
-  const int kNumSegments = 1e1;
+  const int kNumSegments = 1e3;
   const int kN = 12;
   const int kD = 4;
   Segment::Vector segments(kNumSegments, Segment(kN, kD));
   for (size_t i = 0; i < kNumSegments; i++) {
     // Position segment.
-    const Eigen::VectorXd kMinPos = Eigen::VectorXd::Constant(3, -100.0);
+    const Eigen::VectorXd kMinPos = Eigen::VectorXd::Constant(3, -5.0);
     const Eigen::VectorXd kMaxPos = -kMinPos;
     Vertex::Vector vertices_pos =
         createRandomVertices(derivative_order::SNAP, 1, kMinPos, kMaxPos);
-    const double kApproxVMin = 2.0;
-    const double kApproxVMax = 3.0;
-    double kApproxV = createRandomDouble(kApproxVMin, kApproxVMax);
-    const double kApproxAMax = 5.0;
-    std::vector<double> segment_times =
-        estimateSegmentTimes(vertices_pos, kApproxV, kApproxAMax);
+
+    // Add some random start and end velocity to make segment more dynamic.
+    const double kAvgVMin = 0.5;
+    const double kAvgVMax = 2.0;
+    Eigen::Vector3d direction_start, direction_end;
+    direction_start.x() = createRandomDouble(0.01, 1.0);
+    direction_start.y() = createRandomDouble(0.01, 1.0);
+    direction_start.z() = createRandomDouble(0.01, 1.0);
+    direction_start.normalize();
+    vertices_pos[0].addConstraint(
+        derivative_order::VELOCITY,
+        direction_start * createRandomDouble(0.0, kAvgVMax));
+
+    direction_end.x() = createRandomDouble(0.01, 1.0);
+    direction_end.y() = createRandomDouble(0.01, 1.0);
+    direction_end.z() = createRandomDouble(0.01, 1.0);
+    direction_end.normalize();
+    vertices_pos[1].addConstraint(
+        derivative_order::VELOCITY,
+        direction_end * createRandomDouble(0.0, kAvgVMax));
+
+    // Segment time.
+    double v_avg_segment = createRandomDouble(kAvgVMin, kAvgVMax);
+    Eigen::VectorXd pos_start, pos_end;
+    vertices_pos.front().getConstraint(derivative_order::POSITION, &pos_start);
+    vertices_pos.back().getConstraint(derivative_order::POSITION, &pos_end);
+    double distance = (pos_end - pos_start).norm();
+    std::vector<double> segment_times = {distance / v_avg_segment};
+
+    // Optimization
     PolynomialOptimization<kN> opt_pos(3);
     opt_pos.setupFromVertices(vertices_pos, segment_times,
                               derivative_order::SNAP);
@@ -85,10 +109,10 @@ TEST(PolynomialTest, CompareFeasibilityTests) {
     pos_trajectory.setSegments(pos_segments);
 
     // Yaw segment.
-    const double kMinYaw = -M_PI;
+    const double kMinYaw = -3 * M_PI;
     const double kMaxYaw = -kMinYaw;
     Vertex::Vector vertices_yaw = createRandomVertices1D(
-        derivative_order::ANGULAR_ACCELERATION, 1, kMinYaw, kMaxYaw);
+        derivative_order::ANGULAR_VELOCITY, 1, kMinYaw, kMaxYaw);
     PolynomialOptimization<kN> opt_yaw(1);
     opt_yaw.setupFromVertices(vertices_yaw, segment_times,
                               derivative_order::ANGULAR_ACCELERATION);
