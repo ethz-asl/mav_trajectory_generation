@@ -20,6 +20,8 @@
 
 #include "mav_trajectory_generation/trajectory.h"
 
+#include <limits>
+
 namespace mav_trajectory_generation {
 
 bool Trajectory::operator==(const Trajectory& rhs) const {
@@ -176,23 +178,32 @@ Trajectory Trajectory::getTrajectoryWithAppendedDimension(
   return traj;
 }
 
-bool Trajectory::computeMaximumOfMagnitude(int derivative,
-                                           const std::vector<int>& dimensions,
-                                           Extremum* extremum) const {
-  CHECK_NOTNULL(extremum);
-  *extremum = Extremum();
+bool Trajectory::findMinMaxMagnitude(int derivative,
+                                     const std::vector<int>& dimensions,
+                                     Extremum* minimum,
+                                     Extremum* maximum) const {
+  CHECK_NOTNULL(minimum);
+  CHECK_NOTNULL(maximum);
+  minimum->value = std::numeric_limits<double>::max();
+  maximum->value = std::numeric_limits<double>::lowest();
 
-  int segment_idx = 0;
-  for (const Segment& s : segments_) {
-    Extremum candidate;
-    if (!s.computeMaximumOfMagnitude(derivative, dimensions, &candidate)) {
+  for (int segment_idx = 0; segment_idx < segments_.size(); segment_idx++) {
+    Extremum min_candidate;
+    Extremum max_candidate;
+    std::vector<Extremum> candidates;
+    if (!segments_[segment_idx].findMinMaxMagnitude(
+            derivative, 0.0, segments_[segment_idx].getTime(), dimensions,
+            &min_candidate, &max_candidate, &candidates)) {
       return false;
     }
-    if (candidate > *extremum) {
-      *extremum = candidate;
-      extremum->segment_idx = segment_idx;
+    if (min_candidate < *minimum) {
+      *minimum = min_candidate;
+      minimum->segment_idx = segment_idx;
     }
-    ++segment_idx;
+    if (max_candidate > *maximum) {
+      *maximum = max_candidate;
+      maximum->segment_idx = segment_idx;
+    }
   }
   return true;
 }

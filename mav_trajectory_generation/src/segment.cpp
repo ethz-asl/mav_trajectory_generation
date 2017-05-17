@@ -21,6 +21,7 @@
 #include "mav_trajectory_generation/segment.h"
 
 #include <cmath>
+#include <limits>
 
 namespace mav_trajectory_generation {
 
@@ -78,33 +79,34 @@ std::ostream& operator<<(std::ostream& stream,
   return stream;
 }
 
-bool Segment::computeMaximumMagnitudeCandidates(
+bool Segment::findMinMaxMagnitudeCandidates(
     int derivative, double t_start, double t_end,
-    const std::vector<int>& dimensions,
-    std::vector<double>* candidates) const {
-    CHECK_NOTNULL(candidates);
+    const std::vector<int>& dimensions, std::vector<double>* candidates) const {
+  CHECK_NOTNULL(candidates);
 
   if (dimensions.empty()) {
     LOG(WARNING) << "No dimensions specified." << std::endl;
     return false;
-  }
-  else if (dimensions.size() > 1) {
+  } else if (dimensions.size() > 1) {
     const int n_d = N_ - derivative;
     const int n_dd = n_d - 1;
     const int convolved_coefficients_length =
         Polynomial::getConvolutionLength(n_d, n_dd);
     Eigen::VectorXd convolved_coefficients(convolved_coefficients_length);
     convolved_coefficients.setZero();
-    for (const int& dim : dimensions) {
+    for (int dim : dimensions) {
       if (dim < 0 || dim > D_ - 1) {
-        LOG(WARNING) << "Specified dimensions out of bounds." << std::endl;
+        LOG(WARNING) << "Specified dimension " << dim
+                     << " is out of bounds [0.." << D_ - 1 << "]." << std::endl;
         return false;
       }
       // Our coefficients are INCREASING, so when you take the derivative,
       // only the lower powers of t have non-zero coefficients.
       // So we take the head.
-      Eigen::VectorXd d = polynomials_[dim].getCoefficients(derivative).head(n_d);
-      Eigen::VectorXd dd = polynomials_[dim].getCoefficients(derivative + 1).head(n_dd);
+      Eigen::VectorXd d =
+          polynomials_[dim].getCoefficients(derivative).head(n_d);
+      Eigen::VectorXd dd =
+          polynomials_[dim].getCoefficients(derivative + 1).head(n_dd);
       convolved_coefficients += Polynomial::convolve(d, dd);
     }
     Polynomial polynomial_convolved(convolved_coefficients);
@@ -113,47 +115,70 @@ bool Segment::computeMaximumMagnitudeCandidates(
       return false;
     }
   } else {
-    // For dimension == 1  we can simply evaluate the roots of the derivative.
-    if (!polynomials_[dimensions[0]].findMinMaxCandidates(t_start, t_end, derivative,
-                                              candidates)) {
+    // For dimension.size() == 1  we can simply evaluate the roots of the
+    // derivative.
+    if (!polynomials_[dimensions[0]].findMinMaxCandidates(
+            t_start, t_end, derivative, candidates)) {
       return false;
     }
   }
   return true;
 }
 
-bool Segment::computeMaximumOfMagnitude(
-    int derivative, const std::vector<int>& dimensions, Extremum* extremum,
-    std::vector<Extremum>* candidates) const {
-  CHECK_NOTNULL(extremum);
-  *extremum = Extremum();
+bool Segment::findMinMaxMagnitude(int derivative, double t_start, double t_end,
+                                  const std::vector<int>& dimensions,
+                                  Extremum* minimum, Extremum* maximum,
+                                  std::vector<Extremum>* candidates) const {
+  CHECK_NOTNULL(minimum);
+  CHECK_NOTNULL(maximum);
+  CHECK_NOTNULL(candidates);
+  candidates->clear();
 
-  if (candidates != nullptr) {
-    candidates->clear();
-  }
+  // Compute extrema candidates.
   std::vector<double> extrema_candidates;
   extrema_candidates.reserve(N_ - 1);
-  if (!computeMaximumMagnitudeCandidates(derivative, dimensions,
-                                         &extrema_candidates)) {
+  if (!findMinMaxMagnitudeCandidates(derivative, t_start, t_end, dimensions,
+                                     &extrema_candidates)) {
     return false;
   }
 
-  for (double t : extrema_candidates) {
+  // Evaluate candidate times.
+  candidates->resize(extrema_candidates.size());
+  for (size_t i = 0; i < extrema_candidates.size(); i++) {
     double value = 0.0;
     for (int dim : dimensions) {
-      value += std::pow(polynomials_[dim].evaluate(t, derivative), 2);
+      value += std::pow(
+          polynomials_[dim].evaluate(extrema_candidates[i], derivative), 2);
     }
     value = std::sqrt(value);
+    (*candidates)[i] = Extremum(extrema_candidates[i], value, 0);
+  }
 
-    const Extremum candidate(t, value, 0);
-    if (candidate > *extremum) {
-      *extremum = candidate;
+  // Evaluate candidates.
+  findMinMaxMagnitude(t_start, t_end, *candidates, minimum, maximum);
+
+  return true;
+}
+
+void Segment::findMinMaxMagnitude(double t_start, double t_end,
+                                  const std::vector<Extremum>& candidates,
+                                  Extremum* minimum, Extremum* maximum) const {
+  CHECK_NOTNULL(minimum);
+  CHECK_NOTNULL(maximum);
+  minimum->value = std::numeric_limits<double>::max();
+  maximum->value = std::numeric_limits<double>::lowest();
+
+  for (const Extremum& candidate : candidates) {
+    if (candidate.time < t_start || candidate.time > t_end) {
+      continue;
     }
-    if (candidates != nullptr) {
-      candidates->emplace_back(candidate);
+    if (candidate > *maximum) {
+      *maximum = candidate;
+    }
+    if (candidate < *minimum) {
+      *minimum = candidate;
     }
   }
-  return true;
 }
 
 }  // namespace mav_trajectory_generation

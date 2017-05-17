@@ -27,9 +27,9 @@
 #include <map>
 #include <vector>
 
+#include "mav_trajectory_generation/extremum.h"
 #include "mav_trajectory_generation/motion_defines.h"
 #include "mav_trajectory_generation/polynomial.h"
-#include "mav_trajectory_generation/extremum.h"
 
 namespace mav_trajectory_generation {
 
@@ -71,53 +71,63 @@ class Segment {
   Eigen::VectorXd evaluate(
       double t, int derivative_order = derivative_order::POSITION) const;
 
-  // Computes the candidates for the maximum magnitude of a single segment in
-  // the specified derivative. In the 1D case, it simply returns the roots of
-  // the derivative of the segment-polynomial. For higher dimensions, e.g. 3D,
-  // we need to find the extrema of \sqrt{x(t)^2 + y(t)^2 + z(t)^2} where x, y,
-  // z are polynomials describing the position or the derivative, specified by
-  // Derivative. Taking the derivative yields  2 x \dot{x} + 2 y \dot{y} + 2 z
-  // \dot{z}, which needs to be zero at the extrema. The multiplication of two
-  // polynomials is a convolution of their coefficients. Re-ordering by their
-  // powers and addition yields a polynomial, for which we can compute the
-  // roots. Derivative = Derivative of position, in which to find the maxima.
-  // Input: segment = Segment to find the maximum.
+  // Computes the candidates for the minimum and maximum magnitude of a single
+  // segment in the specified derivative. In the 1D case, it simply returns the
+  // roots of the derivative of the segment-polynomial. For higher dimensions,
+  // e.g. 3D, we need to find the extrema of \sqrt{x(t)^2 + y(t)^2 + z(t)^2}
+  // where x, y, z are polynomials describing the position or the derivative,
+  // specified by Derivative. Taking the derivative yields
+  // 2 x \dot{x} + 2 y \dot{y} + 2 z \dot{z}, which needs to be zero at the
+  // extrema. The multiplication of two polynomials is a convolution of their
+  // coefficients. Re-ordering by their powers and addition yields a polynomial,
+  // for which we can compute the roots.
+  // Input: derivative = Derivative of position, in which to find the maxima.
   // Input: t_start = Only maxima >= t_start are returned. Usually set to 0.
-  // Input: derivative = Only maxima <= t_stop are returned. Usually set to
-  // segment time.
+  // Input: t_stop = Only maxima <= t_stop are returned. Usually set to segment
+  // time.
   // Input: dimensions = Vector containing the dimensions that are evaluated.
-  // Usually [0, 1, 2] for position.
+  // Usually [0, 1, 2] for position, [3] for yaw.
   // Output: candidates = Vector containing the candidate times for a maximum.
   // Returns whether the computation succeeded -- false means no candidates
   // were found by Jenkins-Traub.
-  bool computeMaximumMagnitudeCandidates(
-      int derivative, double t_start, double t_end,
-      const std::vector<int>& dimensions,
-      std::vector<double>* candidates) const;
+  bool findMinMaxMagnitudeCandidates(int derivative, double t_start,
+                                     double t_end,
+                                     const std::vector<int>& dimensions,
+                                     std::vector<double>* candidates) const;
 
   // Convenience method with t_start = 0.0 and t_end = segment_time.
-  inline bool computeMaximumMagnitudeCandidates(
+  inline bool findMinMaxMagnitudeCandidates(
       int derivative, const std::vector<int>& dimensions,
       std::vector<double>* candidates) const {
-    return computeMaximumMagnitudeCandidates(derivative, 0.0, time_, dimensions,
-                                             candidates);
+    return findMinMaxMagnitudeCandidates(derivative, 0.0, time_, dimensions,
+                                         candidates);
   }
 
-  // Computes the global maximum of the magnitude of the path in the
-  // specified derivative.
-  // This uses computeSegmentMaximumMagnitudeCandidates to compute the
-  // candidates for each segment.
+  // Computes the global minium and maximum maximum of the magnitude of the
+  // segment in the specified derivative and dimensions.
+  // This uses findMinMaxMagnitudeCandidates to compute the candidates for each
+  // segment.
   // Input: derivative = Derivative of position, in which to find the maxima.
+  // Input: t_start = Only maxima >= t_start are returned. Usually set to 0.
+  // Input: t_stop = Only maxima <= t_stop are returned. Usually set to segment
+  // time.
   // Input: dimensions = Vector containing the dimensions that are evaluated.
-  // Usually [0, 1, 2] for position.
-  // Output: extremum = The global maximum of the path.
+  // Usually [0, 1, 2] for position, [3] for yaw.
+  // Output: minimum = The global minimum magnitude of the path.
+  // Output: maximum = The global maximum magnitude of the path.
   // Output: candidates = Vector containing the candidate times for the global
-  // maximum, i.e. all local maxima. Optional, can be set to nullptr if not
-  // needed.
+  // minimum and maximum, i.e. all local extrema.
   // Output: return = root search may fail.
-  bool computeMaximumOfMagnitude(
-      int derivative, const std::vector<int>& dimensions,
-      Extremum* extremum, std::vector<Extremum>* candidates = nullptr) const;
+  bool findMinMaxMagnitude(int derivative, double t_start, double t_end,
+                           const std::vector<int>& dimensions,
+                           Extremum* minimum, Extremum* maximum,
+                           std::vector<Extremum>* candidates) const;
+
+  // Convenience function. Evaluates the magnitudes of a set of candidates for
+  // the given dimensions.
+  void findMinMaxMagnitude(double t_start, double t_end,
+                           const std::vector<Extremum>& candidates,
+                           Extremum* minimum, Extremum* maximum) const;
 
  protected:
   Polynomial::Vector polynomials_;
