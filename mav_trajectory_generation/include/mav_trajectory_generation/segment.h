@@ -97,7 +97,8 @@ class Segment {
 
   // Convenience function. Evaluates the magnitudes between t_start and t_end
   // for a set of candidates for given dimensions.
-  void findMinMaxMagnitude(double t_start, double t_end,
+  void findMinMaxMagnitude(double t_start, double t_end, int derivative,
+                           const std::vector<int>& dimensions,
                            const std::vector<Extremum>& candidates,
                            Extremum* minimum, Extremum* maximum) const;
 

@@ -141,7 +141,8 @@ bool Segment::findMinMaxMagnitudeCandidates(
   return true;
 }
 
-void Segment::findMinMaxMagnitude(double t_start, double t_end,
+void Segment::findMinMaxMagnitude(double t_start, double t_end, int derivative,
+                                  const std::vector<int>& dimensions,
                                   const std::vector<Extremum>& candidates,
                                   Extremum* minimum, Extremum* maximum) const {
   CHECK_NOTNULL(minimum);
@@ -149,17 +150,28 @@ void Segment::findMinMaxMagnitude(double t_start, double t_end,
   minimum->value = std::numeric_limits<double>::max();
   maximum->value = std::numeric_limits<double>::lowest();
 
+  // Evaluate passed candidates.
   for (const Extremum& candidate : candidates) {
     if (candidate.time < t_start || candidate.time > t_end) {
       continue;
     }
-    if (candidate > *maximum) {
-      *maximum = candidate;
-    }
-    if (candidate < *minimum) {
-      *minimum = candidate;
-    }
+    *maximum = std::max(*maximum, candidate);
+    *minimum = std::max(*minimum, candidate);
   }
+  // Evaluate start and end time.
+  Extremum magnitude_start(t_start, 0.0, 0);
+  Extremum magnitude_end(t_end, 0.0, 0);
+  for (int dim : dimensions) {
+    magnitude_start.value +=
+        std::pow(polynomials_[dim].evaluate(t_start, derivative), 2);
+    magnitude_end.value += std::pow(polynomials_[dim].evaluate(t_end, derivative), 2);
+  }
+  magnitude_start.value = std::sqrt(magnitude_start.value);
+  magnitude_end.value = std::sqrt(magnitude_end.value);
+  *maximum = std::max(*maximum, magnitude_start);
+  *minimum = std::max(*minimum, magnitude_start);
+  *maximum = std::max(*maximum, magnitude_end);
+  *minimum = std::max(*minimum, magnitude_end);
 }
 
 }  // namespace mav_trajectory_generation
