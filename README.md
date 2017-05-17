@@ -276,3 +276,77 @@ mav_trajectory_generation::drawMavTrajectoryWithMavMarker(trajectory, distance, 
 mav_trajectory_generation::drawMavSampledTrajectoryWithMavMarker(states, distance, frame_id, hex, &markers)
 ```
 
+## Checking Feasibility
+The package contains three implementations to check generated trajectories for
+input feasibility. The checks are based on the rigid-body model assumption and
+flat state characteristics presented in
+
+```
+@inproceedings{mellinger2011minimum,
+  title={Minimum snap trajectory generation and control for quadrotors},
+  author={Mellinger, Daniel and Kumar, Vijay},
+  booktitle={Robotics and Automation (ICRA), 2011 IEEE International Conference on},
+  pages={2520--2525},
+  year={2011},
+  organization={IEEE}
+}
+```
+
+The trajectories are checked for low and high thrust, high velocities, high roll
+and pitch rates, high yaw rates and high yaw angular accelerations.
+
+`FeasibilitySampling` implements a naive sampling-based check.
+`FeasibilityRecursive` implements a slightly adapted recursive feasibility test
+presented in
+
+```
+@article{mueller2015computationally,
+  title={A computationally efficient motion primitive for quadrocopter trajectory generation},
+  author={Mueller, Mark W and Hehn, Markus and D'Andrea, Raffaello},
+  journal={IEEE Transactions on Robotics},
+  volume={31},
+  number={6},
+  pages={1294--1310},
+  year={2015},
+  publisher={IEEE}
+}
+```
+
+`FeasibilityAnalytic` analytically checks the magnitudes except for the roll and
+pitch rates, where it runs the recursive test (recommended: lowest computation
+time, no false positives).
+
+###Example
+```c++
+// Create input constraints.
+InputConstraints input_constraints;
+input_constraints.setFMin(0.5); // minimum thrust in [m/s/s].
+input_constraints.setFMax(1.5); // maximum thrust in [m/s/s].
+input_constraints.setVMax(3.5); // maximum velocity in [m/s].
+input_constraints.setOmegaXYMax(M_PI / 2.0); // maximum roll/pitch rates in [rad/s].
+input_constraints.setOmegaZMax(M_PI / 2.0); // maximum yaw rates in [rad/s].
+input_constraints.setOmegaZDotMax(M_PI); // maximum yaw acceleration in [rad/s/s].
+
+// Create feasibility object of choice (FeasibilityAnalytic,
+// FeasibilitySampling, FeasibilityRecursive).
+FeasibilityAnalytic feasibility_check(input_constraints);
+feasibility_check.settings_.setMinSectionTimeS(0.01);
+
+// Check feasibility.
+Segment dummy_segment;
+InputFeasibilityResult result =
+    feasibility_check.checkInputFeasibility(dummy_segment);
+std::cout << "The segment is " << getInputFeasibilityResultName(result);
+<< "." << std::endl;
+```
+
+###Benchmarking
+Both recursive and analytic checks are the fastest.
+The recursive check may have a couple more false negatives, i.e., segments, that
+can not be determined feasible although they are but this is neglectable.
+The sampling based check is both slow and may have false positives, i.e.,
+consider segments feasible although they are not. We do not recommend using
+this.
+
+Here is the result over 1000 random segments with different parameter settings:
+(To be inserted)
