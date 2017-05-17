@@ -87,44 +87,16 @@ class Segment {
   // time.
   // Input: dimensions = Vector containing the dimensions that are evaluated.
   // Usually [0, 1, 2] for position, [3] for yaw.
-  // Output: candidates = Vector containing the candidate times for a maximum.
+  // Output: candidates = Vector containing the candidate extrema.
   // Returns whether the computation succeeded -- false means no candidates
   // were found by Jenkins-Traub.
   bool findMinMaxMagnitudeCandidates(int derivative, double t_start,
                                      double t_end,
                                      const std::vector<int>& dimensions,
-                                     std::vector<double>* candidates) const;
+                                     std::vector<Extremum>* candidates) const;
 
-  // Convenience method with t_start = 0.0 and t_end = segment_time.
-  inline bool findMinMaxMagnitudeCandidates(
-      int derivative, const std::vector<int>& dimensions,
-      std::vector<double>* candidates) const {
-    return findMinMaxMagnitudeCandidates(derivative, 0.0, time_, dimensions,
-                                         candidates);
-  }
-
-  // Computes the global minium and maximum maximum of the magnitude of the
-  // segment in the specified derivative and dimensions.
-  // This uses findMinMaxMagnitudeCandidates to compute the candidates for each
-  // segment.
-  // Input: derivative = Derivative of position, in which to find the maxima.
-  // Input: t_start = Only maxima >= t_start are returned. Usually set to 0.
-  // Input: t_stop = Only maxima <= t_stop are returned. Usually set to segment
-  // time.
-  // Input: dimensions = Vector containing the dimensions that are evaluated.
-  // Usually [0, 1, 2] for position, [3] for yaw.
-  // Output: minimum = The global minimum magnitude of the path.
-  // Output: maximum = The global maximum magnitude of the path.
-  // Output: candidates = Vector containing the candidate times for the global
-  // minimum and maximum, i.e. all local extrema.
-  // Output: return = root search may fail.
-  bool findMinMaxMagnitude(int derivative, double t_start, double t_end,
-                           const std::vector<int>& dimensions,
-                           Extremum* minimum, Extremum* maximum,
-                           std::vector<Extremum>* candidates) const;
-
-  // Convenience function. Evaluates the magnitudes of a set of candidates for
-  // the given dimensions.
+  // Convenience function. Evaluates the magnitudes between t_start and t_end
+  // for a set of candidates for given dimensions.
   void findMinMaxMagnitude(double t_start, double t_end,
                            const std::vector<Extremum>& candidates,
                            Extremum* minimum, Extremum* maximum) const;

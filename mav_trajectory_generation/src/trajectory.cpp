@@ -184,26 +184,22 @@ bool Trajectory::findMinMaxMagnitude(int derivative,
                                      Extremum* maximum) const {
   CHECK_NOTNULL(minimum);
   CHECK_NOTNULL(maximum);
-  minimum->value = std::numeric_limits<double>::max();
-  maximum->value = std::numeric_limits<double>::lowest();
 
   for (int segment_idx = 0; segment_idx < segments_.size(); segment_idx++) {
-    Extremum min_candidate;
-    Extremum max_candidate;
     std::vector<Extremum> candidates;
-    if (!segments_[segment_idx].findMinMaxMagnitude(
+    if (!segments_[segment_idx].findMinMaxMagnitudeCandidates(
             derivative, 0.0, segments_[segment_idx].getTime(), dimensions,
-            &min_candidate, &max_candidate, &candidates)) {
+            &candidates)) {
       return false;
     }
-    if (min_candidate < *minimum) {
-      *minimum = min_candidate;
-      minimum->segment_idx = segment_idx;
-    }
-    if (max_candidate > *maximum) {
-      *maximum = max_candidate;
-      maximum->segment_idx = segment_idx;
-    }
+    minimum->segment_idx =
+        std::distance(candidates.begin(),
+                      std::min_element(candidates.begin(), candidates.end()));
+    maximum->segment_idx =
+        std::distance(candidates.begin(),
+                      std::max_element(candidates.begin(), candidates.end()));
+    *minimum = candidates[minimum->segment_idx];
+    *maximum = candidates[maximum->segment_idx];
   }
   return true;
 }

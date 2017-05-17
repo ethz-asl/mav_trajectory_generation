@@ -81,9 +81,12 @@ std::ostream& operator<<(std::ostream& stream,
 
 bool Segment::findMinMaxMagnitudeCandidates(
     int derivative, double t_start, double t_end,
-    const std::vector<int>& dimensions, std::vector<double>* candidates) const {
+    const std::vector<int>& dimensions,
+    std::vector<Extremum>* candidates) const {
   CHECK_NOTNULL(candidates);
 
+  // Compute magnitude derivative roots.
+  std::vector<double> candidate_times;
   if (dimensions.empty()) {
     LOG(WARNING) << "No dimensions specified." << std::endl;
     return false;
@@ -111,51 +114,29 @@ bool Segment::findMinMaxMagnitudeCandidates(
     }
     Polynomial polynomial_convolved(convolved_coefficients);
     if (!polynomial_convolved.findMinMaxCandidates(t_start, t_end, -1,
-                                                   candidates)) {
+                                                   &candidate_times)) {
       return false;
     }
   } else {
     // For dimension.size() == 1  we can simply evaluate the roots of the
     // derivative.
     if (!polynomials_[dimensions[0]].findMinMaxCandidates(
-            t_start, t_end, derivative, candidates)) {
+            t_start, t_end, derivative, &candidate_times)) {
       return false;
     }
   }
-  return true;
-}
-
-bool Segment::findMinMaxMagnitude(int derivative, double t_start, double t_end,
-                                  const std::vector<int>& dimensions,
-                                  Extremum* minimum, Extremum* maximum,
-                                  std::vector<Extremum>* candidates) const {
-  CHECK_NOTNULL(minimum);
-  CHECK_NOTNULL(maximum);
-  CHECK_NOTNULL(candidates);
-  candidates->clear();
-
-  // Compute extrema candidates.
-  std::vector<double> extrema_candidates;
-  extrema_candidates.reserve(N_ - 1);
-  if (!findMinMaxMagnitudeCandidates(derivative, t_start, t_end, dimensions,
-                                     &extrema_candidates)) {
-    return false;
-  }
 
   // Evaluate candidate times.
-  candidates->resize(extrema_candidates.size());
-  for (size_t i = 0; i < extrema_candidates.size(); i++) {
-    double value = 0.0;
+  candidates->resize(candidate_times.size());
+  for (size_t i = 0; i < candidate_times.size(); i++) {
+    double magnitude = 0.0;
     for (int dim : dimensions) {
-      value += std::pow(
-          polynomials_[dim].evaluate(extrema_candidates[i], derivative), 2);
+      magnitude += std::pow(
+          polynomials_[dim].evaluate(candidate_times[i], derivative), 2);
     }
-    value = std::sqrt(value);
-    (*candidates)[i] = Extremum(extrema_candidates[i], value, 0);
+    magnitude = std::sqrt(magnitude);
+    (*candidates)[i] = Extremum(candidate_times[i], magnitude, 0);
   }
-
-  // Evaluate candidates.
-  findMinMaxMagnitude(t_start, t_end, *candidates, minimum, maximum);
 
   return true;
 }

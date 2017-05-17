@@ -73,9 +73,6 @@ class Polynomial {
     return Polynomial(convolve(coefficients_, rhs.coefficients_));
   }
 
-  /// Gets the number of coefficients (order + 1) of the polynomial.
-  int N() const { return N_; }
-
   // Sets up the internal representation from coefficients.
   // Coefficients are stored in increasing order with the power of t,
   // i.e. c1 + c2*t + c3*t^2 ==> coeffs = [c1 c2 c3]
