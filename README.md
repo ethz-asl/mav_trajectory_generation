@@ -298,7 +298,6 @@ and pitch rates, high yaw rates and high yaw angular accelerations.
 `FeasibilitySampling` implements a naive sampling-based check.
 `FeasibilityRecursive` implements a slightly adapted recursive feasibility test
 presented in
-
 ```
 @article{mueller2015computationally,
   title={A computationally efficient motion primitive for quadrocopter trajectory generation},
@@ -311,6 +310,8 @@ presented in
   publisher={IEEE}
 }
 ```
+We adapted [https://github.com/markwmuller/RapidQuadrocopterTrajectories] to
+check arbitrary polynomial order trajectories for yaw and velocity feasibility.
 
 `FeasibilityAnalytic` analytically checks the magnitudes except for the roll and
 pitch rates, where it runs the recursive test (recommended: low in computation
