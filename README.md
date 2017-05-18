@@ -313,7 +313,7 @@ presented in
 ```
 
 `FeasibilityAnalytic` analytically checks the magnitudes except for the roll and
-pitch rates, where it runs the recursive test (recommended: lowest computation
+pitch rates, where it runs the recursive test (recommended: low in computation
 time, no false positives).
 
 ###Example
@@ -343,10 +343,11 @@ std::cout << "The segment is " << getInputFeasibilityResultName(result);
 ###Benchmarking
 Both recursive and analytic checks are the fastest.
 The recursive check may have a couple more false negatives, i.e., segments, that
-can not be determined feasible although they are but this is neglectable.
+can not be determined feasible although they are. But this is neglectable.
 The sampling based check is both slow and may have false positives, i.e.,
 consider segments feasible although they are not. We do not recommend using
 this.
 
 Here are the computational results over 1000 random segments with different
 parameter settings:
+<p align="center"><img src="https://cloud.githubusercontent.com/assets/11293852/26199226/903dea9a-3bc9-11e7-945e-91e5a119e63f.png" /></p>
