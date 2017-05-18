@@ -87,9 +87,15 @@ class Segment {
   // time.
   // Input: dimensions = Vector containing the dimensions that are evaluated.
   // Usually [0, 1, 2] for position, [3] for yaw.
-  // Output: candidates = Vector containing the candidate extrema.
+  // Output: candidates = Vector containing the candidate extrema times.
   // Returns whether the computation succeeded -- false means no candidates
   // were found by Jenkins-Traub.
+  bool findMinMaxMagnitudeCandidates(
+      int derivative, double t_start, double t_end,
+      const std::vector<int>& dimensions,
+      std::vector<double>* candidate_times) const;
+
+  // Convenience function. Additionally evaluates the candidate times.
   bool findMinMaxMagnitudeCandidates(int derivative, double t_start,
                                      double t_end,
                                      const std::vector<int>& dimensions,

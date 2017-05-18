@@ -82,11 +82,10 @@ std::ostream& operator<<(std::ostream& stream,
 bool Segment::findMinMaxMagnitudeCandidates(
     int derivative, double t_start, double t_end,
     const std::vector<int>& dimensions,
-    std::vector<Extremum>* candidates) const {
-  CHECK_NOTNULL(candidates);
-
+    std::vector<double>* candidate_times) const {
+  CHECK_NOTNULL(candidate_times);
+  candidate_times->clear();
   // Compute magnitude derivative roots.
-  std::vector<double> candidate_times;
   if (dimensions.empty()) {
     LOG(WARNING) << "No dimensions specified." << std::endl;
     return false;
@@ -114,17 +113,28 @@ bool Segment::findMinMaxMagnitudeCandidates(
     }
     Polynomial polynomial_convolved(convolved_coefficients);
     if (!polynomial_convolved.findMinMaxCandidates(t_start, t_end, -1,
-                                                   &candidate_times)) {
+                                                   candidate_times)) {
       return false;
     }
   } else {
     // For dimension.size() == 1  we can simply evaluate the roots of the
     // derivative.
     if (!polynomials_[dimensions[0]].findMinMaxCandidates(
-            t_start, t_end, derivative, &candidate_times)) {
+            t_start, t_end, derivative, candidate_times)) {
       return false;
     }
   }
+}
+
+bool Segment::findMinMaxMagnitudeCandidates(
+    int derivative, double t_start, double t_end,
+    const std::vector<int>& dimensions,
+    std::vector<Extremum>* candidates) const {
+  CHECK_NOTNULL(candidates);
+  // Find candidate times (roots + start + end).
+  std::vector<double> candidate_times;
+  findMinMaxMagnitudeCandidates(derivative, t_start, t_end, dimensions,
+                                &candidate_times);
 
   // Evaluate candidate times.
   candidates->resize(candidate_times.size());
@@ -164,7 +174,8 @@ void Segment::findMinMaxMagnitude(double t_start, double t_end, int derivative,
   for (int dim : dimensions) {
     magnitude_start.value +=
         std::pow(polynomials_[dim].evaluate(t_start, derivative), 2);
-    magnitude_end.value += std::pow(polynomials_[dim].evaluate(t_end, derivative), 2);
+    magnitude_end.value +=
+        std::pow(polynomials_[dim].evaluate(t_end, derivative), 2);
   }
   magnitude_start.value = std::sqrt(magnitude_start.value);
   magnitude_end.value = std::sqrt(magnitude_end.value);
