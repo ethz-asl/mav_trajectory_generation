@@ -125,12 +125,12 @@ class FeasibilityBase {
   }
 
   // Checks if a trajectory stays within a set of half planes.
-  bool checkHalfPlaneFeasibility(const Trajectory& trajectory);
+  bool checkHalfPlaneFeasibility(const Trajectory& trajectory) const;
   // Checks if a segment stays within a set of half planes.
-  inline bool checkHalfPlaneFeasibility(const Segment& segment) {
-    ROS_ERROR_STREAM("Half plane feasibility check not implemented.");
-    return false;
-  }
+  // This check computes the extrema for each axis and checks whether these lie
+  // in the positive half space as in
+  // https://github.com/markwmuller/RapidQuadrocopterTrajectories/blob/master/C%2B%2B/RapidTrajectoryGenerator.cpp#L149
+  bool checkHalfPlaneFeasibility(const Segment& segment) const;
 
   // Input constraints.
   InputConstraints input_constraints_;
