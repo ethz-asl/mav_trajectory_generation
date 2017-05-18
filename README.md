@@ -348,5 +348,5 @@ The sampling based check is both slow and may have false positives, i.e.,
 consider segments feasible although they are not. We do not recommend using
 this.
 
-Here is the result over 1000 random segments with different parameter settings:
-(To be inserted)
+Here are the computational results over 1000 random segments with different
+parameter settings:
