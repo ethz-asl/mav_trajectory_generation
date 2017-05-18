@@ -129,6 +129,21 @@ title('Recursive: mean and stdev of computation times')
 figure()
 sampling_interval = [0.01 0.05 0.1];
 errorbar(sampling_interval, mean(7:9), stddev(7:9))
-xlabel('Sampling Interval \Delta t');
+xlabel('Sampling Interval \Deltat');
 ylabel('Time [s]');
 title('Sampling: mean and stdev of computation times')
+
+%% Together
+fig = figure();
+hold on
+sampling_interval = [0.01 0.05 0.1];
+errorbar(min_section_time, mean(1:3), stddev(1:3))
+errorbar(min_section_time, mean(4:6), stddev(4:6))
+errorbar(sampling_interval, mean(7:9), stddev(7:9))
+ax = get(fig,'CurrentAxes');
+set(ax,'YScale','log');
+xticks(sampling_interval);
+xlabel('Minimum section time t_{min} / Sampling Interval \Deltat');
+ylabel('Time [s]');
+title('Mean and stdev of computation times')
+legend('analytic', 'recursive', 'sampling');
