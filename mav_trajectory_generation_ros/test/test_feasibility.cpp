@@ -17,10 +17,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <iostream>
 #include <fstream>
-#include <string>
+#include <iostream>
 #include <random>
+#include <string>
 
 #include <eigen-checks/gtest.h>
 
@@ -30,13 +30,14 @@
 #include <mav_trajectory_generation/timing.h>
 #include <mav_trajectory_generation/vertex.h>
 
+#include "mav_trajectory_generation_ros/feasibility_analytic.h"
 #include "mav_trajectory_generation_ros/feasibility_recursive.h"
 #include "mav_trajectory_generation_ros/feasibility_sampling.h"
-#include "mav_trajectory_generation_ros/feasibility_analytic.h"
 
 using namespace mav_trajectory_generation;
 
-void writeResultsToFile(const std::string& file_name, const std::vector<InputFeasibilityResult>& results) {
+void writeResultsToFile(const std::string& file_name,
+                        const std::vector<InputFeasibilityResult>& results) {
   std::ofstream file;
   file.open(file_name, std::ofstream::out | std::ofstream::trunc);
   if (file.is_open()) {
@@ -44,13 +45,12 @@ void writeResultsToFile(const std::string& file_name, const std::vector<InputFea
       file << std::to_string(result) + "\n";
     }
     file.close();
-  }
-  else {
+  } else {
     std::cout << "Unable to open file " << file_name << "." << std::endl;
   }
 }
 
-TEST(PolynomialTest, CompareFeasibilityTests) {
+TEST(FeasibilityTest, CompareFeasibilityTests) {
   std::srand(1234567);
   // Create random segments.
   const int kNumSegments = 1e3;
@@ -235,30 +235,35 @@ TEST(PolynomialTest, CompareFeasibilityTests) {
     // If the analytic test shows feasibility all other tests should show
     // feasibility or indeterminability.
     if (result_analytic_01[i] == InputFeasibilityResult::kInputFeasible) {
-      EXPECT_TRUE(
-          result_analytic_05[i] == InputFeasibilityResult::kInputFeasible ||
-          result_analytic_05[i] == InputFeasibilityResult::kInputIndeterminable);
-      EXPECT_TRUE(
-          result_analytic_10[i] == InputFeasibilityResult::kInputFeasible ||
-          result_analytic_10[i] == InputFeasibilityResult::kInputIndeterminable);
+      EXPECT_TRUE(result_analytic_05[i] ==
+                      InputFeasibilityResult::kInputFeasible ||
+                  result_analytic_05[i] ==
+                      InputFeasibilityResult::kInputIndeterminable);
+      EXPECT_TRUE(result_analytic_10[i] ==
+                      InputFeasibilityResult::kInputFeasible ||
+                  result_analytic_10[i] ==
+                      InputFeasibilityResult::kInputIndeterminable);
 
-      EXPECT_TRUE(
-          result_recursive_01[i] == InputFeasibilityResult::kInputFeasible ||
-          result_recursive_01[i] == InputFeasibilityResult::kInputIndeterminable);
-      EXPECT_TRUE(
-          result_recursive_05[i] == InputFeasibilityResult::kInputFeasible ||
-          result_recursive_05[i] == InputFeasibilityResult::kInputIndeterminable);
-      EXPECT_TRUE(
-          result_recursive_10[i] == InputFeasibilityResult::kInputFeasible ||
-          result_recursive_10[i] == InputFeasibilityResult::kInputIndeterminable);
+      EXPECT_TRUE(result_recursive_01[i] ==
+                      InputFeasibilityResult::kInputFeasible ||
+                  result_recursive_01[i] ==
+                      InputFeasibilityResult::kInputIndeterminable);
+      EXPECT_TRUE(result_recursive_05[i] ==
+                      InputFeasibilityResult::kInputFeasible ||
+                  result_recursive_05[i] ==
+                      InputFeasibilityResult::kInputIndeterminable);
+      EXPECT_TRUE(result_recursive_10[i] ==
+                      InputFeasibilityResult::kInputFeasible ||
+                  result_recursive_10[i] ==
+                      InputFeasibilityResult::kInputIndeterminable);
 
       // The sampling test needs to show feasibility even.
-      EXPECT_TRUE(
-          result_sampling_01[i] == InputFeasibilityResult::kInputFeasible);
-      EXPECT_TRUE(
-          result_sampling_05[i] == InputFeasibilityResult::kInputFeasible);
-      EXPECT_TRUE(
-          result_sampling_10[i] == InputFeasibilityResult::kInputFeasible);
+      EXPECT_TRUE(result_sampling_01[i] ==
+                  InputFeasibilityResult::kInputFeasible);
+      EXPECT_TRUE(result_sampling_05[i] ==
+                  InputFeasibilityResult::kInputFeasible);
+      EXPECT_TRUE(result_sampling_10[i] ==
+                  InputFeasibilityResult::kInputFeasible);
     }
   }
 
@@ -283,6 +288,36 @@ TEST(PolynomialTest, CompareFeasibilityTests) {
     time_file.close();
   } else {
     std::cout << "Unable to open file " << time_file_name << "." << std::endl;
+  }
+}
+
+TEST(PolynomialTest, HalfPlaneFeasibility) {
+  FeasibilityBase feasibility_check;
+  Eigen::VectorXd coeffs_x(Eigen::Vector3d::Zero());
+  Eigen::VectorXd coeffs_y(Eigen::Vector3d::Zero());
+  Eigen::VectorXd coeffs_z(Eigen::Vector3d::Zero());
+  // Parabola.
+  coeffs_x(1) = 1;
+  coeffs_z(2) = 1;
+
+  Segment segment(3, 3);
+  segment[0] = Polynomial(coeffs_x);
+  segment[1] = Polynomial(coeffs_y);
+  segment[2] = Polynomial(coeffs_z);
+  segment.setTime(1.0);
+
+  Eigen::Vector3d point(0.0, 0.0, 0.0);
+  Eigen::Vector3d normal(-1.0, 0.0, 1.0);
+  while (point.z() > -1.0) {
+    feasibility_check.half_plane_constraints_.emplace_back(point, normal);
+    bool feasible = feasibility_check.checkHalfPlaneFeasibility(segment);
+    if (point.z() >= -0.25) {
+      EXPECT_FALSE(feasible) << point.transpose();
+    } else {
+      EXPECT_TRUE(feasible) << point.transpose();;
+    }
+    feasibility_check.half_plane_constraints_.clear();
+    point.z() -= 0.05;
   }
 }
 
