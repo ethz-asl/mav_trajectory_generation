@@ -35,6 +35,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <limits>
 
 #include "mav_trajectory_generation/rpoly.h"
 
@@ -45,7 +46,7 @@ int findLastNonZeroCoeff(const Eigen::VectorXd& coefficients) {
 
   // Find last non-zero coefficient:
   for (size_t i = coefficients.size() - 1; i >= 0; i--) {
-    if (coefficients(i) != 0.0) {
+    if (std::abs(coefficients(i)) >= std::numeric_limits<double>::epsilon()) {
       last_non_zero_coefficient = i;
       break;
     }
