@@ -42,10 +42,13 @@ class Polynomial {
 
   // Maximum degree of a polynomial for which the static derivative (basis
   // coefficient) matrix should be evaluated for.
-  // kMaxN = max. convolution size for N = 12.
-  static constexpr int kMaxN = 12 + 11 - 1;
+  // kMaxN = max. number of coefficients.
+  static constexpr int kMaxN = 12;
+  // kMaxConvolutionSize = max. convolution size for N = 12, convolved with its
+  // derivative.
+  static constexpr int kMaxConvolutionSize = 2 * kMaxN - 2;
   // One static shared across all members of the class, computed up to order
-  // kMaxN.
+  // kMaxConvolutionSize.
   static Eigen::MatrixXd base_coefficients_;
 
   Polynomial(int N) : N_(N), coefficients_(N) { coefficients_.setZero(); }
@@ -58,6 +61,9 @@ class Polynomial {
 
   Polynomial(const Eigen::VectorXd& coeffs)
       : N_(coeffs.size()), coefficients_(coeffs) {}
+
+  /// Gets the number of coefficients (order + 1) of the polynomial.
+  int N() const { return N_; }
 
   inline bool operator==(const Polynomial& rhs) const {
     return coefficients_ == rhs.coefficients_;
@@ -159,35 +165,38 @@ class Polynomial {
 
   // Finds all candidates for the minimum and maximum between t_start and t_end
   // by evaluating the roots of the polynomial's derivative.
-  void findMinMaxCandidates(
+  bool selectMinMaxCandidatesFromRoots(
       double t_start, double t_end,
       const Eigen::VectorXcd& roots_derivative_of_derivative,
       std::vector<double>* candidates) const;
 
   // Finds all candidates for the minimum and maximum between t_start and t_end
-  // by evaluating the roots of the polynomial. Computes the roots explicitely.
-  bool findMinMaxCandidates(double t_start, double t_end, int derivative,
-                            std::vector<double>* candidates) const;
+  // by computing the roots of the derivative polynomial.
+  bool computeMinMaxCandidates(double t_start, double t_end, int derivative,
+                               std::vector<double>* candidates) const;
 
-  // Computes the minimum and maximum of a polynomial between time t_start and
-  // t_end. Returns the minimum and maximum as pair<t, value>.
-  bool findMinMax(double t_start, double t_end, int derivative,
-                  const Eigen::VectorXcd& roots_derivative_of_derivative,
-                  std::pair<double, double>* min,
-                  std::pair<double, double>* max) const;
-
-  // Computes the minimum and maximum of a polynomial between time t_start and
-  // t_end. Returns the minimum and maximum as pair<t, value>.
-  // This version finds the minimum and maximum candidates explicitely.
-  bool findMinMax(double t_start, double t_end, int derivative,
-                  std::pair<double, double>* min,
-                  std::pair<double, double>* max) const;
-
-  // Computes the minimum and maximum of a polynomial among a candidate set.
+  // Evaluates the minimum and maximum of a polynomial between time t_start and
+  // t_end given the roots of the derivative.
   // Returns the minimum and maximum as pair<t, value>.
-  bool findMinMax(const std::vector<double>& candidates, int derivative,
-                  std::pair<double, double>* min,
-                  std::pair<double, double>* max) const;
+  bool selectMinMaxFromRoots(
+      double t_start, double t_end, int derivative,
+      const Eigen::VectorXcd& roots_derivative_of_derivative,
+      std::pair<double, double>* minimum,
+      std::pair<double, double>* maximum) const;
+
+  // Computes the minimum and maximum of a polynomial between time t_start and
+  // t_end by computing the roots of the derivative polynomial.
+  // Returns the minimum and maximum as pair<t, value>.
+  bool computeMinMax(double t_start, double t_end, int derivative,
+                     std::pair<double, double>* minimum,
+                     std::pair<double, double>* maximum) const;
+
+  // Selects the minimum and maximum of a polynomial among a candidate set.
+  // Returns the minimum and maximum as pair<t, value>.
+  bool selectMinMaxFromCandidates(const std::vector<double>& candidates,
+                                  int derivative,
+                                  std::pair<double, double>* minimum,
+                                  std::pair<double, double>* maximum) const;
 
   // Computes the base coefficients with the according powers of t, as
   // e.g. needed for computation of (in)equality constraints.

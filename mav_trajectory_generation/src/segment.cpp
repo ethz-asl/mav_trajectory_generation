@@ -79,7 +79,7 @@ std::ostream& operator<<(std::ostream& stream,
   return stream;
 }
 
-bool Segment::findMinMaxMagnitudeCandidates(
+bool Segment::computeMinMaxMagnitudeCandidateTimes(
     int derivative, double t_start, double t_end,
     const std::vector<int>& dimensions,
     std::vector<double>* candidate_times) const {
@@ -97,9 +97,10 @@ bool Segment::findMinMaxMagnitudeCandidates(
     Eigen::VectorXd convolved_coefficients(convolved_coefficients_length);
     convolved_coefficients.setZero();
     for (int dim : dimensions) {
-      if (dim < 0 || dim > D_ - 1) {
-        LOG(WARNING) << "Specified dimension " << dim
-                     << " is out of bounds [0.." << D_ - 1 << "]." << std::endl;
+      if (dim < 0 || dim >= D_) {
+        LOG(WARNING) << "Specified dimensions " << dim
+                     << " are out of bounds [0.." << D_ - 1 << "]."
+                     << std::endl;
         return false;
       }
       // Our coefficients are INCREASING, so when you take the derivative,
@@ -112,29 +113,32 @@ bool Segment::findMinMaxMagnitudeCandidates(
       convolved_coefficients += Polynomial::convolve(d, dd);
     }
     Polynomial polynomial_convolved(convolved_coefficients);
-    if (!polynomial_convolved.findMinMaxCandidates(t_start, t_end, -1,
-                                                   candidate_times)) {
+    // derivative = -1 because the convolved polynomial is the derivative
+    // already. We wish to find the minimum and maximum candidates for the
+    // integral.
+    if (!polynomial_convolved.computeMinMaxCandidates(t_start, t_end, -1,
+                                                      candidate_times)) {
       return false;
     }
   } else {
     // For dimension.size() == 1  we can simply evaluate the roots of the
     // derivative.
-    if (!polynomials_[dimensions[0]].findMinMaxCandidates(
+    if (!polynomials_[dimensions[0]].computeMinMaxCandidates(
             t_start, t_end, derivative, candidate_times)) {
       return false;
     }
   }
 }
 
-bool Segment::findMinMaxMagnitudeCandidates(
+bool Segment::computeMinMaxMagnitudeCandidates(
     int derivative, double t_start, double t_end,
     const std::vector<int>& dimensions,
     std::vector<Extremum>* candidates) const {
   CHECK_NOTNULL(candidates);
   // Find candidate times (roots + start + end).
   std::vector<double> candidate_times;
-  findMinMaxMagnitudeCandidates(derivative, t_start, t_end, dimensions,
-                                &candidate_times);
+  computeMinMaxMagnitudeCandidateTimes(derivative, t_start, t_end, dimensions,
+                                       &candidate_times);
 
   // Evaluate candidate times.
   candidates->resize(candidate_times.size());
@@ -151,12 +155,17 @@ bool Segment::findMinMaxMagnitudeCandidates(
   return true;
 }
 
-void Segment::findMinMaxMagnitude(double t_start, double t_end, int derivative,
-                                  const std::vector<int>& dimensions,
-                                  const std::vector<Extremum>& candidates,
-                                  Extremum* minimum, Extremum* maximum) const {
+bool Segment::selectMinMaxMagnitudeFromCandidates(
+    double t_start, double t_end, int derivative,
+    const std::vector<int>& dimensions, const std::vector<Extremum>& candidates,
+    Extremum* minimum, Extremum* maximum) const {
   CHECK_NOTNULL(minimum);
   CHECK_NOTNULL(maximum);
+  if (t_start > t_end) {
+    LOG(WARNING) << "t_start is greater than t_end.";
+    return false;
+  }
+
   minimum->value = std::numeric_limits<double>::max();
   maximum->value = std::numeric_limits<double>::lowest();
 
@@ -166,7 +175,7 @@ void Segment::findMinMaxMagnitude(double t_start, double t_end, int derivative,
       continue;
     }
     *maximum = std::max(*maximum, candidate);
-    *minimum = std::max(*minimum, candidate);
+    *minimum = std::min(*minimum, candidate);
   }
   // Evaluate start and end time.
   Extremum magnitude_start(t_start, 0.0, 0);
@@ -180,9 +189,11 @@ void Segment::findMinMaxMagnitude(double t_start, double t_end, int derivative,
   magnitude_start.value = std::sqrt(magnitude_start.value);
   magnitude_end.value = std::sqrt(magnitude_end.value);
   *maximum = std::max(*maximum, magnitude_start);
-  *minimum = std::max(*minimum, magnitude_start);
+  *minimum = std::min(*minimum, magnitude_start);
   *maximum = std::max(*maximum, magnitude_end);
-  *minimum = std::max(*minimum, magnitude_end);
+  *minimum = std::min(*minimum, magnitude_end);
+
+  return true;
 }
 
 }  // namespace mav_trajectory_generation

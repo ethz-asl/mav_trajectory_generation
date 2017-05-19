@@ -178,28 +178,40 @@ Trajectory Trajectory::getTrajectoryWithAppendedDimension(
   return traj;
 }
 
-bool Trajectory::findMinMaxMagnitude(int derivative,
-                                     const std::vector<int>& dimensions,
-                                     Extremum* minimum,
-                                     Extremum* maximum) const {
+bool Trajectory::computeMinMaxMagnitude(int derivative,
+                                        const std::vector<int>& dimensions,
+                                        Extremum* minimum,
+                                        Extremum* maximum) const {
   CHECK_NOTNULL(minimum);
   CHECK_NOTNULL(maximum);
+  minimum->value = std::numeric_limits<double>::max();
+  maximum->value = std::numeric_limits<double>::lowest();
 
-  for (int segment_idx = 0; segment_idx < segments_.size(); segment_idx++) {
+  // For all segments in the trajectory:
+  for (size_t segment_idx = 0; segment_idx < segments_.size(); segment_idx++) {
+    // Compute candidates.
     std::vector<Extremum> candidates;
-    if (!segments_[segment_idx].findMinMaxMagnitudeCandidates(
+    if (!segments_[segment_idx].computeMinMaxMagnitudeCandidates(
             derivative, 0.0, segments_[segment_idx].getTime(), dimensions,
             &candidates)) {
       return false;
     }
-    minimum->segment_idx =
-        std::distance(candidates.begin(),
-                      std::min_element(candidates.begin(), candidates.end()));
-    maximum->segment_idx =
-        std::distance(candidates.begin(),
-                      std::max_element(candidates.begin(), candidates.end()));
-    *minimum = candidates[minimum->segment_idx];
-    *maximum = candidates[maximum->segment_idx];
+    // Evaluate candidates.
+    Extremum minimum_candidate, maximum_candidate;
+    if (!segments_[segment_idx].selectMinMaxMagnitudeFromCandidates(
+            0.0, segments_[segment_idx].getTime(), derivative, dimensions,
+            candidates, &minimum_candidate, &maximum_candidate)) {
+      return false;
+    }
+    // Select minimum / maximum.
+    if (minimum_candidate < *minimum) {
+      *minimum = minimum_candidate;
+      minimum->segment_idx = static_cast<int>(segment_idx);
+    }
+    if (maximum_candidate > *maximum) {
+      *maximum = maximum_candidate;
+      maximum->segment_idx = static_cast<int>(segment_idx);
+    }
   }
   return true;
 }

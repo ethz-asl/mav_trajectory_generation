@@ -96,8 +96,9 @@ class Trajectory {
   // Compute the analytic minimum and maximum of magnitude for a given
   // derivative and dimensions, e.g., [0, 1, 2] for position or [3] for yaw.
   // Returns false in case of extremum calculation failure.
-  bool findMinMaxMagnitude(int derivative, const std::vector<int>& dimensions,
-                           Extremum* minimum, Extremum* maximum) const;
+  bool computeMinMaxMagnitude(int derivative,
+                              const std::vector<int>& dimensions,
+                              Extremum* minimum, Extremum* maximum) const;
 
  private:
   int D_;            // Number of dimensions.

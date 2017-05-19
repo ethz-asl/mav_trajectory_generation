@@ -449,8 +449,8 @@ TEST(MavTrajectoryGeneration,
     std::vector<double> res_template_free;
     std::vector<int> dimensions = {0};
     time_analytic_template_free.Start();
-    s.findMinMaxMagnitudeCandidates(1, 0.0, s.getTime(), dimensions,
-                                    &res_template_free);
+    s.computeMinMaxMagnitudeCandidateTimes(1, 0.0, s.getTime(), dimensions,
+                                           &res_template_free);
     time_analytic_template_free.Stop();
 
     std::vector<double> res_sampling;
@@ -543,8 +543,8 @@ TEST(MavTrajectoryGeneration, PathOptimization3D_segment_extrema_of_magnitude) {
     std::vector<double> res_template_free;
     std::vector<int> dimensions = {0, 1, 2};
     time_analytic_template_free.Start();
-    s.findMinMaxMagnitudeCandidates(1, 0.0, s.getTime(), dimensions,
-                                    &res_template_free);
+    s.computeMinMaxMagnitudeCandidateTimes(1, 0.0, s.getTime(), dimensions,
+                                           &res_template_free);
     time_analytic_template_free.Stop();
 
     std::vector<double> res_sampling;

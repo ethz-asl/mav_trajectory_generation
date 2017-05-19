@@ -90,23 +90,24 @@ class Segment {
   // Output: candidates = Vector containing the candidate extrema times.
   // Returns whether the computation succeeded -- false means no candidates
   // were found by Jenkins-Traub.
-  bool findMinMaxMagnitudeCandidates(
+  bool computeMinMaxMagnitudeCandidateTimes(
       int derivative, double t_start, double t_end,
       const std::vector<int>& dimensions,
       std::vector<double>* candidate_times) const;
 
   // Convenience function. Additionally evaluates the candidate times.
-  bool findMinMaxMagnitudeCandidates(int derivative, double t_start,
-                                     double t_end,
-                                     const std::vector<int>& dimensions,
-                                     std::vector<Extremum>* candidates) const;
+  bool computeMinMaxMagnitudeCandidates(
+      int derivative, double t_start, double t_end,
+      const std::vector<int>& dimensions,
+      std::vector<Extremum>* candidates) const;
 
   // Convenience function. Evaluates the magnitudes between t_start and t_end
   // for a set of candidates for given dimensions.
-  void findMinMaxMagnitude(double t_start, double t_end, int derivative,
-                           const std::vector<int>& dimensions,
-                           const std::vector<Extremum>& candidates,
-                           Extremum* minimum, Extremum* maximum) const;
+  bool selectMinMaxMagnitudeFromCandidates(
+      double t_start, double t_end, int derivative,
+      const std::vector<int>& dimensions,
+      const std::vector<Extremum>& candidates, Extremum* minimum,
+      Extremum* maximum) const;
 
  protected:
   Polynomial::Vector polynomials_;

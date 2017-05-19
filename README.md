@@ -279,7 +279,7 @@ mav_trajectory_generation::drawMavSampledTrajectoryWithMavMarker(states, distanc
 ## Checking Feasibility
 The package contains three implementations to check generated trajectories for
 input feasibility. The checks are based on the rigid-body model assumption and
-flat state characteristics presented in
+flat state characteristics presented in [Mellinger2011](http://www-personal.acfr.usyd.edu.au/spns/cdm/papers/Mellinger.pdf).
 
 ```
 @inproceedings{mellinger2011minimum,
@@ -297,7 +297,7 @@ and pitch rates, high yaw rates and high yaw angular accelerations.
 
 `FeasibilitySampling` implements a naive sampling-based check.
 `FeasibilityRecursive` implements a slightly adapted recursive feasibility test
-presented in
+presented in [Müller2015](http://flyingmachinearena.org/wp-content/publications/2015/mueTRO15.pdf).
 ```
 @article{mueller2015computationally,
   title={A computationally efficient motion primitive for quadrocopter trajectory generation},
@@ -321,8 +321,8 @@ time, no false positives).
 ```c++
 // Create input constraints.
 InputConstraints input_constraints;
-input_constraints.setFMin(0.5); // minimum thrust in [m/s/s].
-input_constraints.setFMax(1.5); // maximum thrust in [m/s/s].
+input_constraints.setFMin(0.5 * 9.81); // minimum acceleration in [m/s/s].
+input_constraints.setFMax(1.5 * 9.81); // maximum acceleration in [m/s/s].
 input_constraints.setVMax(3.5); // maximum velocity in [m/s].
 input_constraints.setOmegaXYMax(M_PI / 2.0); // maximum roll/pitch rates in [rad/s].
 input_constraints.setOmegaZMax(M_PI / 2.0); // maximum yaw rates in [rad/s].
@@ -337,12 +337,12 @@ feasibility_check.settings_.setMinSectionTimeS(0.01);
 Segment dummy_segment;
 InputFeasibilityResult result =
     feasibility_check.checkInputFeasibility(dummy_segment);
-std::cout << "The segment is " << getInputFeasibilityResultName(result);
+std::cout << "The segment input is " << getInputFeasibilityResultName(result);
 << "." << std::endl;
 ```
 
 ###Benchmarking
-Both recursive and analytic checks are the fastest.
+Both recursive and analytic checks are comparably fast.
 The recursive check may have a couple more false negatives, i.e., segments, that
 can not be determined feasible although they are. But this is neglectable.
 The sampling based check is both slow and may have false positives, i.e.,
