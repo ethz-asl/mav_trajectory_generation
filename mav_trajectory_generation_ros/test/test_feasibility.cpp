@@ -308,6 +308,7 @@ TEST(PolynomialTest, HalfPlaneFeasibility) {
 
   Eigen::Vector3d point(0.0, 0.0, 0.0);
   Eigen::Vector3d normal(-1.0, 0.0, 1.0);
+  // Shift boundary down.
   while (point.z() > -1.0) {
     feasibility_check.half_plane_constraints_.emplace_back(point, normal);
     bool feasible = feasibility_check.checkHalfPlaneFeasibility(segment);

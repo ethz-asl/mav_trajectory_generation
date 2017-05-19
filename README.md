@@ -276,7 +276,7 @@ mav_trajectory_generation::drawMavTrajectoryWithMavMarker(trajectory, distance, 
 mav_trajectory_generation::drawMavSampledTrajectoryWithMavMarker(states, distance, frame_id, hex, &markers)
 ```
 
-## Checking Feasibility
+## Checking Input Feasibility
 The package contains three implementations to check generated trajectories for
 input feasibility. The checks are based on the rigid-body model assumption and
 flat state characteristics presented in [Mellinger2011](http://www-personal.acfr.usyd.edu.au/spns/cdm/papers/Mellinger.pdf).
@@ -310,7 +310,7 @@ presented in [Müller2015](http://flyingmachinearena.org/wp-content/publications
   publisher={IEEE}
 }
 ```
-We adapted [https://github.com/markwmuller/RapidQuadrocopterTrajectories] to
+We adapted https://github.com/markwmuller/RapidQuadrocopterTrajectories to
 check arbitrary polynomial order trajectories for yaw and velocity feasibility.
 
 `FeasibilityAnalytic` analytically checks the magnitudes except for the roll and
@@ -352,3 +352,39 @@ this.
 Here are the computational results over 1000 random segments with different
 parameter settings:
 <p align="center"><img src="https://cloud.githubusercontent.com/assets/11293852/26199226/903dea9a-3bc9-11e7-945e-91e5a119e63f.png" /></p>
+
+## Checking Half-Space Feasibility
+The package also contains a method to check if a trajectory or segment is inside
+an arbitrary set of half spaces based on https://github.com/markwmuller/RapidQuadrocopterTrajectories.
+This is useful to check if a segment is inside a box or above ground.
+
+Example ground plane feasibility:
+```c++
+// Create feasibility check.
+FeasibilityBase feasibility_check;
+// Create ground plane.
+Eigen::Vector3d point(0.0, 0.0, 0.0);
+Eigen::Vector3d normal(0.0, 0.0, 1.0);
+feasibility_check.half_plane_constraints_.emplace_back(point, normal);
+// Check feasibility.
+Segment dummy_segment;
+if(!feasibility_check.checkHalfPlaneFeasibility(segment)) {
+  std::cout << "The segment is in collision with the ground plane." << std::endl;
+}
+```
+
+Example box feasibility:
+```c++
+// Create feasibility check.
+FeasibilityBase feasibility_check;
+// Create box constraints.
+Eigen::Vector3d box_center(0.0, 0.0, 0.0);
+Eigen::Vector3d box_size(1.0, 1.0, 1.0);
+feasibility_check.half_plane_constraints_ =
+    HalfPlane::createBoundingBox(box_center, box_size);
+// Check feasibility.
+Segment dummy_segment;
+if(!feasibility_check.checkHalfPlaneFeasibility(segment)) {
+  std::cout << "The segment is not inside the box." << std::endl;
+}
+```

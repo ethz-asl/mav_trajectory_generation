@@ -116,6 +116,22 @@ HalfPlane::HalfPlane(const Eigen::Vector3d& a, const Eigen::Vector3d& b,
   normal = (b - a).cross(c - a).normalized();
 }
 
+static HalfPlane::Vector createBoundingBox(
+    const Eigen::Vector3d& point, const Eigen::Vector3d& bounding_box_size) {
+  HalfPlane::Vector bounding_box;
+  Eigen::Vector3d bbx_min = point - bounding_box_size / 2;
+  Eigen::Vector3d bbx_max = point + bounding_box_size / 2;
+
+  for (size_t axis = 0; axis < 3; axis++) {
+    Eigen::Vector3d normal_min(Eigen::Vector3d::Zero());
+    Eigen::Vector3d normal_max(Eigen::Vector3d::Zero());
+    normal_min(axis) = 1.0;
+    normal_max(axis) = -1.0;
+    bounding_box.emplace_back(bbx_min, normal_min);
+    bounding_box.emplace_back(bbx_max, normal_max);
+  }
+}
+
 FeasibilityBase::FeasibilityBase()
     : gravity_((Eigen::Vector3d() << 0.0, 0.0, mav_msgs::kGravity).finished()) {
 }
@@ -160,7 +176,6 @@ bool FeasibilityBase::checkHalfPlaneFeasibility(const Segment& segment) const {
     // Project the segment position polynomial onto the half plane direction.
     // This polynomial represents the distance of the segment from the origin in
     // half plane direction.
-    // TODO(rikba): Verify this claim.
     Polynomial projection(segment.N());
     for (size_t dim = 0; dim < 3; dim++) {
       projection += segment[dim] * half_plane.normal(dim);

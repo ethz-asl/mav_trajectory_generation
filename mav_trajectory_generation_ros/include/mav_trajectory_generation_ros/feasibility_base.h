@@ -101,6 +101,10 @@ class HalfPlane {
   HalfPlane(const Eigen::Vector3d& a, const Eigen::Vector3d& b,
             const Eigen::Vector3d& c);
 
+  // Create 6 half planes that form a box with inward-facing normals.
+  // point = center of the box, bounding_box_size = x, y, z edge length.
+  static HalfPlane::Vector createBoundingBox(
+      const Eigen::Vector3d& point, const Eigen::Vector3d& bounding_box_size);
   Eigen::Vector3d point;
   Eigen::Vector3d normal;
 };
