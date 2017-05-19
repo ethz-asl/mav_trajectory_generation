@@ -62,12 +62,12 @@ InputConstraints::InputConstraints()
 InputConstraints::InputConstraints(double f_min, double f_max, double v_max,
                                    double omega_xy_max, double omega_z_max,
                                    double omega_z_dot_max) {
-setFMin(f_min);
-setFMax(f_max);
-setVMax(v_max);
-setOmegaXYMax(omega_xy_max);
-setOmegaZMax(omega_z_max);
-setOmegaZDotMax(omega_z_dot_max);
+  setFMin(f_min);
+  setFMax(f_max);
+  setVMax(v_max);
+  setOmegaXYMax(omega_xy_max);
+  setOmegaZMax(omega_z_max);
+  setOmegaZDotMax(omega_z_dot_max);
 }
 
 void InputConstraints::setFMin(double f_min) {
@@ -103,17 +103,17 @@ void InputConstraints::setDefaultValues() {
 
 HalfPlane::HalfPlane(const Eigen::Vector3d& point,
                      const Eigen::Vector3d& normal)
-    : point_(point), normal_(normal) {
+    : point(point), normal(normal) {
   CHECK_GT(normal.norm(), 0.0) << "Invalid normal.";
-  normal_.normalize();
+  this->normal.normalize();
 }
 
 HalfPlane::HalfPlane(const Eigen::Vector3d& a, const Eigen::Vector3d& b,
                      const Eigen::Vector3d& c) {
   CHECK_NE(a, b);
   CHECK_NE(a, c);
-  point_ = a;
-  normal_ = (b - a).cross(c - a).normalized();
+  point = a;
+  normal = (b - a).cross(c - a).normalized();
 }
 
 FeasibilityBase::FeasibilityBase()
@@ -156,70 +156,32 @@ bool FeasibilityBase::checkHalfPlaneFeasibility(const Segment& segment) const {
     return false;
   }
 
-  //Ensure that the normal is a unit vector:
-boundaryNormal = boundaryNormal.GetUnitVector();
-
-//first, we will build the polynomial describing the velocity of the a
-//quadrocopter in the direction of the normal. Then we will solve for
-//the zeros of this, which give us the times when the position is at a
-//critical point. Then we evaluate the position at these points, and at
-//the trajectory beginning and end, to see whether we are feasible.
-
-//need to check that the trajectory stays inside the safe box throughout the flight:
-
-//the coefficients of the quartic equation: x(t) = c[0]t**4 + c[1]*t**3 + c[2]*t**2 + c[3]*t + c[4]
-double c[5] = { 0, 0, 0, 0, 0 };
-
-for(int dim=0; dim<3; dim++)
-{
-  c[0] += boundaryNormal[dim]*_axis[dim].GetParamAlpha() / 24.0; //t**4
-  c[1] += boundaryNormal[dim]*_axis[dim].GetParamBeta()  / 6.0; //t**3
-  c[2] += boundaryNormal[dim]*_axis[dim].GetParamGamma() / 2.0; //t**2
-  c[3] += boundaryNormal[dim]*_axis[dim].GetInitialAcceleration(); //t
-  c[4] += boundaryNormal[dim]*_axis[dim].GetInitialVelocity(); //1
-}
-
-//Solve the roots (we prepend the times 0 and tf):
-double roots[6];
-roots[0] = 0;
-roots[1] = _tf;
-
-size_t rootCount;
-if(fabs(c[0]) > 1e-6)
-{
-  rootCount = magnet::math::quarticSolve(c[1] / c[0], c[2] / c[0], c[3] / c[0], c[4] / c[0], roots[2], roots[3], roots[4], roots[5]);
-}
-else
-{
-  rootCount = magnet::math::cubicSolve(c[2] / c[1], c[3] / c[1], c[4] / c[1], roots[2], roots[3], roots[4]);
-}
-
-for(unsigned i=0; i<(rootCount+2); i++)
-{
-  //don't evaluate points outside the domain
-  if(roots[i] < 0) continue;
-  if(roots[i] > _tf) continue;
-
-  if((GetPosition(roots[i]) - boundaryPoint).Dot(boundaryNormal) <= 0)
-  {
-    //touching, or on the wrong side of, the boundary!
-    return StateInfeasible;
+  for (const HalfPlane& half_plane : half_plane_constraints_) {
+    // Project the segment position polynomial onto the half plane direction.
+    // This polynomial represents the distance of the segment from the origin in
+    // half plane direction.
+    // TODO(rikba): Verify this claim.
+    Polynomial projection(segment.N());
+    for (size_t dim = 0; dim < 3; dim++) {
+      projection += segment[dim] * half_plane.normal(dim);
+    }
+    // Find critical times.
+    // These are the points in the projected polynomial with zero velocity. The
+    // MAV changes directions towards the boundary normal.
+    std::vector<double> extrema_candidates;
+    projection.computeMinMaxCandidates(0.0, segment.getTime(),
+                                       derivative_order::POSITION,
+                                       &extrema_candidates);
+    // Evaluate position at these critical points.
+    for (double t : extrema_candidates) {
+      if ((segment.evaluate(t) - half_plane.point).dot(half_plane.normal) <=
+          0.0) {
+        // The vector connecting the critical position and the point on the half
+        // plane face different / perpendicular direction.
+        return false;
+      }
+    }
   }
-}
-return StateFeasible;
-
-
-  // For each axis transform the polynomial into  check extrema inside all half planes.
-  for (size_t dim = 0; dim < 3; dim++) {
-  // Calculate extrema.
-  std::pair<double, double> min, max;
-  segment[dim].findMinMax(0.0, segment.getTime(), derivative_order::POSITION, &min, &max);
-  for (const Halfplane& : half_plane_constraints_) {
-    if ()
-  }
-
-  }
-
   return true;
 }
 

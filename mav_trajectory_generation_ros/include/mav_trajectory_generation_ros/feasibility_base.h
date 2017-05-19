@@ -101,9 +101,8 @@ class HalfPlane {
   HalfPlane(const Eigen::Vector3d& a, const Eigen::Vector3d& b,
             const Eigen::Vector3d& c);
 
- private:
-  Eigen::Vector3d point_;
-  Eigen::Vector3d normal_;
+  Eigen::Vector3d point;
+  Eigen::Vector3d normal;
 };
 
 // A base class for different implementations for dynamic and position
