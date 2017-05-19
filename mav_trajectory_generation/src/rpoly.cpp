@@ -45,7 +45,7 @@ int findLastNonZeroCoeff(const Eigen::VectorXd& coefficients) {
   int last_non_zero_coefficient = -1;
 
   // Find last non-zero coefficient:
-  for (size_t i = coefficients.size() - 1; i >= 0; i--) {
+  for (size_t i = coefficients.size() - 1; i != -1; i--) {
     if (std::abs(coefficients(i)) >= std::numeric_limits<double>::epsilon()) {
       last_non_zero_coefficient = i;
       break;
