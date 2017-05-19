@@ -56,7 +56,7 @@ bool sampleTrajectoryAtTime(const Trajectory& trajectory, double sample_time,
         (trajectory.evaluate(sample_time, derivative_order::POSITION))(3));
     state->setFromYawRate(
         (trajectory.evaluate(sample_time, derivative_order::VELOCITY))(3));
-    state->setFromYawRate(
+    state->setFromYawAcc(
         (trajectory.evaluate(sample_time, derivative_order::ACCELERATION))(3));
   }
   state->time_from_start_ns =

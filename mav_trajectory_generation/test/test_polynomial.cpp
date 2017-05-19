@@ -28,6 +28,7 @@
 
 #include "mav_trajectory_generation/motion_defines.h"
 #include "mav_trajectory_generation/polynomial.h"
+#include "mav_trajectory_generation/test_utils.h"
 #include "mav_trajectory_generation/timing.h"
 
 using namespace mav_trajectory_generation;
@@ -56,12 +57,6 @@ void findMinMaxBySampling(const Polynomial& polynomial, double t_start,
     }
     t += kSamplingInterval;
   }
-}
-
-double createRandomDouble(double min, double max) {
-  return (max - min) * (static_cast<double>(std::rand()) /
-                        static_cast<double>(RAND_MAX)) +
-         min;
 }
 
 bool approxEqual(double x_1, double x_2) {
@@ -109,8 +104,8 @@ TEST(PolynomialTest, FindMinMax) {
     findMinMaxBySampling(p, t_start, t_end, &min_sampling, &max_sampling);
     timer_sampling.Stop();
     timing::Timer timer_analytic("find_min_max_analytic");
-    bool success = p.findMinMax(t_start, t_end, kDerivative, &min_computing,
-                                &max_computing);
+    bool success = p.computeMinMax(t_start, t_end, kDerivative, &min_computing,
+                                   &max_computing);
     timer_analytic.Stop();
     if (!success) {
       std::cout << "Failed to compute roots of derivative of polynomial: "
@@ -118,20 +113,16 @@ TEST(PolynomialTest, FindMinMax) {
       num_failures++;
       continue;
     }
-    if (!approxEqual(max_sampling.first, max_computing.first) ||
-        !approxEqual(min_sampling.first, min_computing.first)) {
-      std::cout << "t_min_sampling: " << min_sampling.first << std::endl;
-      std::cout << "t_min_computing: " << min_computing.first << std::endl;
-      std::cout << "min_sampling: " << min_sampling.second << std::endl;
-      std::cout << "min_computing: " << min_computing.second << std::endl;
-
-      std::cout << "t_max_sampling: " << max_sampling.first << std::endl;
-      std::cout << "t_max_computing: " << max_computing.first << std::endl;
-      std::cout << "max_sampling: " << max_sampling.second << std::endl;
-      std::cout << "max_computing: " << max_computing.second << std::endl;
-    }
-    EXPECT_TRUE(approxEqual(max_sampling.first, max_computing.first));
-    EXPECT_TRUE(approxEqual(min_sampling.first, min_computing.first));
+    EXPECT_TRUE(approxEqual(max_sampling.first, max_computing.first)) <<
+    "t_max_sampling: " << max_sampling.first << std::endl <<
+    "t_max_computing: " << max_computing.first << std::endl <<
+    "max_sampling: " << max_sampling.second << std::endl <<
+    "max_computing: " << max_computing.second << std::endl;
+    EXPECT_TRUE(approxEqual(min_sampling.first, min_computing.first)) <<
+    "t_min_sampling: " << min_sampling.first << std::endl <<
+    "t_min_computing: " << min_computing.first << std::endl <<
+    "min_sampling: " << min_sampling.second << std::endl <<
+    "min_computing: " << min_computing.second << std::endl;
   }
   std::cout << "Failed to compute minimum for " << num_failures << " / "
             << kNumPolynomials << " polynomials." << std::endl;

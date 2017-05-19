@@ -13,11 +13,10 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied. See the License for the specific language governing
+ * permissions and limitations under the License.
  */
-
 #include "mav_trajectory_generation/polynomial.h"
 
 #include <algorithm>
@@ -25,7 +24,7 @@
 
 namespace mav_trajectory_generation {
 
-void Polynomial::findMinMaxCandidates(
+void Polynomial::selectMinMaxCandidatesFromRoots(
     double t_start, double t_end,
     const Eigen::VectorXcd& roots_derivative_of_derivative,
     std::vector<double>* candidates) const {
@@ -51,9 +50,9 @@ void Polynomial::findMinMaxCandidates(
   }
 }
 
-bool Polynomial::findMinMaxCandidates(double t_start, double t_end,
-                                      int derivative,
-                                      std::vector<double>* candidates) const {
+bool Polynomial::computeMinMaxCandidates(
+    double t_start, double t_end, int derivative,
+    std::vector<double>* candidates) const {
   CHECK_NOTNULL(candidates);
   candidates->clear();
   if (N_ - derivative - 1 < 0) {
@@ -65,63 +64,65 @@ bool Polynomial::findMinMaxCandidates(double t_start, double t_end,
                              &roots_derivative_of_derivative)) {
     return false;
   } else {
-    findMinMaxCandidates(t_start, t_end, roots_derivative_of_derivative,
-                         candidates);
+    selectMinMaxCandidatesFromRoots(t_start, t_end,
+                                    roots_derivative_of_derivative, candidates);
     return true;
   }
 }
 
-bool Polynomial::findMinMax(
+bool Polynomial::selectMinMaxFromRoots(
     double t_start, double t_end, int derivative,
     const Eigen::VectorXcd& roots_derivative_of_derivative,
-    std::pair<double, double>* min, std::pair<double, double>* max) const {
-  CHECK_NOTNULL(min);
-  CHECK_NOTNULL(max);
+    std::pair<double, double>* minimum,
+    std::pair<double, double>* maximum) const {
+  CHECK_NOTNULL(minimum);
+  CHECK_NOTNULL(maximum);
   // Find candidates in interval t_start to t_end computing the roots.
   std::vector<double> candidates;
-  findMinMaxCandidates(t_start, t_end, roots_derivative_of_derivative,
-                       &candidates);
+  selectMinMaxCandidatesFromRoots(t_start, t_end,
+                                  roots_derivative_of_derivative, &candidates);
   // Evaluate minimum and maximum.
-  return findMinMax(candidates, derivative, min, max);
+  return selectMinMaxFromCandidates(candidates, derivative, minimum, maximum);
 }
 
-bool Polynomial::findMinMax(double t_start, double t_end, int derivative,
-                            std::pair<double, double>* min,
-                            std::pair<double, double>* max) const {
-  CHECK_NOTNULL(min);
-  CHECK_NOTNULL(max);
+bool Polynomial::computeMinMax(double t_start, double t_end, int derivative,
+                               std::pair<double, double>* minimum,
+                               std::pair<double, double>* maximum) const {
+  CHECK_NOTNULL(minimum);
+  CHECK_NOTNULL(maximum);
   // Find candidates in interval t_start to t_end by computing the roots.
   std::vector<double> candidates;
-  if (!findMinMaxCandidates(t_start, t_end, derivative, &candidates)) {
+  if (!computeMinMaxCandidates(t_start, t_end, derivative, &candidates)) {
     return false;
   }
   // Evaluate minimum and maximum.
-  return findMinMax(candidates, derivative, min, max);
+  return selectMinMaxFromCandidates(candidates, derivative, minimum, maximum);
 }
 
-bool Polynomial::findMinMax(const std::vector<double>& candidates,
-                            int derivative, std::pair<double, double>* min,
-                            std::pair<double, double>* max) const {
-  CHECK_NOTNULL(min);
-  CHECK_NOTNULL(max);
+bool Polynomial::selectMinMaxFromCandidates(
+    const std::vector<double>& candidates, int derivative,
+    std::pair<double, double>* minimum,
+    std::pair<double, double>* maximum) const {
+  CHECK_NOTNULL(minimum);
+  CHECK_NOTNULL(maximum);
   if (candidates.empty()) {
     LOG(WARNING) << "Cannot find extrema from an empty candidates vector.";
     return false;
   }
-  min->first = candidates[0];
-  min->second = std::numeric_limits<double>::max();
-  max->first = candidates[0];
-  max->second = std::numeric_limits<double>::lowest();
+  minimum->first = candidates[0];
+  minimum->second = std::numeric_limits<double>::max();
+  maximum->first = candidates[0];
+  maximum->second = std::numeric_limits<double>::lowest();
 
   for (const double& t : candidates) {
     const double value = evaluate(t, derivative);
-    if (value < min->second) {
-      min->first = t;
-      min->second = value;
+    if (value < minimum->second) {
+      minimum->first = t;
+      minimum->second = value;
     }
-    if (value > max->second) {
-      max->first = t;
-      max->second = value;
+    if (value > maximum->second) {
+      maximum->first = t;
+      maximum->second = value;
     }
   }
   return true;
@@ -165,6 +166,6 @@ Eigen::VectorXd Polynomial::convolve(const Eigen::VectorXd& data,
 }
 
 Eigen::MatrixXd Polynomial::base_coefficients_ =
-    computeBaseCoefficients(Polynomial::kMaxN);
+    computeBaseCoefficients(Polynomial::kMaxConvolutionSize);
 
 }  // namespace mav_trajectory_generation

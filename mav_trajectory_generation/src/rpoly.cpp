@@ -44,7 +44,7 @@ int findLastNonZeroCoeff(const Eigen::VectorXd& coefficients) {
   int last_non_zero_coefficient = -1;
 
   // Find last non-zero coefficient:
-  for (size_t i = coefficients.size() - 1; i != -1; i--) {
+  for (size_t i = coefficients.size() - 1; i >= 0; i--) {
     if (coefficients(i) != 0.0) {
       last_non_zero_coefficient = i;
       break;
@@ -55,7 +55,7 @@ int findLastNonZeroCoeff(const Eigen::VectorXd& coefficients) {
 
 bool findRootsJenkinsTraub(const Eigen::VectorXd& coefficients_increasing,
                            Eigen::VectorXcd* roots) {
-  // Remove trailing zeros and reverse coefficients.
+  // Remove trailing zeros.
   const int last_non_zero_coefficient =
       findLastNonZeroCoeff(coefficients_increasing);
   if (last_non_zero_coefficient == -1) {
@@ -64,6 +64,7 @@ bool findRootsJenkinsTraub(const Eigen::VectorXd& coefficients_increasing,
     return true;
   }
 
+  // Reverse coefficients in descending order.
   Eigen::VectorXd coefficients_decreasing =
       coefficients_increasing.head(last_non_zero_coefficient + 1).reverse();
 
@@ -79,7 +80,7 @@ bool findRootsJenkinsTraub(const Eigen::VectorXd& coefficients_increasing,
   int ret =
       findRootsJenkinsTraub(coefficients_decreasing.data(), n_coefficients - 1,
                             roots_real, roots_imag, NULL);
-  if (ret != -1) {
+  if (ret > -1) {
     roots->resize(ret);
     for (int i = 0; i < ret; ++i) {
       (*roots)[i] = std::complex<double>(roots_real[i], roots_imag[i]);
@@ -89,10 +90,10 @@ bool findRootsJenkinsTraub(const Eigen::VectorXd& coefficients_increasing,
   delete[] roots_real;
   delete[] roots_imag;
 
-  if (ret == -1) {
-    return false;
-  } else {
+  if (ret > -1) {
     return true;
+  } else {
+    return false;
   }
 }
 

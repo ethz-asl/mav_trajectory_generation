@@ -88,8 +88,8 @@ InputFeasibilityResult FeasibilityRecursive::checkInputFeasibility(
     // Yaw feasibility (assumed independent of translation in the rigid body
     // model). Check the single axis minimum / maximum yaw rate:
     std::pair<double, double> yaw_rate_min, yaw_rate_max;
-    if (!segment[3].findMinMax(t_1, t_2, derivative_order::ANGULAR_VELOCITY,
-                               &yaw_rate_min, &yaw_rate_max)) {
+    if (!segment[3].computeMinMax(t_1, t_2, derivative_order::ANGULAR_VELOCITY,
+                                  &yaw_rate_min, &yaw_rate_max)) {
       return InputFeasibilityResult::kInputIndeterminable;
     }
     if (std::max(std::abs(yaw_rate_min.second), std::abs(yaw_rate_max.second)) >
@@ -98,8 +98,9 @@ InputFeasibilityResult FeasibilityRecursive::checkInputFeasibility(
     }
     // Check the single axis minimum / maximum yaw acceleration:
     std::pair<double, double> yaw_acc_min, yaw_acc_max;
-    if (!segment[3].findMinMax(t_1, t_2, derivative_order::ANGULAR_ACCELERATION,
-                               &yaw_acc_min, &yaw_acc_max)) {
+    if (!segment[3].computeMinMax(t_1, t_2,
+                                  derivative_order::ANGULAR_ACCELERATION,
+                                  &yaw_acc_min, &yaw_acc_max)) {
       return InputFeasibilityResult::kInputIndeterminable;
     }
     if (std::max(std::abs(yaw_acc_min.second), std::abs(yaw_acc_max.second)) >
@@ -145,12 +146,12 @@ InputFeasibilityResult FeasibilityRecursive::recursiveFeasibility(
   for (size_t i = 0; i < 3; i++) {
     // Find the minimum / maximum of each axis.
     std::pair<double, double> v_min, v_max, a_min, a_max, j_min, j_max;
-    segment[i].findMinMax(t_1, t_2, derivative_order::VELOCITY, roots_acc[i],
-                          &v_min, &v_max);
-    segment[i].findMinMax(t_1, t_2, derivative_order::ACCELERATION,
-                          roots_jerk[i], &a_min, &a_max);
-    segment[i].findMinMax(t_1, t_2, derivative_order::JERK, roots_snap[i],
-                          &j_min, &j_max);
+    segment[i].selectMinMaxFromRoots(t_1, t_2, derivative_order::VELOCITY,
+                                     roots_acc[i], &v_min, &v_max);
+    segment[i].selectMinMaxFromRoots(t_1, t_2, derivative_order::ACCELERATION,
+                                     roots_jerk[i], &a_min, &a_max);
+    segment[i].selectMinMaxFromRoots(t_1, t_2, derivative_order::JERK,
+                                     roots_snap[i], &j_min, &j_max);
 
     // Distance from zero thrust point in this axis.
     double f_i_min = a_min.second + gravity_[i];

@@ -26,6 +26,7 @@
 
 #include <mav_trajectory_generation/polynomial_optimization_linear.h>
 #include <mav_trajectory_generation/segment.h>
+#include <mav_trajectory_generation/test_utils.h>
 #include <mav_trajectory_generation/timing.h>
 #include <mav_trajectory_generation/vertex.h>
 
@@ -34,13 +35,6 @@
 #include "mav_trajectory_generation_ros/feasibility_analytic.h"
 
 using namespace mav_trajectory_generation;
-
-double createRandomDouble(double min, double max) {
-  // No seed for repeatability.
-  return (max - min) * (static_cast<double>(std::rand()) /
-                        static_cast<double>(RAND_MAX)) +
-         min;
-}
 
 void writeResultsToFile(const std::string& file_name, const std::vector<InputFeasibilityResult>& results) {
   std::ofstream file;
