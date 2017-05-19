@@ -33,6 +33,7 @@
 #include "mav_trajectory_generation_ros/feasibility_analytic.h"
 #include "mav_trajectory_generation_ros/feasibility_recursive.h"
 #include "mav_trajectory_generation_ros/feasibility_sampling.h"
+#include "mav_trajectory_generation_ros/feasibility_base.h"
 
 using namespace mav_trajectory_generation;
 
@@ -292,7 +293,7 @@ TEST(FeasibilityTest, CompareFeasibilityTests) {
 }
 
 TEST(PolynomialTest, HalfPlaneFeasibility) {
-  FeasibilityBase feasibility_check;
+  FeasibilityBase half_space_check;
   Eigen::VectorXd coeffs_x(Eigen::Vector3d::Zero());
   Eigen::VectorXd coeffs_y(Eigen::Vector3d::Zero());
   Eigen::VectorXd coeffs_z(Eigen::Vector3d::Zero());
@@ -310,15 +311,33 @@ TEST(PolynomialTest, HalfPlaneFeasibility) {
   Eigen::Vector3d normal(-1.0, 0.0, 1.0);
   // Shift boundary down.
   while (point.z() > -1.0) {
-    feasibility_check.half_plane_constraints_.emplace_back(point, normal);
-    bool feasible = feasibility_check.checkHalfPlaneFeasibility(segment);
+    half_space_check.half_plane_constraints_.emplace_back(point, normal);
+    bool feasible = half_space_check.checkHalfPlaneFeasibility(segment);
     if (point.z() >= -0.25) {
       EXPECT_FALSE(feasible) << point.transpose();
     } else {
       EXPECT_TRUE(feasible) << point.transpose();;
     }
-    feasibility_check.half_plane_constraints_.clear();
+    half_space_check.half_plane_constraints_.clear();
     point.z() -= 0.05;
+  }
+
+  FeasibilityBase box_check;
+  Eigen::Vector3d box_center(0.0, 0.0, 0.0);
+
+  // Grow box.
+  double l = 0.0;
+  while(l < 2.0) {
+    Eigen::Vector3d box_size(Eigen::Vector3d::Constant(l));
+    box_check.half_plane_constraints_ = HalfPlane::createBoundingBox(box_center, box_size);
+    bool feasible = box_check.checkHalfPlaneFeasibility(segment);
+    if(l <= 1.0) {
+      EXPECT_FALSE(feasible);
+    }
+    else {
+      EXPECT_TRUE(feasible);
+    }
+    l += 0.05;
   }
 }
 

@@ -116,11 +116,11 @@ HalfPlane::HalfPlane(const Eigen::Vector3d& a, const Eigen::Vector3d& b,
   normal = (b - a).cross(c - a).normalized();
 }
 
-static HalfPlane::Vector createBoundingBox(
+HalfPlane::Vector HalfPlane::createBoundingBox(
     const Eigen::Vector3d& point, const Eigen::Vector3d& bounding_box_size) {
   HalfPlane::Vector bounding_box;
-  Eigen::Vector3d bbx_min = point - bounding_box_size / 2;
-  Eigen::Vector3d bbx_max = point + bounding_box_size / 2;
+  Eigen::Vector3d bbx_min = point - bounding_box_size / 2.0;
+  Eigen::Vector3d bbx_max = point + bounding_box_size / 2.0;
 
   for (size_t axis = 0; axis < 3; axis++) {
     Eigen::Vector3d normal_min(Eigen::Vector3d::Zero());
@@ -130,6 +130,7 @@ static HalfPlane::Vector createBoundingBox(
     bounding_box.emplace_back(bbx_min, normal_min);
     bounding_box.emplace_back(bbx_max, normal_max);
   }
+  return bounding_box;
 }
 
 FeasibilityBase::FeasibilityBase()
