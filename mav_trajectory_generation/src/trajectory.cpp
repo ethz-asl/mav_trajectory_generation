@@ -198,9 +198,11 @@ bool Trajectory::computeMinMaxMagnitude(int derivative,
     }
     // Evaluate candidates.
     Extremum minimum_candidate, maximum_candidate;
-    segments_[segment_idx].selectMinMaxMagnitudeFromCandidates(
-        0.0, segments_[segment_idx].getTime(), derivative, dimensions,
-        candidates, &minimum_candidate, &maximum_candidate);
+    if (!segments_[segment_idx].selectMinMaxMagnitudeFromCandidates(
+            0.0, segments_[segment_idx].getTime(), derivative, dimensions,
+            candidates, &minimum_candidate, &maximum_candidate)) {
+      return false;
+    }
     // Select minimum / maximum.
     if (minimum_candidate < *minimum) {
       *minimum = minimum_candidate;

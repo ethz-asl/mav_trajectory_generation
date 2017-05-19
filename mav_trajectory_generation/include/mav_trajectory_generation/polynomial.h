@@ -165,7 +165,7 @@ class Polynomial {
 
   // Finds all candidates for the minimum and maximum between t_start and t_end
   // by evaluating the roots of the polynomial's derivative.
-  void selectMinMaxCandidatesFromRoots(
+  bool selectMinMaxCandidatesFromRoots(
       double t_start, double t_end,
       const Eigen::VectorXcd& roots_derivative_of_derivative,
       std::vector<double>* candidates) const;

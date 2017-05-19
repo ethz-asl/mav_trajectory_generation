@@ -155,12 +155,17 @@ bool Segment::computeMinMaxMagnitudeCandidates(
   return true;
 }
 
-void Segment::selectMinMaxMagnitudeFromCandidates(
+bool Segment::selectMinMaxMagnitudeFromCandidates(
     double t_start, double t_end, int derivative,
     const std::vector<int>& dimensions, const std::vector<Extremum>& candidates,
     Extremum* minimum, Extremum* maximum) const {
   CHECK_NOTNULL(minimum);
   CHECK_NOTNULL(maximum);
+  if (t_start > t_end) {
+    LOG(WARNING) << "t_start is greater than t_end.";
+    return false;
+  }
+
   minimum->value = std::numeric_limits<double>::max();
   maximum->value = std::numeric_limits<double>::lowest();
 
@@ -187,6 +192,8 @@ void Segment::selectMinMaxMagnitudeFromCandidates(
   *minimum = std::min(*minimum, magnitude_start);
   *maximum = std::max(*maximum, magnitude_end);
   *minimum = std::min(*minimum, magnitude_end);
+
+  return true;
 }
 
 }  // namespace mav_trajectory_generation

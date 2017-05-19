@@ -24,11 +24,15 @@
 
 namespace mav_trajectory_generation {
 
-void Polynomial::selectMinMaxCandidatesFromRoots(
+bool Polynomial::selectMinMaxCandidatesFromRoots(
     double t_start, double t_end,
     const Eigen::VectorXcd& roots_derivative_of_derivative,
     std::vector<double>* candidates) const {
   CHECK_NOTNULL(candidates);
+  if (t_start > t_end) {
+    LOG(WARNING) << "t_start is greater than t_end.";
+    return false;
+  }
   candidates->clear();
   candidates->reserve(roots_derivative_of_derivative.size() + 2);
   candidates->push_back(t_start);
@@ -41,13 +45,13 @@ void Polynomial::selectMinMaxCandidatesFromRoots(
     }
     const double candidate = roots_derivative_of_derivative[i].real();
     // Do not evaluate points outside the domain.
-    if (candidate < std::min(t_start, t_end) ||
-        candidate > std::max(t_start, t_end)) {
+    if (candidate < t_start || candidate > t_end) {
       continue;
     } else {
       candidates->push_back(candidate);
     }
   }
+  return true;
 }
 
 bool Polynomial::computeMinMaxCandidates(
@@ -64,9 +68,12 @@ bool Polynomial::computeMinMaxCandidates(
                              &roots_derivative_of_derivative)) {
     return false;
   } else {
-    selectMinMaxCandidatesFromRoots(t_start, t_end,
-                                    roots_derivative_of_derivative, candidates);
-    return true;
+    if (!selectMinMaxCandidatesFromRoots(
+            t_start, t_end, roots_derivative_of_derivative, candidates)) {
+      return false;
+    } else {
+      return true;
+    }
   }
 }
 
@@ -79,8 +86,10 @@ bool Polynomial::selectMinMaxFromRoots(
   CHECK_NOTNULL(maximum);
   // Find candidates in interval t_start to t_end computing the roots.
   std::vector<double> candidates;
-  selectMinMaxCandidatesFromRoots(t_start, t_end,
-                                  roots_derivative_of_derivative, &candidates);
+  if (!selectMinMaxCandidatesFromRoots(
+          t_start, t_end, roots_derivative_of_derivative, &candidates)) {
+    return false;
+  }
   // Evaluate minimum and maximum.
   return selectMinMaxFromCandidates(candidates, derivative, minimum, maximum);
 }
