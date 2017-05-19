@@ -33,3 +33,6 @@
 
 # Temporary git files
 *.orig
+
+# Matlab
+*.m~

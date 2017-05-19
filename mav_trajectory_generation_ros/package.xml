@@ -17,8 +17,10 @@
   <buildtool_depend>catkin</buildtool_depend>
   <buildtool_depend>catkin_simple</buildtool_depend>
 
+  <depend>eigen_catkin</depend>
   <depend>mav_msgs</depend>
   <depend>mav_trajectory_generation</depend>
   <depend>mav_visualization</depend>
   <depend>planning_msgs</depend>
+  <depend>eigen_checks</depend>
 </package>

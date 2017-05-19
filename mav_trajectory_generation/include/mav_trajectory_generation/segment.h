@@ -27,6 +27,7 @@
 #include <map>
 #include <vector>
 
+#include "mav_trajectory_generation/extremum.h"
 #include "mav_trajectory_generation/motion_defines.h"
 #include "mav_trajectory_generation/polynomial.h"
 
@@ -48,6 +49,9 @@ class Segment {
   }
   Segment(const Segment& segment) = default;
 
+  bool operator==(const Segment& rhs) const;
+  inline bool operator!=(const Segment& rhs) const { return !operator==(rhs); }
+
   int D() const { return D_; }
   int N() const { return N_; }
   double getTime() const { return time_; }
@@ -66,6 +70,44 @@ class Segment {
 
   Eigen::VectorXd evaluate(
       double t, int derivative_order = derivative_order::POSITION) const;
+
+  // Computes the candidates for the minimum and maximum magnitude of a single
+  // segment in the specified derivative. In the 1D case, it simply returns the
+  // roots of the derivative of the segment-polynomial. For higher dimensions,
+  // e.g. 3D, we need to find the extrema of \sqrt{x(t)^2 + y(t)^2 + z(t)^2}
+  // where x, y, z are polynomials describing the position or the derivative,
+  // specified by Derivative. Taking the derivative yields
+  // 2 x \dot{x} + 2 y \dot{y} + 2 z \dot{z}, which needs to be zero at the
+  // extrema. The multiplication of two polynomials is a convolution of their
+  // coefficients. Re-ordering by their powers and addition yields a polynomial,
+  // for which we can compute the roots.
+  // Input: derivative = Derivative of position, in which to find the maxima.
+  // Input: t_start = Only maxima >= t_start are returned. Usually set to 0.
+  // Input: t_stop = Only maxima <= t_stop are returned. Usually set to segment
+  // time.
+  // Input: dimensions = Vector containing the dimensions that are evaluated.
+  // Usually [0, 1, 2] for position, [3] for yaw.
+  // Output: candidates = Vector containing the candidate extrema times.
+  // Returns whether the computation succeeded -- false means no candidates
+  // were found by Jenkins-Traub.
+  bool computeMinMaxMagnitudeCandidateTimes(
+      int derivative, double t_start, double t_end,
+      const std::vector<int>& dimensions,
+      std::vector<double>* candidate_times) const;
+
+  // Convenience function. Additionally evaluates the candidate times.
+  bool computeMinMaxMagnitudeCandidates(
+      int derivative, double t_start, double t_end,
+      const std::vector<int>& dimensions,
+      std::vector<Extremum>* candidates) const;
+
+  // Convenience function. Evaluates the magnitudes between t_start and t_end
+  // for a set of candidates for given dimensions.
+  bool selectMinMaxMagnitudeFromCandidates(
+      double t_start, double t_end, int derivative,
+      const std::vector<int>& dimensions,
+      const std::vector<Extremum>& candidates, Extremum* minimum,
+      Extremum* maximum) const;
 
  protected:
   Polynomial::Vector polynomials_;

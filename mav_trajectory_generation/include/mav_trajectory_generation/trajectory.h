@@ -21,6 +21,7 @@
 #ifndef MAV_TRAJECTORY_GENERATION_TRAJECTORY_H_
 #define MAV_TRAJECTORY_GENERATION_TRAJECTORY_H_
 
+#include "mav_trajectory_generation/extremum.h"
 #include "mav_trajectory_generation/segment.h"
 
 namespace mav_trajectory_generation {
@@ -31,6 +32,11 @@ class Trajectory {
  public:
   Trajectory() : D_(0), N_(0) {}
   ~Trajectory() {}
+
+  bool operator==(const Trajectory& rhs) const;
+  inline bool operator!=(const Trajectory& rhs) const {
+    return !operator==(rhs);
+  }
 
   int D() const { return D_; }
   int N() const { return N_; }
@@ -86,6 +92,13 @@ class Trajectory {
   void evaluateRange(double t_start, double t_end, double dt,
                      int derivative_order, std::vector<Eigen::VectorXd>* result,
                      std::vector<double>* sampling_times = nullptr) const;
+
+  // Compute the analytic minimum and maximum of magnitude for a given
+  // derivative and dimensions, e.g., [0, 1, 2] for position or [3] for yaw.
+  // Returns false in case of extremum calculation failure.
+  bool computeMinMaxMagnitude(int derivative,
+                              const std::vector<int>& dimensions,
+                              Extremum* minimum, Extremum* maximum) const;
 
  private:
   int D_;            // Number of dimensions.

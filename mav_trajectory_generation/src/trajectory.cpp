@@ -20,7 +20,23 @@
 
 #include "mav_trajectory_generation/trajectory.h"
 
+#include <limits>
+
 namespace mav_trajectory_generation {
+
+bool Trajectory::operator==(const Trajectory& rhs) const {
+  if (segments_.size() != rhs.segments_.size()) {
+    // Different number of segments.
+    return false;
+  } else {
+    for (size_t i = 0; i < K(); i++) {
+      if (segments_ != rhs.segments_) {
+        return false;
+      }
+    }
+    return true;
+  }
+}
 
 Eigen::VectorXd Trajectory::evaluate(double t, int derivative_order) const {
   double accumulated_time = 0.0;
@@ -160,6 +176,44 @@ Trajectory Trajectory::getTrajectoryWithAppendedDimension(
   Trajectory traj;
   traj.setSegments(segments);
   return traj;
+}
+
+bool Trajectory::computeMinMaxMagnitude(int derivative,
+                                        const std::vector<int>& dimensions,
+                                        Extremum* minimum,
+                                        Extremum* maximum) const {
+  CHECK_NOTNULL(minimum);
+  CHECK_NOTNULL(maximum);
+  minimum->value = std::numeric_limits<double>::max();
+  maximum->value = std::numeric_limits<double>::lowest();
+
+  // For all segments in the trajectory:
+  for (size_t segment_idx = 0; segment_idx < segments_.size(); segment_idx++) {
+    // Compute candidates.
+    std::vector<Extremum> candidates;
+    if (!segments_[segment_idx].computeMinMaxMagnitudeCandidates(
+            derivative, 0.0, segments_[segment_idx].getTime(), dimensions,
+            &candidates)) {
+      return false;
+    }
+    // Evaluate candidates.
+    Extremum minimum_candidate, maximum_candidate;
+    if (!segments_[segment_idx].selectMinMaxMagnitudeFromCandidates(
+            0.0, segments_[segment_idx].getTime(), derivative, dimensions,
+            candidates, &minimum_candidate, &maximum_candidate)) {
+      return false;
+    }
+    // Select minimum / maximum.
+    if (minimum_candidate < *minimum) {
+      *minimum = minimum_candidate;
+      minimum->segment_idx = static_cast<int>(segment_idx);
+    }
+    if (maximum_candidate > *maximum) {
+      *maximum = maximum_candidate;
+      maximum->segment_idx = static_cast<int>(segment_idx);
+    }
+  }
+  return true;
 }
 
 }  // namespace mav_trajectory_generation

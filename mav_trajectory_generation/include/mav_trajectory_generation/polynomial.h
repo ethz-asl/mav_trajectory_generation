@@ -42,9 +42,13 @@ class Polynomial {
 
   // Maximum degree of a polynomial for which the static derivative (basis
   // coefficient) matrix should be evaluated for.
+  // kMaxN = max. number of coefficients.
   static constexpr int kMaxN = 12;
+  // kMaxConvolutionSize = max. convolution size for N = 12, convolved with its
+  // derivative.
+  static constexpr int kMaxConvolutionSize = 2 * kMaxN - 2;
   // One static shared across all members of the class, computed up to order
-  // kMaxN.
+  // kMaxConvolutionSize.
   static Eigen::MatrixXd base_coefficients_;
 
   Polynomial(int N) : N_(N), coefficients_(N) { coefficients_.setZero(); }
@@ -55,8 +59,25 @@ class Polynomial {
     CHECK_EQ(N_, coeffs.size()) << "Number of coefficients has to match.";
   }
 
+  Polynomial(const Eigen::VectorXd& coeffs)
+      : N_(coeffs.size()), coefficients_(coeffs) {}
+
   /// Gets the number of coefficients (order + 1) of the polynomial.
   int N() const { return N_; }
+
+  inline bool operator==(const Polynomial& rhs) const {
+    return coefficients_ == rhs.coefficients_;
+  }
+  inline bool operator!=(const Polynomial& rhs) const {
+    return !operator==(rhs);
+  }
+  inline Polynomial operator+(const Polynomial& rhs) const {
+    return Polynomial(coefficients_ + rhs.coefficients_);
+  }
+  // The product of two polynomials is the convolution of their coefficients.
+  inline Polynomial operator*(const Polynomial& rhs) const {
+    return Polynomial(convolve(coefficients_, rhs.coefficients_));
+  }
 
   // Sets up the internal representation from coefficients.
   // Coefficients are stored in increasing order with the power of t,
@@ -142,6 +163,41 @@ class Polynomial {
     return findRootsJenkinsTraub(coefficients_);
   }
 
+  // Finds all candidates for the minimum and maximum between t_start and t_end
+  // by evaluating the roots of the polynomial's derivative.
+  bool selectMinMaxCandidatesFromRoots(
+      double t_start, double t_end,
+      const Eigen::VectorXcd& roots_derivative_of_derivative,
+      std::vector<double>* candidates) const;
+
+  // Finds all candidates for the minimum and maximum between t_start and t_end
+  // by computing the roots of the derivative polynomial.
+  bool computeMinMaxCandidates(double t_start, double t_end, int derivative,
+                               std::vector<double>* candidates) const;
+
+  // Evaluates the minimum and maximum of a polynomial between time t_start and
+  // t_end given the roots of the derivative.
+  // Returns the minimum and maximum as pair<t, value>.
+  bool selectMinMaxFromRoots(
+      double t_start, double t_end, int derivative,
+      const Eigen::VectorXcd& roots_derivative_of_derivative,
+      std::pair<double, double>* minimum,
+      std::pair<double, double>* maximum) const;
+
+  // Computes the minimum and maximum of a polynomial between time t_start and
+  // t_end by computing the roots of the derivative polynomial.
+  // Returns the minimum and maximum as pair<t, value>.
+  bool computeMinMax(double t_start, double t_end, int derivative,
+                     std::pair<double, double>* minimum,
+                     std::pair<double, double>* maximum) const;
+
+  // Selects the minimum and maximum of a polynomial among a candidate set.
+  // Returns the minimum and maximum as pair<t, value>.
+  bool selectMinMaxFromCandidates(const std::vector<double>& candidates,
+                                  int derivative,
+                                  std::pair<double, double>* minimum,
+                                  std::pair<double, double>* maximum) const;
+
   // Computes the base coefficients with the according powers of t, as
   // e.g. needed for computation of (in)equality constraints.
   // Output: coeffs = vector to write the coefficients to
@@ -175,6 +231,15 @@ class Polynomial {
     Eigen::VectorXd c(N);
     baseCoeffsWithTime(N, derivative, t, &c);
     return c;
+  }
+
+  // Discrete convolution of two vectors.
+  // convolve(d, k)[m] = sum(d[m - n] * k[n])
+  static Eigen::VectorXd convolve(const Eigen::VectorXd& data,
+                                  const Eigen::VectorXd& kernel);
+
+  static inline int getConvolutionLength(int data_size, int kernel_size) {
+    return data_size + kernel_size - 1;
   }
 
  private:

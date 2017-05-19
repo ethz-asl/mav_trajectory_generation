@@ -35,35 +35,73 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <limits>
 
 #include "mav_trajectory_generation/rpoly.h"
 
 namespace mav_trajectory_generation {
 
-Eigen::VectorXcd findRootsJenkinsTraub(
-    const Eigen::VectorXd& coefficients_increasing) {
-  const Eigen::VectorXd coefficients_decreasing =
-      coefficients_increasing.reverse();
+int findLastNonZeroCoeff(const Eigen::VectorXd& coefficients) {
+  int last_non_zero_coefficient = -1;
 
-  const int n_coefficients = coefficients_increasing.size();
+  // Find last non-zero coefficient:
+  for (size_t i = coefficients.size() - 1; i != -1; i--) {
+    if (std::abs(coefficients(i)) >= std::numeric_limits<double>::epsilon()) {
+      last_non_zero_coefficient = i;
+      break;
+    }
+  }
+  return last_non_zero_coefficient;
+}
+
+bool findRootsJenkinsTraub(const Eigen::VectorXd& coefficients_increasing,
+                           Eigen::VectorXcd* roots) {
+  // Remove trailing zeros.
+  const int last_non_zero_coefficient =
+      findLastNonZeroCoeff(coefficients_increasing);
+  if (last_non_zero_coefficient == -1) {
+    // The polynomial has all zero coefficients and has no roots.
+    roots->resize(0);
+    return true;
+  }
+
+  // Reverse coefficients in descending order.
+  Eigen::VectorXd coefficients_decreasing =
+      coefficients_increasing.head(last_non_zero_coefficient + 1).reverse();
+
+  const int n_coefficients = coefficients_decreasing.size();
+  if (n_coefficients < 2) {
+    // The polynomial is 0th order and has no roots.
+    roots->resize(0);
+    return true;
+  }
   double* roots_real = new double[n_coefficients];
   double* roots_imag = new double[n_coefficients];
 
   int ret =
       findRootsJenkinsTraub(coefficients_decreasing.data(), n_coefficients - 1,
                             roots_real, roots_imag, NULL);
-
-  Eigen::VectorXcd roots;
-
-  if (ret > 0) {
-    roots.resize(ret);
+  if (ret > -1) {
+    roots->resize(ret);
     for (int i = 0; i < ret; ++i) {
-      roots[i] = std::complex<double>(roots_real[i], roots_imag[i]);
+      (*roots)[i] = std::complex<double>(roots_real[i], roots_imag[i]);
     }
   }
 
   delete[] roots_real;
   delete[] roots_imag;
+
+  if (ret > -1) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+Eigen::VectorXcd findRootsJenkinsTraub(
+    const Eigen::VectorXd& coefficients_increasing) {
+  Eigen::VectorXcd roots;
+  findRootsJenkinsTraub(coefficients_increasing, &roots);
   return roots;
 }
 
