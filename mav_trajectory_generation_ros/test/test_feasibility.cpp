@@ -327,11 +327,13 @@ TEST(PolynomialTest, HalfPlaneFeasibility) {
 
   // Grow box.
   double l = 0.0;
-  while(l < 2.0) {
+  while(l < 4.0) {
     Eigen::Vector3d box_size(Eigen::Vector3d::Constant(l));
     box_check.half_plane_constraints_ = HalfPlane::createBoundingBox(box_center, box_size);
+    for (const HalfPlane& half_plane : box_check.half_plane_constraints_) {
+    }
     bool feasible = box_check.checkHalfPlaneFeasibility(segment);
-    if(l <= 1.0) {
+    if(l <= 2.0) {
       EXPECT_FALSE(feasible);
     }
     else {
