@@ -119,6 +119,8 @@ HalfPlane::HalfPlane(const Eigen::Vector3d& a, const Eigen::Vector3d& b,
 HalfPlane::Vector HalfPlane::createBoundingBox(
     const Eigen::Vector3d& point, const Eigen::Vector3d& bounding_box_size) {
   HalfPlane::Vector bounding_box;
+  bounding_box.reserve(6);
+  
   Eigen::Vector3d bbx_min = point - bounding_box_size / 2.0;
   Eigen::Vector3d bbx_max = point + bounding_box_size / 2.0;
 
