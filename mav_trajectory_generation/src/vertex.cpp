@@ -93,7 +93,7 @@ void Vertex::addConstraint(int derivative_order,
 }
 
 bool Vertex::removeConstraint(int type) {
-  Constraints::iterator it = constraints_.find(type);
+  Constraints::const_iterator it = constraints_.find(type);
   if (it != constraints_.end()) {
     constraints_.erase(it);
     return true;

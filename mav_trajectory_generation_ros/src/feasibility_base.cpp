@@ -51,56 +51,6 @@ std::string getInputFeasibilityResultName(InputFeasibilityResult fr) {
   return "Unknown!";
 }
 
-InputConstraints::InputConstraints()
-    : f_min_(0.0),
-      f_max_(std::numeric_limits<double>::max()),
-      v_max_(std::numeric_limits<double>::max()),
-      omega_xy_max_(std::numeric_limits<double>::max()),
-      omega_z_max_(std::numeric_limits<double>::max()),
-      omega_z_dot_max_(std::numeric_limits<double>::max()) {}
-
-InputConstraints::InputConstraints(double f_min, double f_max, double v_max,
-                                   double omega_xy_max, double omega_z_max,
-                                   double omega_z_dot_max) {
-setFMin(f_min);
-setFMax(f_max);
-setVMax(v_max);
-setOmegaXYMax(omega_xy_max);
-setOmegaZMax(omega_z_max);
-setOmegaZDotMax(omega_z_dot_max);
-}
-
-void InputConstraints::setFMin(double f_min) {
-  f_min = std::abs(f_min);
-  f_max_ = f_min > f_max_ ? f_min : f_max_;
-  f_min_ = f_min;
-}
-
-void InputConstraints::setFMax(double f_max) {
-  f_max = std::abs(f_max);
-  f_min_ = f_max < f_min_ ? f_max : f_min_;
-  f_max_ = f_max;
-}
-
-void InputConstraints::setVMax(double v_max) { v_max_ = std::abs(v_max); }
-void InputConstraints::setOmegaXYMax(double omega_xy_max) {
-  omega_xy_max_ = std::abs(omega_xy_max);
-}
-void InputConstraints::setOmegaZMax(double omega_z_max) {
-  omega_z_max_ = std::abs(omega_z_max);
-}
-void InputConstraints::setOmegaZDotMax(double omega_z_dot_max) {
-  omega_z_dot_max_ = std::abs(omega_z_dot_max);
-}
-void InputConstraints::setDefaultValues() {
-  setFMin(0.5 * mav_msgs::kGravity);
-  setFMax(1.5 * mav_msgs::kGravity);
-  setVMax(3.0);
-  setOmegaXYMax(M_PI / 2.0);
-  setOmegaZMax(M_PI / 2.0);
-  setOmegaZDotMax(2.0 * M_PI);
-}
-
 HalfPlane::HalfPlane(const Eigen::Vector3d& point,
                      const Eigen::Vector3d& normal)
     : point_(point), normal_(normal) {

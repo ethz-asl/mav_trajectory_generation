@@ -28,6 +28,8 @@
 
 #include <mav_trajectory_generation/trajectory.h>
 
+#include "input_constraints.h"
+
 namespace mav_trajectory_generation {
 enum InputFeasibilityResult {
   kInputFeasible = 0,    // The trajectory is input feasible.
@@ -49,47 +51,6 @@ enum InputFeasibilityResult {
 
 // Human readable InputFeasibilityResult.
 std::string getInputFeasibilityResultName(InputFeasibilityResult fr);
-
-// Dynamic constraints of the MAV.
-class InputConstraints {
- public:
-  // Reasonable default constraints.
-  InputConstraints();
-  InputConstraints(double f_min, double f_max, double v_max,
-                   double omega_xy_max, double omega_z_max,
-                   double omega_z_dot_max);
-  // Needs to be smaller than f_max_. Otherwise f_max_ will be set f_min.
-  void setFMin(double f_min);
-  // Needs to be larger than f_min_. Otherwise f_min_ will be set f_max.
-  void setFMax(double f_max);
-  void setVMax(double v_max);
-  void setOmegaXYMax(double omega_xy_max);
-  void setOmegaZMax(double omega_z_max);
-  void setOmegaZDotMax(double omega_z_dot_max);
-  // Sets all constraints to reasonable default values.
-  void setDefaultValues();
-
-  inline double getFMin() const { return f_min_; }
-  inline double getFMax() const { return f_max_; }
-  inline double getVMax() const { return v_max_; }
-  inline double getOmegaXYMax() const { return omega_xy_max_; }
-  inline double getOmegaZMax() const { return omega_z_max_; }
-  inline double getOmegaZDotMax() const { return omega_z_dot_max_; }
-
- private:
-  // Minimum input acceleration (mass normalized thrust) [m/s/s].
-  double f_min_;
-  // Maximum input acceleration (mass normalized thrust) [m/s/s].
-  double f_max_;
-  // Maximum velocity [m/s].
-  double v_max_;
-  // Maximum roll/pitch input rate [rad/s].
-  double omega_xy_max_;
-  // Maximum yaw rate [rad/s].
-  double omega_z_max_;
-  // Maximum yaw acc [rad/s^2].
-  double omega_z_dot_max_;
-};
 
 // A half plane is defined through a point and a normal.
 class HalfPlane {
