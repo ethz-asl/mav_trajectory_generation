@@ -320,13 +320,14 @@ time, no false positives).
 ###Example
 ```c++
 // Create input constraints.
+typedef InputConstraintType ICT;
 InputConstraints input_constraints;
-input_constraints.setFMin(0.5 * 9.81); // minimum acceleration in [m/s/s].
-input_constraints.setFMax(1.5 * 9.81); // maximum acceleration in [m/s/s].
-input_constraints.setVMax(3.5); // maximum velocity in [m/s].
-input_constraints.setOmegaXYMax(M_PI / 2.0); // maximum roll/pitch rates in [rad/s].
-input_constraints.setOmegaZMax(M_PI / 2.0); // maximum yaw rates in [rad/s].
-input_constraints.setOmegaZDotMax(M_PI); // maximum yaw acceleration in [rad/s/s].
+input_constraints.addConstraint(ICT::kFMin, 0.5 * 9.81); // minimum acceleration in [m/s/s].
+input_constraints.addConstraint(ICT::kFMax, 1.5 * 9.81); // maximum acceleration in [m/s/s].
+input_constraints.addConstraint(ICT::kVMax, 3.5); // maximum velocity in [m/s].
+input_constraints.addConstraint(ICT::kOmegaXYMax, M_PI / 2.0); // maximum roll/pitch rates in [rad/s].
+input_constraints.addConstraint(ICT::kOmegaZMax, M_PI / 2.0); // maximum yaw rates in [rad/s].
+input_constraints.addConstraint(ICT::kOmegaZDotMax, M_PI); // maximum yaw acceleration in [rad/s/s].
 
 // Create feasibility object of choice (FeasibilityAnalytic,
 // FeasibilitySampling, FeasibilityRecursive).
