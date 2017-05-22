@@ -62,12 +62,12 @@ InputConstraints::InputConstraints()
 InputConstraints::InputConstraints(double f_min, double f_max, double v_max,
                                    double omega_xy_max, double omega_z_max,
                                    double omega_z_dot_max) {
-setFMin(f_min);
-setFMax(f_max);
-setVMax(v_max);
-setOmegaXYMax(omega_xy_max);
-setOmegaZMax(omega_z_max);
-setOmegaZDotMax(omega_z_dot_max);
+  setFMin(f_min);
+  setFMax(f_max);
+  setVMax(v_max);
+  setOmegaXYMax(omega_xy_max);
+  setOmegaZMax(omega_z_max);
+  setOmegaZDotMax(omega_z_dot_max);
 }
 
 void InputConstraints::setFMin(double f_min) {
@@ -103,15 +103,36 @@ void InputConstraints::setDefaultValues() {
 
 HalfPlane::HalfPlane(const Eigen::Vector3d& point,
                      const Eigen::Vector3d& normal)
-    : point_(point), normal_(normal) {
+    : point(point), normal(normal) {
   CHECK_GT(normal.norm(), 0.0) << "Invalid normal.";
-  normal_.normalize();
+  this->normal.normalize();
 }
 
 HalfPlane::HalfPlane(const Eigen::Vector3d& a, const Eigen::Vector3d& b,
                      const Eigen::Vector3d& c) {
-  point_ = a;
-  normal_ = (b - a).cross(c - a).normalized();
+  CHECK_NE(a, b);
+  CHECK_NE(a, c);
+  point = a;
+  normal = (b - a).cross(c - a).normalized();
+}
+
+HalfPlane::Vector HalfPlane::createBoundingBox(
+    const Eigen::Vector3d& point, const Eigen::Vector3d& bounding_box_size) {
+  HalfPlane::Vector bounding_box;
+  bounding_box.reserve(6);
+  
+  Eigen::Vector3d bbx_min = point - bounding_box_size / 2.0;
+  Eigen::Vector3d bbx_max = point + bounding_box_size / 2.0;
+
+  for (size_t axis = 0; axis < 3; axis++) {
+    Eigen::Vector3d normal_min(Eigen::Vector3d::Zero());
+    Eigen::Vector3d normal_max(Eigen::Vector3d::Zero());
+    normal_min(axis) = 1.0;
+    normal_max(axis) = -1.0;
+    bounding_box.emplace_back(bbx_min, normal_min);
+    bounding_box.emplace_back(bbx_max, normal_max);
+  }
+  return bounding_box;
 }
 
 FeasibilityBase::FeasibilityBase()
@@ -135,10 +156,48 @@ InputFeasibilityResult FeasibilityBase::checkInputFeasibility(
   return result;
 }
 
-bool FeasibilityBase::checkHalfPlaneFeasibility(const Trajectory& trajectory) {
+bool FeasibilityBase::checkHalfPlaneFeasibility(
+    const Trajectory& trajectory) const {
   for (const Segment segment : trajectory.segments()) {
     if (!checkHalfPlaneFeasibility(segment)) {
       return false;
+    }
+  }
+  return true;
+}
+
+bool FeasibilityBase::checkHalfPlaneFeasibility(const Segment& segment) const {
+  // Check user input.
+  if (!(segment.D() == 3 || segment.D() == 4)) {
+    LOG(WARNING) << "Feasibility check only implemented for segment dimensions "
+                    "3 and 4. Got dimension "
+                 << segment.D() << ".";
+    return false;
+  }
+
+  for (const HalfPlane& half_plane : half_plane_constraints_) {
+    // Project the segment position polynomial onto the half plane direction.
+    // This polynomial represents the distance of the segment from the origin in
+    // half plane direction.
+    Polynomial projection(segment.N());
+    for (size_t dim = 0; dim < 3; dim++) {
+      projection += segment[dim] * half_plane.normal(dim);
+    }
+    // Find critical times.
+    // These are the points in the projected polynomial with zero velocity. The
+    // MAV changes directions towards the boundary normal.
+    std::vector<double> extrema_candidates;
+    projection.computeMinMaxCandidates(0.0, segment.getTime(),
+                                       derivative_order::POSITION,
+                                       &extrema_candidates);
+    // Evaluate position at these critical points.
+    for (double t : extrema_candidates) {
+      if ((segment.evaluate(t) - half_plane.point).dot(half_plane.normal) <=
+          0.0) {
+        // The vector connecting the critical position and the point on the half
+        // plane face different / perpendicular direction.
+        return false;
+      }
     }
   }
   return true;
