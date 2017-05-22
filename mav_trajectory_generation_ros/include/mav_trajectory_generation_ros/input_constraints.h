@@ -18,7 +18,7 @@
  * limitations under the License.
  */
 
-<map>
+#include <map>
 
 namespace mav_trajectory_generation {
 

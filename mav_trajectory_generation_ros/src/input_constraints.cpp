@@ -20,27 +20,26 @@
 
 #include <cmath>
 
+#include <glog/logging.h>
+
 #include <mav_msgs/default_values.h>
 
 #include "mav_trajectory_generation_ros/input_constraints.h"
 
 namespace mav_trajectory_generation {
-
 typedef InputConstraintType ICT;
 
 void InputConstraints::addConstraint(int constraint_type, double value) {
   // Correct user input.
   value = std::abs(value);
-  if (constraint_type == ICT::kFMin && hasConstraint(ICT::kFMax) {
+  if (constraint_type == ICT::kFMin && hasConstraint(ICT::kFMax)) {
     constraints_[ICT::kFMax] =
-        value > constraint_[ICT::kFMax] ? value : constraint_[ICT::kFMax];
-  }
-  else if (constraint_type == ICT::kFMax && hasConstraint(ICT::kFMin)) {
-    constraint_[ICT::kFMin] =
-        value < constraint_[ICT::kFMin] ? value : constraint_[ICT::kFMin];
-  }
-  else {
-    constraint_[constraint_type] = value;
+        value > constraints_[ICT::kFMax] ? value : constraints_[ICT::kFMax];
+  } else if (constraint_type == ICT::kFMax && hasConstraint(ICT::kFMin)) {
+    constraints_[ICT::kFMin] =
+        value < constraints_[ICT::kFMin] ? value : constraints_[ICT::kFMin];
+  } else {
+    constraints_[constraint_type] = value;
   }
 }
 
@@ -70,7 +69,7 @@ bool InputConstraints::hasConstraint(int constraint_type) const {
 }
 
 bool InputConstraints::removeConstraint(int constraint_type) {
-  std::map<int, double>::const_iterator it = constraints_.find(type);
+  std::map<int, double>::const_iterator it = constraints_.find(constraint_type);
   if (it != constraints_.end()) {
     constraints_.erase(it);
     return true;

@@ -26,6 +26,8 @@
 std::vector<int> kPosDim = {0, 1, 2};
 
 namespace mav_trajectory_generation {
+typedef InputConstraintType ICT;
+
 FeasibilityAnalytic::Settings::Settings() : min_section_time_s_(0.05) {}
 
 FeasibilityAnalytic::FeasibilityAnalytic(const Settings& settings)
@@ -45,11 +47,10 @@ InputFeasibilityResult FeasibilityAnalytic::checkInputFeasibility(
   }
   // Check constraints.
   // Thrust:
-  if (input_constraints_.hasConstraint(InputConstraintType::kFMin ||
-                                       InputConstraintType::kFMax ||
-                                       InputConstraintType::kOmegaXYMax)) {
-    std::vector<Extremum> thrust_candidates;
-    Segment thrust_segment(segment.N() - 2, kPosDim.size());
+  std::vector<Extremum> thrust_candidates;
+  Segment thrust_segment(segment.N() - 2, kPosDim.size());
+  if (input_constraints_.hasConstraint(ICT::kFMin || ICT::kFMax ||
+                                       ICT::kOmegaXYMax)) {
     InputFeasibilityResult thrust_result =
         analyticThrustFeasibility(segment, &thrust_candidates, &thrust_segment);
     if (thrust_result != InputFeasibilityResult::kInputFeasible) {
@@ -59,8 +60,7 @@ InputFeasibilityResult FeasibilityAnalytic::checkInputFeasibility(
 
   // Velocity:
   double v_max_limit;
-  if (input_constraints_.getConstraint(InputConstraintType::kVMax,
-                                       &v_max_limit)) {
+  if (input_constraints_.getConstraint(ICT::kVMax, &v_max_limit)) {
     std::vector<Extremum> velocity_candidates;
     if (!segment.computeMinMaxMagnitudeCandidates(
             derivative_order::VELOCITY, 0.0, segment.getTime(), kPosDim,
@@ -80,8 +80,7 @@ InputFeasibilityResult FeasibilityAnalytic::checkInputFeasibility(
   if (segment.D() == 4) {
     // Check the single axis minimum / maximum yaw rate:
     double yaw_rate_limit;
-    if (input_constraints_.getConstraint(InputConstraintType::kOmegaZMax,
-                                         &yaw_rate_limit)) {
+    if (input_constraints_.getConstraint(ICT::kOmegaZMax, &yaw_rate_limit)) {
       std::pair<double, double> yaw_rate_min, yaw_rate_max;
       if (!segment[3].computeMinMax(0.0, segment.getTime(),
                                     derivative_order::ANGULAR_VELOCITY,
@@ -96,8 +95,7 @@ InputFeasibilityResult FeasibilityAnalytic::checkInputFeasibility(
 
     // Check the single axis minimum / maximum yaw acceleration:
     double yaw_acc_limit;
-    if (input_constraints_.getConstraint(InputConstraintType::kOmegaZDotMax,
-                                         &yaw_acc_limit)) {
+    if (input_constraints_.getConstraint(ICT::kOmegaZDotMax, &yaw_acc_limit)) {
       std::pair<double, double> yaw_acc_min, yaw_acc_max;
       if (!segment[3].computeMinMax(0.0, segment.getTime(),
                                     derivative_order::ANGULAR_ACCELERATION,
@@ -112,7 +110,7 @@ InputFeasibilityResult FeasibilityAnalytic::checkInputFeasibility(
   }
 
   // Roll / Pitch rates using recursive test:
-  if (input_constraints_.hasConstraint(InputConstraintType::kOmegaXYMax)) {
+  if (input_constraints_.hasConstraint(ICT::kOmegaXYMax)) {
     std::vector<Extremum> jerk_candidates;
     if (!segment.computeMinMaxMagnitudeCandidates(derivative_order::JERK, 0.0,
                                                   segment.getTime(), kPosDim,
@@ -153,18 +151,17 @@ InputFeasibilityResult FeasibilityAnalytic::analyticThrustFeasibility(
 
   // Evaluate the candidates.
   double f_min_constraint;
-  if (input_constraints_.getConstraint(InputConstraintType::kFMin,
-                                       &f_min_constraint) {
+  if (input_constraints_.getConstraint(ICT::kFMin, &f_min_constraint)) {
     const double f_min =
         std::min_element(thrust_candidates->begin(), thrust_candidates->end())
             ->value;
     if (f_min < f_min_constraint) {
       return InputFeasibilityResult::kInputInfeasibleThrustLow;
     }
- }
+  }
 
- double f_max_constraint;
- if(input_constraints_.getConstraint(InputConstraintType::kFMax, &f_max_constraint)) {
+  double f_max_constraint;
+  if (input_constraints_.getConstraint(ICT::kFMax, &f_max_constraint)) {
     const double f_max =
         std::max_element(thrust_candidates->begin(), thrust_candidates->end())
             ->value;
@@ -208,8 +205,7 @@ InputFeasibilityResult FeasibilityAnalytic::recursiveRollPitchFeasibility(
 
   // Possible infeasible.
   double limit;
-  if (!input_constraints_.getConstraint(InputConstraintType::kOmegaXYMax,
-                                        &limit)) {
+  if (!input_constraints_.getConstraint(ICT::kOmegaXYMax, &limit)) {
     return InputFeasibilityResult::kInputFeasible;
   }
 
