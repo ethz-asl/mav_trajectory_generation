@@ -317,7 +317,7 @@ check arbitrary polynomial order trajectories for yaw and velocity feasibility.
 pitch rates, where it runs the recursive test (recommended: low in computation
 time, no false positives).
 
-###Example
+### Example
 ```c++
 // Create input constraints.
 InputConstraints input_constraints;
@@ -341,7 +341,7 @@ std::cout << "The segment input is " << getInputFeasibilityResultName(result);
 << "." << std::endl;
 ```
 
-###Benchmarking
+### Benchmarking
 Both recursive and analytic checks are comparably fast.
 The recursive check may have a couple more false negatives, i.e., segments, that
 can not be determined feasible although they are. But this is neglectable.
