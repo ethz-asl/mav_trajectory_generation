@@ -310,7 +310,7 @@ presented in [Müller2015](http://flyingmachinearena.org/wp-content/publications
   publisher={IEEE}
 }
 ```
-We adapted https://github.com/markwmuller/RapidQuadrocopterTrajectories to
+We adapted [RapidQuadrocopterTrajectories](https://github.com/markwmuller/RapidQuadrocopterTrajectories) to
 check arbitrary polynomial order trajectories for yaw and velocity feasibility.
 
 `FeasibilityAnalytic` analytically checks the magnitudes except for the roll and
@@ -355,7 +355,7 @@ parameter settings:
 
 ## Checking Half-Space Feasibility
 The package also contains a method to check if a trajectory or segment is inside
-an arbitrary set of half spaces based on https://github.com/markwmuller/RapidQuadrocopterTrajectories.
+an arbitrary set of half spaces based on [RapidQuadrocopterTrajectories](https://github.com/markwmuller/RapidQuadrocopterTrajectories).
 This is useful to check if a segment is inside a box or above ground.
 
 Example ground plane feasibility:

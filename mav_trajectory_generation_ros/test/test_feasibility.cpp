@@ -292,7 +292,7 @@ TEST(FeasibilityTest, CompareFeasibilityTests) {
   }
 }
 
-TEST(PolynomialTest, HalfPlaneFeasibility) {
+TEST(FeasibilityTest, HalfPlaneFeasibility) {
   FeasibilityBase half_space_check;
   Eigen::VectorXd coeffs_x(Eigen::Vector3d::Zero());
   Eigen::VectorXd coeffs_y(Eigen::Vector3d::Zero());
@@ -330,8 +330,6 @@ TEST(PolynomialTest, HalfPlaneFeasibility) {
   while(l < 4.0) {
     Eigen::Vector3d box_size(Eigen::Vector3d::Constant(l));
     box_check.half_plane_constraints_ = HalfPlane::createBoundingBox(box_center, box_size);
-    for (const HalfPlane& half_plane : box_check.half_plane_constraints_) {
-    }
     bool feasible = box_check.checkHalfPlaneFeasibility(segment);
     if(l <= 2.0) {
       EXPECT_FALSE(feasible);
