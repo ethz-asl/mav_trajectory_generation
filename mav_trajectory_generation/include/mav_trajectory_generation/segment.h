@@ -109,6 +109,11 @@ class Segment {
       const std::vector<Extremum>& candidates, Extremum* minimum,
       Extremum* maximum) const;
 
+  // Split a segment to get a segment with the specified dimension.
+  bool getSegmentWithSingleDimension(int dimension, Segment* new_segment) const;
+  // Compose this segment and another segment to a new segment.
+  bool getSegmentWithAppendedDimension(const Segment& segment_to_append, Segment* new_segment) const;
+
  protected:
   Polynomial::Vector polynomials_;
   double time_;
