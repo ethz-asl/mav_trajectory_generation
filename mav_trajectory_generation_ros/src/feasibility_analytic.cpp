@@ -26,6 +26,8 @@
 std::vector<int> kPosDim = {0, 1, 2};
 
 namespace mav_trajectory_generation {
+typedef InputConstraintType ICT;
+
 FeasibilityAnalytic::Settings::Settings() : min_section_time_s_(0.05) {}
 
 FeasibilityAnalytic::FeasibilityAnalytic(const Settings& settings)
@@ -47,65 +49,80 @@ InputFeasibilityResult FeasibilityAnalytic::checkInputFeasibility(
   // Thrust:
   std::vector<Extremum> thrust_candidates;
   Segment thrust_segment(segment.N() - 2, kPosDim.size());
-  InputFeasibilityResult thrust_result =
-      analyticThrustFeasibility(segment, &thrust_candidates, &thrust_segment);
-  if (thrust_result != InputFeasibilityResult::kInputFeasible) {
-    return thrust_result;
+  if (input_constraints_.hasConstraint(ICT::kFMin || ICT::kFMax ||
+                                       ICT::kOmegaXYMax)) {
+    InputFeasibilityResult thrust_result =
+        analyticThrustFeasibility(segment, &thrust_candidates, &thrust_segment);
+    if (thrust_result != InputFeasibilityResult::kInputFeasible) {
+      return thrust_result;
+    }
   }
 
   // Velocity:
-  std::vector<Extremum> velocity_candidates;
-  if (!segment.computeMinMaxMagnitudeCandidates(derivative_order::VELOCITY, 0.0,
-                                                segment.getTime(), kPosDim,
-                                                &velocity_candidates)) {
-    return InputFeasibilityResult::kInputIndeterminable;
-  }
-  const double v_max =
-      std::max_element(velocity_candidates.begin(), velocity_candidates.end())
-          ->value;
-  if (v_max > input_constraints_.getVMax()) {
-    return InputFeasibilityResult::kInputInfeasibleVelocity;
+  double v_max_limit;
+  if (input_constraints_.getConstraint(ICT::kVMax, &v_max_limit)) {
+    std::vector<Extremum> velocity_candidates;
+    if (!segment.computeMinMaxMagnitudeCandidates(
+            derivative_order::VELOCITY, 0.0, segment.getTime(), kPosDim,
+            &velocity_candidates)) {
+      return InputFeasibilityResult::kInputIndeterminable;
+    }
+    const double v_max =
+        std::max_element(velocity_candidates.begin(), velocity_candidates.end())
+            ->value;
+    if (v_max > v_max_limit) {
+      return InputFeasibilityResult::kInputInfeasibleVelocity;
+    }
   }
 
   // Yaw feasibility (assumed independent of translation in the rigid body
   // model)
   if (segment.D() == 4) {
     // Check the single axis minimum / maximum yaw rate:
-    std::pair<double, double> yaw_rate_min, yaw_rate_max;
-    if (!segment[3].computeMinMax(0.0, segment.getTime(),
-                                  derivative_order::ANGULAR_VELOCITY,
-                                  &yaw_rate_min, &yaw_rate_max)) {
-      return InputFeasibilityResult::kInputIndeterminable;
+    double yaw_rate_limit;
+    if (input_constraints_.getConstraint(ICT::kOmegaZMax, &yaw_rate_limit)) {
+      std::pair<double, double> yaw_rate_min, yaw_rate_max;
+      if (!segment[3].computeMinMax(0.0, segment.getTime(),
+                                    derivative_order::ANGULAR_VELOCITY,
+                                    &yaw_rate_min, &yaw_rate_max)) {
+        return InputFeasibilityResult::kInputIndeterminable;
+      }
+      if (std::max(std::abs(yaw_rate_min.second),
+                   std::abs(yaw_rate_max.second)) > yaw_rate_limit) {
+        return InputFeasibilityResult::kInputInfeasibleYawRates;
+      }
     }
-    if (std::max(std::abs(yaw_rate_min.second), std::abs(yaw_rate_max.second)) >
-        input_constraints_.getOmegaZMax()) {
-      return InputFeasibilityResult::kInputInfeasibleYawRates;
-    }
+
     // Check the single axis minimum / maximum yaw acceleration:
-    std::pair<double, double> yaw_acc_min, yaw_acc_max;
-    if (!segment[3].computeMinMax(0.0, segment.getTime(),
-                                  derivative_order::ANGULAR_ACCELERATION,
-                                  &yaw_acc_min, &yaw_acc_max)) {
-      return InputFeasibilityResult::kInputIndeterminable;
-    }
-    if (std::max(std::abs(yaw_acc_min.second), std::abs(yaw_acc_max.second)) >
-        input_constraints_.getOmegaZDotMax()) {
-      return InputFeasibilityResult::kInputInfeasibleYawAcc;
+    double yaw_acc_limit;
+    if (input_constraints_.getConstraint(ICT::kOmegaZDotMax, &yaw_acc_limit)) {
+      std::pair<double, double> yaw_acc_min, yaw_acc_max;
+      if (!segment[3].computeMinMax(0.0, segment.getTime(),
+                                    derivative_order::ANGULAR_ACCELERATION,
+                                    &yaw_acc_min, &yaw_acc_max)) {
+        return InputFeasibilityResult::kInputIndeterminable;
+      }
+      if (std::max(std::abs(yaw_acc_min.second), std::abs(yaw_acc_max.second)) >
+          yaw_acc_limit) {
+        return InputFeasibilityResult::kInputInfeasibleYawAcc;
+      }
     }
   }
 
   // Roll / Pitch rates using recursive test:
-  std::vector<Extremum> jerk_candidates;
-  if (!segment.computeMinMaxMagnitudeCandidates(derivative_order::JERK, 0.0,
-                                                segment.getTime(), kPosDim,
-                                                &jerk_candidates)) {
-    return InputFeasibilityResult::kInputIndeterminable;
-  }
-  InputFeasibilityResult omega_xy_result =
-      recursiveRollPitchFeasibility(segment, thrust_segment, thrust_candidates,
-                                    jerk_candidates, 0.0, segment.getTime());
-  if (omega_xy_result != InputFeasibilityResult::kInputFeasible) {
-    return omega_xy_result;
+  if (input_constraints_.hasConstraint(ICT::kOmegaXYMax)) {
+    std::vector<Extremum> jerk_candidates;
+    if (!segment.computeMinMaxMagnitudeCandidates(derivative_order::JERK, 0.0,
+                                                  segment.getTime(), kPosDim,
+                                                  &jerk_candidates)) {
+      return InputFeasibilityResult::kInputIndeterminable;
+    }
+    InputFeasibilityResult omega_xy_result = recursiveRollPitchFeasibility(
+        segment, thrust_segment, thrust_candidates, jerk_candidates, 0.0,
+        segment.getTime());
+    if (omega_xy_result != InputFeasibilityResult::kInputFeasible) {
+      return omega_xy_result;
+    }
   }
 
   return InputFeasibilityResult::kInputFeasible;
@@ -131,19 +148,27 @@ InputFeasibilityResult FeasibilityAnalytic::analyticThrustFeasibility(
           0, 0.0, thrust_segment->getTime(), kPosDim, thrust_candidates)) {
     return InputFeasibilityResult::kInputIndeterminable;
   }
+
   // Evaluate the candidates.
-  const double f_min =
-      std::min_element(thrust_candidates->begin(), thrust_candidates->end())
-          ->value;
-  const double f_max =
-      std::max_element(thrust_candidates->begin(), thrust_candidates->end())
-          ->value;
-  if (f_max > input_constraints_.getFMax()) {
-    return InputFeasibilityResult::kInputInfeasibleThrustHigh;
+  double f_min_constraint;
+  if (input_constraints_.getConstraint(ICT::kFMin, &f_min_constraint)) {
+    const double f_min =
+        std::min_element(thrust_candidates->begin(), thrust_candidates->end())
+            ->value;
+    if (f_min < f_min_constraint) {
+      return InputFeasibilityResult::kInputInfeasibleThrustLow;
+    }
   }
-  if (f_min < input_constraints_.getFMin()) {
-    return InputFeasibilityResult::kInputInfeasibleThrustLow;
-  }
+
+  double f_max_constraint;
+  if (input_constraints_.getConstraint(ICT::kFMax, &f_max_constraint)) {
+    const double f_max =
+        std::max_element(thrust_candidates->begin(), thrust_candidates->end())
+            ->value;
+    if (f_max > f_max_constraint) {
+      return InputFeasibilityResult::kInputInfeasibleThrustHigh;
+    }
+ }
 
   return InputFeasibilityResult::kInputFeasible;
 }
@@ -179,7 +204,12 @@ InputFeasibilityResult FeasibilityAnalytic::recursiveRollPitchFeasibility(
   }
 
   // Possible infeasible.
-  if (omega_xy_upper_bound > input_constraints_.getOmegaXYMax()) {
+  double limit;
+  if (!input_constraints_.getConstraint(ICT::kOmegaXYMax, &limit)) {
+    return InputFeasibilityResult::kInputFeasible;
+  }
+
+  if (omega_xy_upper_bound > limit) {
     // Indeterminate. Must check more closely:
     double t_half = (t_1 + t_2) / 2;
     InputFeasibilityResult result_1 = recursiveRollPitchFeasibility(

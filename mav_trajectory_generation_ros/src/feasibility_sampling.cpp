@@ -72,24 +72,56 @@ InputFeasibilityResult FeasibilitySampling::checkInputFeasibility(
     EigenMavStateFromEigenTrajectoryPoint(flat_state, &state);
 
     // Feasibility check:
-    double thrust = state.acceleration_B.norm();
-    double v = state.velocity_W.norm();
+    // Thrust.
+    if (input_constraints_.hasConstraint(InputConstraintType::kFMin) ||
+        input_constraints_.hasConstraint(InputConstraintType::kFMax)) {
+      const double thrust = state.acceleration_B.norm();
+
+      double f_min;
+      if (input_constraints_.getConstraint(InputConstraintType::kFMin,
+                                           &f_min) &&
+          thrust < f_min) {
+        return InputFeasibilityResult::kInputInfeasibleThrustLow;
+      }
+
+      double f_max;
+      if (input_constraints_.getConstraint(InputConstraintType::kFMax,
+                                           &f_max) &&
+          thrust > f_max) {
+        return InputFeasibilityResult::kInputInfeasibleThrustHigh;
+      }
+    }
+
+    // Velocity.
+    double v_max;
+    if (input_constraints_.getConstraint(InputConstraintType::kVMax, &v_max) &&
+        state.velocity_W.norm() > v_max) {
+      return InputFeasibilityResult::kInputInfeasibleVelocity;
+    }
+
     // Evaluate roll/pitch rate and yaw rate assuming independency (rigid body
     // model).
-    double omega_xy = state.angular_velocity_B.head<2>().norm();
-    double omega_z = std::fabs(state.angular_velocity_B(2));
-    double omega_z_dot = std::fabs(state.angular_acceleration_B(2));
-    if (thrust < input_constraints_.getFMin()) {
-      return InputFeasibilityResult::kInputInfeasibleThrustLow;
-    } else if (thrust > input_constraints_.getFMax()) {
-      return InputFeasibilityResult::kInputInfeasibleThrustHigh;
-    } else if (v > input_constraints_.getVMax()) {
-      return InputFeasibilityResult::kInputInfeasibleVelocity;
-    } else if (omega_xy > input_constraints_.getOmegaXYMax()) {
+    // Roll/Pitch rates.
+    double omega_xy_max;
+    if (input_constraints_.getConstraint(InputConstraintType::kOmegaXYMax,
+                                         &omega_xy_max) &&
+        state.angular_velocity_B.head<2>().norm() > omega_xy_max) {
       return InputFeasibilityResult::kInputInfeasibleRollPitchRates;
-    } else if (omega_z > input_constraints_.getOmegaZMax()) {
+    }
+
+    // Yaw rates.
+    double omega_z_max;
+    if (input_constraints_.getConstraint(InputConstraintType::kOmegaZMax,
+                                         &omega_z_max) &&
+        std::fabs(state.angular_velocity_B(2)) > omega_z_max) {
       return InputFeasibilityResult::kInputInfeasibleYawRates;
-    } else if (omega_z_dot > input_constraints_.getOmegaZDotMax()) {
+    }
+
+    // Yaw acceleration.
+    double omega_z_dot_max;
+    if (input_constraints_.getConstraint(InputConstraintType::kOmegaZDotMax,
+                                         &omega_z_dot_max) &&
+        std::fabs(state.angular_acceleration_B(2)) > omega_z_dot_max) {
       return InputFeasibilityResult::kInputInfeasibleYawAcc;
     }
 
