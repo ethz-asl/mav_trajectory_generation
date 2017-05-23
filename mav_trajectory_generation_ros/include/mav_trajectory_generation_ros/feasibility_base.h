@@ -62,9 +62,12 @@ class HalfPlane {
   HalfPlane(const Eigen::Vector3d& a, const Eigen::Vector3d& b,
             const Eigen::Vector3d& c);
 
- private:
-  Eigen::Vector3d point_;
-  Eigen::Vector3d normal_;
+  // Create 6 half planes that form a box with inward-facing normals.
+  // point = center of the box, bounding_box_size = x, y, z edge length.
+  static HalfPlane::Vector createBoundingBox(
+      const Eigen::Vector3d& point, const Eigen::Vector3d& bounding_box_size);
+  Eigen::Vector3d point;
+  Eigen::Vector3d normal;
 };
 
 // A base class for different implementations for dynamic and position
@@ -86,12 +89,12 @@ class FeasibilityBase {
   }
 
   // Checks if a trajectory stays within a set of half planes.
-  bool checkHalfPlaneFeasibility(const Trajectory& trajectory);
+  bool checkHalfPlaneFeasibility(const Trajectory& trajectory) const;
   // Checks if a segment stays within a set of half planes.
-  inline bool checkHalfPlaneFeasibility(const Segment& segment) {
-    ROS_ERROR_STREAM("Half plane feasibility check not implemented.");
-    return false;
-  }
+  // This check computes the extrema for each axis and checks whether these lie
+  // in the positive half space as in
+  // https://github.com/markwmuller/RapidQuadrocopterTrajectories/blob/master/C%2B%2B/RapidTrajectoryGenerator.cpp#L149
+  bool checkHalfPlaneFeasibility(const Segment& segment) const;
 
   // Input constraints.
   InputConstraints input_constraints_;

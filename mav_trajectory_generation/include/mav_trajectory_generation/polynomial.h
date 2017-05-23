@@ -61,7 +61,6 @@ class Polynomial {
 
   Polynomial(const Eigen::VectorXd& coeffs)
       : N_(coeffs.size()), coefficients_(coeffs) {}
-
   /// Gets the number of coefficients (order + 1) of the polynomial.
   int N() const { return N_; }
 
@@ -74,9 +73,18 @@ class Polynomial {
   inline Polynomial operator+(const Polynomial& rhs) const {
     return Polynomial(coefficients_ + rhs.coefficients_);
   }
+  inline Polynomial& operator+=(const Polynomial& rhs) {
+    this->coefficients_ += rhs.coefficients_;
+    return *this;
+  }
   // The product of two polynomials is the convolution of their coefficients.
   inline Polynomial operator*(const Polynomial& rhs) const {
     return Polynomial(convolve(coefficients_, rhs.coefficients_));
+  }
+  // The product of a polynomial with a scalar. Note that polynomials are in
+  // general not homogeneous, i.e., f(a*t) != a*f(t)
+  inline Polynomial operator*(const double& rhs) const {
+    return Polynomial(coefficients_ * rhs);
   }
 
   // Sets up the internal representation from coefficients.
