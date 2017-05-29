@@ -774,7 +774,6 @@ TEST(MavTrajectoryGeneration, 2_vertices_rand) {
 }
 
 // Test unpacking and repacking constraints between [d_f; d_p] and p.
-// Test 2 vertices setup
 TEST(MavTrajectoryGeneration, ConstraintPacking) {
   const int kMaxDerivative = derivative_order::JERK;
   const size_t kNumSegments = 5;
