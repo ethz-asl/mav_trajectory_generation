@@ -331,8 +331,9 @@ bool PolynomialOptimization<_N>::solveLinear() {
         derivative_to_optimize_ <= kHighestDerivativeToOptimize);
   // Catch the fully constrained case:
   if (n_free_constraints_ == 0) {
-    LOG(WARNING) << "No free constraints set in the vertices. Polynomial can "
-                    "not be optimized. Outputting fully constrained polynomial.";
+    LOG(WARNING)
+        << "No free constraints set in the vertices. Polynomial can "
+           "not be optimized. Outputting fully constrained polynomial.";
     updateSegmentsFromCompactConstraints();
     return true;
   }
@@ -538,6 +539,35 @@ void PolynomialOptimization<_N>::getR(Eigen::MatrixXd* R) const {
   constructR(&R_sparse);
 
   *R = R_sparse;
+}
+
+template <int _N>
+void PolynomialOptimization<_N>::getA(Eigen::MatrixXd* A) const {
+  CHECK_NOTNULL(A);
+  A->resize(N * n_segments_, N * n_segments_);
+  A->setZero();
+
+  // Create a mapping matrix per segment and append them together.
+  for (size_t i = 0; i < n_segments_; ++i) {
+    const double segment_time = segment_times_[i];
+    CHECK_GT(segment_time, 0) << "Segment times need to be greater than zero";
+
+    SquareMatrix A_segment;
+    setupMappingMatrix(segment_time, &A_segment);
+
+    (*A).block<N, N>(N * i, N * i) = A_segment;
+  }
+}
+
+template <int _N>
+void PolynomialOptimization<_N>::getMpinv(Eigen::MatrixXd* M_pinv) const {
+  CHECK_NOTNULL(M_pinv);
+
+  // Pseudoinverse implementation by @SebastianInd.
+  *M_pinv = constraint_reordering_.transpose();
+  for (int M_row = 0; M_row < M_pinv->rows(); M_row++) {
+    M_pinv->row(M_row) = M_pinv->row(M_row) / M_pinv->row(M_row).sum();
+  }
 }
 
 template <int _N>

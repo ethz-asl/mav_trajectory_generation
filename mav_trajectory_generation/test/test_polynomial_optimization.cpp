@@ -94,8 +94,7 @@ void checkPath(const Vertex::Vector& vertices,
       EXPECT_TRUE(EIGEN_MATRIX_NEAR(desired, actual, tol))
           << "[fixed constraint check t=0] at vertex " << i
           << " and constraint " << positionDerivativeToString(derivative)
-          << "\nsegment:\n"
-          << segment << segment_derivative.str();
+          << "\nsegment:\n" << segment << segment_derivative.str();
     }
     for (Vertex::Constraints::const_iterator it = v_end.cBegin();
          it != v_end.cEnd(); ++it) {
@@ -108,8 +107,7 @@ void checkPath(const Vertex::Vector& vertices,
       EXPECT_TRUE(EIGEN_MATRIX_NEAR(desired, actual, tol))
           << "[fixed constraint check] at vertex " << i + 1
           << " and constraint " << positionDerivativeToString(derivative)
-          << "\nsegment:\n"
-          << segment << segment_derivative.str();
+          << "\nsegment:\n" << segment << segment_derivative.str();
     }
 
     // Check if values at vertices are continuous.
@@ -200,8 +198,8 @@ TEST(MavTrajectoryGeneration, PathPlanning_A_matrix_inversion) {
     PolynomialOptimization<N>::setupMappingMatrix(t, &A);
     PolynomialOptimization<N>::invertMappingMatrix(A, &Ai);
     Ai_eigen = A.inverse();
-    EXPECT_TRUE(EIGEN_MATRIX_NEAR(Ai, Ai_eigen, 1.0e-10))
-        << "time was " << t << std::endl;
+    EXPECT_TRUE(EIGEN_MATRIX_NEAR(Ai, Ai_eigen, 1.0e-10)) << "time was " << t
+                                                          << std::endl;
   }
 }
 
@@ -772,6 +770,68 @@ TEST(MavTrajectoryGeneration, 2_vertices_rand) {
     opt.getSegments(&segments);
 
     checkPath(vertices, segments);
+  }
+}
+
+// Test unpacking and repacking constraints between [d_f; d_p] and p.
+TEST(MavTrajectoryGeneration, ConstraintPacking) {
+  const int kMaxDerivative = derivative_order::JERK;
+  const size_t kNumSegments = 5;
+  Eigen::VectorXd min_pos, max_pos;
+  min_pos = Eigen::Vector3d::Constant(-50.0);
+  max_pos = -min_pos;
+  const int kSeed = 12345;
+  const size_t kNumSetups = 100;
+
+  for (size_t i = 0; i < kNumSetups; i++) {
+    Vertex::Vector vertices;
+    vertices = createRandomVertices(kMaxDerivative, kNumSegments, min_pos,
+                                    max_pos, kSeed + i);
+
+    const double kApproxVMax = 3.0;
+    const double kApproxAMax = 5.0;
+    std::vector<double> segment_times =
+        estimateSegmentTimes(vertices, kApproxVMax, kApproxAMax);
+
+    PolynomialOptimization<N> opt(3);
+    opt.setupFromVertices(vertices, segment_times);
+    opt.solveLinear();
+
+    Segment::Vector segments;
+    opt.getSegments(&segments);
+
+    std::vector<Eigen::VectorXd> fixed_constraints;
+    std::vector<Eigen::VectorXd> free_constraints;
+
+    opt.getFixedConstraints(&fixed_constraints);
+    opt.getFreeConstraints(&free_constraints);
+
+    // Get the mapping matrices.
+    Eigen::MatrixXd M, A_inv, A, M_pinv;
+    opt.getM(&M);
+    opt.getAInverse(&A_inv);
+    opt.getA(&A);
+    opt.getMpinv(&M_pinv);
+
+    ASSERT_EQ(fixed_constraints.size(), 3);
+    ASSERT_EQ(free_constraints.size(), 3);
+
+    // For each dimension... We can test that [df;dp] -> p -> [df;dp].
+    for (int i = 0; i < 3; ++i) {
+      Eigen::VectorXd d_all_ordered(fixed_constraints[i].size() +
+                                    free_constraints[i].size());
+      d_all_ordered << fixed_constraints[i], free_constraints[i];
+      Eigen::VectorXd p = A_inv * M * d_all_ordered;
+      Eigen::VectorXd d_unordered = A * p;
+      Eigen::VectorXd d_reordered = M_pinv * d_unordered;
+      EXPECT_TRUE(EIGEN_MATRIX_NEAR(d_all_ordered, d_reordered, 1e-6));
+
+      // Now also check for each segment.
+      for (size_t j = 0; j < segments.size(); ++j) {
+        Eigen::VectorXd p_seg = segments[j][i].getCoefficients(0);
+        EXPECT_TRUE(EIGEN_MATRIX_NEAR(p_seg, p.segment<N>(j * N), 1e-6));
+      }
+    }
   }
 }
 

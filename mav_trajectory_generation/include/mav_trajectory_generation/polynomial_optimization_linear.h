@@ -209,6 +209,9 @@ class PolynomialOptimization {
   void getAInverse(Eigen::MatrixXd* A_inv) const;
   void getM(Eigen::MatrixXd* M) const;
   void getR(Eigen::MatrixXd* R) const;
+  // Extras not directly used in the standard optimization:
+  void getA(Eigen::MatrixXd* A) const;
+  void getMpinv(Eigen::MatrixXd* M_pinv) const;  // Pseudo-inverse of M.
 
   void printReorderingMatrix(std::ostream& stream) const;
 
