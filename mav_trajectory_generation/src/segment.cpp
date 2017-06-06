@@ -212,43 +212,52 @@ bool Segment::getSegmentWithSingleDimension(int dimension,
 
 bool Segment::getSegmentWithAppendedDimension(const Segment& segment_to_append,
                                               Segment* new_segment) const {
-if (time_ != segment_to_append.getTime()) {
-  LOG(WARNING) << "The appended segment needs the same segment time.";
-  return false;
-}
-if (N_ == 0 || D_ == 0) {
-  *new_segment = segment_to_append;
-  return true;
-}
-if (segment_to_append.N() == 0 || segment_to_append.D() == 0) {
-  *new_segment = *this;
-  return true;
-}
-
-// Get common polynomial order.
-const int N_common = std::max(segment_to_append.N(), N_);
-const int new_D = D_ + segment_to_append.D();
-*new_segment = Segment(N_common, new_D);
-
-for (int i = 0; i < D_; i++) {
-  Polynomial polynom_to_append(N_common);
-  if (!polynomials_[i].getPolynomialWithAppendedCoefficients(
-          N_common, &polynom_to_append)) {
+  if (time_ != segment_to_append.getTime()) {
+    LOG(WARNING) << "The appended segment needs the same segment time.";
     return false;
   }
-  (*new_segment)[i] = polynom_to_append;
-}
-for (int i = D_; i < new_D; i++) {
-  Polynomial polynom_to_append(N_common);
-  if (!segment_to_append[i - D_].getPolynomialWithAppendedCoefficients(
-          N_common, &polynom_to_append)) {
-    return false;
+  if (N_ == 0 || D_ == 0) {
+    *new_segment = segment_to_append;
+    return true;
   }
-  (*new_segment)[i] = polynom_to_append;
-}
+  if (segment_to_append.N() == 0 || segment_to_append.D() == 0) {
+    *new_segment = *this;
+    return true;
+  }
 
-new_segment->setTime(time_);
-return true;
+  // Get common polynomial order.
+  const int new_N = std::max(segment_to_append.N(), N_);
+  const int new_D = D_ + segment_to_append.D();
+  *new_segment = Segment(new_N, new_D);
+
+  if (N_ == segment_to_append.N()) {
+    for (int i = 0; i < new_D; i++) {
+      if (i < D_) {
+        (*new_segment)[i] = polynomials_[i];
+      } else {
+        (*new_segment)[i] = segment_to_append[i - D_];
+      }
+    }
+  } else {
+    for (int i = 0; i < new_D; i++) {
+      Polynomial polynomial_to_append(new_N);
+      if (i < D_) {
+        if (!polynomials_[i].getPolynomialWithAppendedCoefficients(
+                new_N, &polynomial_to_append)) {
+          return false;
+        }
+      } else {
+        if (!segment_to_append[i - D_].getPolynomialWithAppendedCoefficients(
+                new_N, &polynomial_to_append)) {
+          return false;
+        }
+      }
+      (*new_segment)[i] = polynomial_to_append;
+    }
+  }
+
+  new_segment->setTime(time_);
+  return true;
 }
 
 }  // namespace mav_trajectory_generation
