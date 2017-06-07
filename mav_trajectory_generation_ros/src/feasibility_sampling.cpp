@@ -38,7 +38,7 @@ FeasibilitySampling::FeasibilitySampling(
     : FeasibilityBase(input_constraints), settings_(settings) {}
 
 InputFeasibilityResult FeasibilitySampling::checkInputFeasibility(
-    const Segment& segment) {
+    const Segment& segment) const {
   // Check user input.
   if (!(segment.D() == 3 || segment.D() == 4)) {
     return InputFeasibilityResult::kInputIndeterminable;
