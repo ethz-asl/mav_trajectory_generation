@@ -117,8 +117,9 @@ TEST(FeasibilityTest, CompareFeasibilityTests) {
     Trajectory yaw_trajectory;
     yaw_trajectory.setSegments(yaw_segments);
 
-    Trajectory trajectory =
-        pos_trajectory.getTrajectoryWithAppendedDimension(yaw_trajectory);
+    Trajectory trajectory;
+    EXPECT_TRUE(pos_trajectory.getTrajectoryWithAppendedDimension(
+        yaw_trajectory, &trajectory));
 
     EXPECT_EQ(trajectory.segments().size(), 1);
     segments[i] = trajectory.segments()[0];

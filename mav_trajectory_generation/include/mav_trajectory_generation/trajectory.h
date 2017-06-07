@@ -77,8 +77,8 @@ class Trajectory {
   // with a single dimension) or compositing (create a new trajectory with
   // another trajectory appended).
   Trajectory getTrajectoryWithSingleDimension(int dimension) const;
-  Trajectory getTrajectoryWithAppendedDimension(
-      const Trajectory& trajectory_to_append) const;
+  bool getTrajectoryWithAppendedDimension(
+      const Trajectory& trajectory_to_append, Trajectory* new_trajectory) const;
 
   // Evaluation functions.
   // Evaluate at a single time, and a single derivative. Return type of

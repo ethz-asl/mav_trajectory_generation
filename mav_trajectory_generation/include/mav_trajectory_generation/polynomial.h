@@ -206,6 +206,11 @@ class Polynomial {
                                   std::pair<double, double>* minimum,
                                   std::pair<double, double>* maximum) const;
 
+  // Increase the number of coefficients of this polynomial up to the specified
+  // degree by appending zeros.
+  bool getPolynomialWithAppendedCoefficients(int new_N,
+                                             Polynomial* new_polynomial) const;
+
   // Computes the base coefficients with the according powers of t, as
   // e.g. needed for computation of (in)equality constraints.
   // Output: coeffs = vector to write the coefficients to

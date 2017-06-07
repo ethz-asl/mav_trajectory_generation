@@ -145,16 +145,17 @@ Trajectory Trajectory::getTrajectoryWithSingleDimension(int dimension) const {
   return traj;
 }
 
-Trajectory Trajectory::getTrajectoryWithAppendedDimension(
-    const Trajectory& trajectory_to_append) const {
+bool Trajectory::getTrajectoryWithAppendedDimension(
+    const Trajectory& trajectory_to_append, Trajectory* new_trajectory) const {
   // Handle the case of one of the trajectories being empty.
   if (N_ == 0 || D_ == 0) {
-    return trajectory_to_append;
+    *new_trajectory = trajectory_to_append;
+    return true;
   }
   if (trajectory_to_append.N() == 0 || trajectory_to_append.D() == 0) {
-    return *this;
+    *new_trajectory = *this;
+    return true;
   }
-  CHECK_EQ(N_, trajectory_to_append.N());
   CHECK_EQ(static_cast<int>(segments_.size()), trajectory_to_append.K());
 
   // Create a new set of segments with all of the dimensions.
@@ -162,20 +163,16 @@ Trajectory Trajectory::getTrajectoryWithAppendedDimension(
   segments.reserve(segments_.size());
 
   for (size_t k = 0; k < segments_.size(); ++k) {
-    Segment segment(N_, D_ + trajectory_to_append.D());
-    segment.setTime(segments_[k].getTime());
-    for (int d = 0; d < D_; ++d) {
-      segment[d] = (segments_[k])[d];
+    Segment new_segment(0, 0);
+    if (!segments_[k].getSegmentWithAppendedDimension(
+            trajectory_to_append.segments()[k], &new_segment)) {
+      return false;
     }
-    for (int d = 0; d < trajectory_to_append.D(); ++d) {
-      segment[D_ + d] = (trajectory_to_append.segments()[k])[d];
-    }
-    segments.push_back(segment);
+    segments.push_back(new_segment);
   }
 
-  Trajectory traj;
-  traj.setSegments(segments);
-  return traj;
+  new_trajectory->setSegments(segments);
+  return true;
 }
 
 bool Trajectory::computeMinMaxMagnitude(int derivative,

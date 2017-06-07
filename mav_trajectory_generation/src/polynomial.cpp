@@ -174,6 +174,23 @@ Eigen::VectorXd Polynomial::convolve(const Eigen::VectorXd& data,
   return convolved;
 }
 
+bool Polynomial::getPolynomialWithAppendedCoefficients(
+    int new_N, Polynomial* new_polynomial) const {
+  if (new_N == N_) {
+    *new_polynomial = *this;
+    return true;
+  } else if (new_N < N_) {
+    LOG(WARNING) << "You shan't decrease the number of coefficients.";
+    *new_polynomial = *this;
+    return false;
+  } else {
+    Eigen::VectorXd coeffs = Eigen::VectorXd::Zero(new_N);
+    coeffs.head(N_) = coefficients_;
+    *new_polynomial = Polynomial(coeffs);
+    return true;
+  }
+}
+
 Eigen::MatrixXd Polynomial::base_coefficients_ =
     computeBaseCoefficients(Polynomial::kMaxConvolutionSize);
 
