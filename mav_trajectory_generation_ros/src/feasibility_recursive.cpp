@@ -40,7 +40,7 @@ FeasibilityRecursive::FeasibilityRecursive(
     : FeasibilityBase(input_constraints), settings_(settings) {}
 
 InputFeasibilityResult FeasibilityRecursive::checkInputFeasibility(
-    const Segment& segment) {
+    const Segment& segment) const {
   // Check user input.
   if (!(segment.D() == 3 || segment.D() == 4)) {
     return InputFeasibilityResult::kInputIndeterminable;

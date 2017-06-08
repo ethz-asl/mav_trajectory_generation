@@ -80,10 +80,11 @@ class FeasibilityBase {
   FeasibilityBase(const InputConstraints& input_constraints);
 
   // Checks a trajectory for input feasibility.
-  InputFeasibilityResult checkInputFeasibility(const Trajectory& trajectory);
+  InputFeasibilityResult checkInputFeasibility(
+      const Trajectory& trajectory) const;
   // Checks a segment for input feasibility.
   inline virtual InputFeasibilityResult checkInputFeasibility(
-      const Segment& segment) {
+      const Segment& segment) const {
     ROS_ERROR_STREAM("Input feasibility check not implemented.");
     return InputFeasibilityResult::kInputIndeterminable;
   }

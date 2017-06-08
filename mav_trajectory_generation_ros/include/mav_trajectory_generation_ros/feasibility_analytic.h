@@ -59,7 +59,8 @@ class FeasibilityAnalytic : public FeasibilityBase {
   FeasibilityAnalytic(const Settings& settings,
                       const InputConstraints& input_constraints);
   // Checks a segment for input feasibility.
-  virtual InputFeasibilityResult checkInputFeasibility(const Segment& segment);
+  virtual InputFeasibilityResult checkInputFeasibility(
+      const Segment& segment) const;
 
   // The user settings.
   Settings settings_;
