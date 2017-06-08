@@ -39,29 +39,7 @@ bool sampleTrajectoryAtTime(const Trajectory& trajectory, double sample_time,
     return false;
   }
 
-  state->position_W =
-      trajectory.evaluate(sample_time, derivative_order::POSITION).head<3>();
-  state->velocity_W =
-      trajectory.evaluate(sample_time, derivative_order::VELOCITY).head<3>();
-  state->acceleration_W =
-      trajectory.evaluate(sample_time, derivative_order::ACCELERATION)
-          .head<3>();
-  state->jerk_W =
-      trajectory.evaluate(sample_time, derivative_order::JERK).head<3>();
-  state->snap_W =
-      trajectory.evaluate(sample_time, derivative_order::SNAP).head<3>();
-
-  if (trajectory.D() > 3) {
-    state->setFromYaw(
-        (trajectory.evaluate(sample_time, derivative_order::POSITION))(3));
-    state->setFromYawRate(
-        (trajectory.evaluate(sample_time, derivative_order::VELOCITY))(3));
-    state->setFromYawAcc(
-        (trajectory.evaluate(sample_time, derivative_order::ACCELERATION))(3));
-  }
-  state->time_from_start_ns =
-      static_cast<int64_t>(sample_time * kNumNanosecondsPerSecond);
-  return true;
+  return sampleFlatStateAtTime<Trajectory>(trajectory, sample_time, state);
 }
 
 bool sampleTrajectoryInRange(const Trajectory& trajectory, double min_time,
@@ -132,6 +110,49 @@ bool sampleWholeTrajectory(const Trajectory& trajectory,
 
   return sampleTrajectoryInRange(trajectory, min_time, max_time,
                                  sampling_interval, states);
+}
+
+bool sampleSegmentAtTime(const Segment& segment, double sample_time,
+                         mav_msgs::EigenTrajectoryPoint* state) {
+  CHECK_NOTNULL(state);
+  if (sample_time < 0.0 || sample_time > segment.getTime()) {
+    LOG(ERROR) << "Sample time should be within [" << 0.0 << " "
+               << segment.getTime() << "] but is " << sample_time;
+    return false;
+  }
+
+  return sampleFlatStateAtTime<Segment>(segment, sample_time, state);
+}
+
+template <class T>
+bool sampleFlatStateAtTime(const T& type, double sample_time,
+                           mav_msgs::EigenTrajectoryPoint* state) {
+  if (type.D() < 3) {
+    LOG(ERROR) << "Dimension has to be 3 or 4, but is " << type.D();
+    return false;
+  }
+  type.evaluate(sample_time, derivative_order::POSITION);
+
+  state->position_W =
+      type.evaluate(sample_time, derivative_order::POSITION).head(3);
+  state->velocity_W =
+      type.evaluate(sample_time, derivative_order::VELOCITY).head(3);
+  state->acceleration_W =
+      type.evaluate(sample_time, derivative_order::ACCELERATION).head(3);
+  state->jerk_W = type.evaluate(sample_time, derivative_order::JERK).head(3);
+  state->snap_W = type.evaluate(sample_time, derivative_order::SNAP).head(3);
+
+  if (type.D() > 3) {
+    state->setFromYaw(
+        (type.evaluate(sample_time, derivative_order::POSITION))(3));
+    state->setFromYawRate(
+        (type.evaluate(sample_time, derivative_order::VELOCITY))(3));
+    state->setFromYawAcc(
+        (type.evaluate(sample_time, derivative_order::ACCELERATION))(3));
+  }
+  state->time_from_start_ns =
+      static_cast<int64_t>(sample_time * kNumNanosecondsPerSecond);
+  return true;
 }
 
 }  // namespace mav_trajectory_generation
