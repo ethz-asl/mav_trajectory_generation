@@ -133,7 +133,7 @@ InputFeasibilityResult FeasibilityAnalytic::analyticThrustFeasibility(
     Segment* thrust_segment) const {
   // Create thrust segment, f = ddx + g.
   thrust_segment->setTime(segment.getTime());
-  for (size_t i = 0; i < thrust_segment->D(); i++) {
+  for (int i = 0; i < thrust_segment->D(); i++) {
     Eigen::VectorXd thrust_coeffs =
         segment[i]
             .getCoefficients(derivative_order::ACCELERATION)
@@ -168,7 +168,7 @@ InputFeasibilityResult FeasibilityAnalytic::analyticThrustFeasibility(
     if (f_max > f_max_constraint) {
       return InputFeasibilityResult::kInputInfeasibleThrustHigh;
     }
- }
+  }
 
   return InputFeasibilityResult::kInputFeasible;
 }

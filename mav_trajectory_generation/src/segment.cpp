@@ -29,7 +29,7 @@ bool Segment::operator==(const Segment& rhs) const {
   if (D_ != rhs.D_ || time_ != rhs.time_) {
     return false;
   } else {
-    for (size_t i = 0; i < D(); i++) {
+    for (int i = 0; i < D(); i++) {
       if (polynomials_[i] != rhs[i]) {
         return false;
       }
@@ -128,6 +128,7 @@ bool Segment::computeMinMaxMagnitudeCandidateTimes(
       return false;
     }
   }
+  return true;
 }
 
 bool Segment::computeMinMaxMagnitudeCandidates(

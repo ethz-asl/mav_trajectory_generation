@@ -29,7 +29,7 @@ bool Trajectory::operator==(const Trajectory& rhs) const {
     // Different number of segments.
     return false;
   } else {
-    for (size_t i = 0; i < K(); i++) {
+    for (int i = 0; i < K(); i++) {
       if (segments_ != rhs.segments_) {
         return false;
       }
