@@ -196,7 +196,7 @@ We can also create new trajectories by splitting (getting a trajectory with a si
 mav_trajectory_generation::Trajectory x_trajectory = trajectory.getTrajectoryWithSingleDimension(1);
 
 // Compositing:
-mav_trajectory_generation::Trajectory trajectory_with_yaw = trajectory.getTrajectoryWithAppendedDimension(yaw_trajectory);
+mav_trajectory_generation::Trajectory trajectory_with_yaw; trajectory.getTrajectoryWithAppendedDimension(yaw_trajectory, &trajectory_with_yaw);
 ```
 
 ## Sampling Trajectories
