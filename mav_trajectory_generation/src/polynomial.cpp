@@ -37,7 +37,7 @@ bool Polynomial::selectMinMaxCandidatesFromRoots(
   candidates->reserve(roots_derivative_of_derivative.size() + 2);
   candidates->push_back(t_start);
   candidates->push_back(t_end);
-  for (size_t i = 0; i < roots_derivative_of_derivative.size(); i++) {
+  for (size_t i = 0; static_cast<Eigen::Index>(i) < roots_derivative_of_derivative.size(); i++) {
     // Only real roots are considered as critical points.
     if (std::abs(roots_derivative_of_derivative[i].imag()) >
         std::numeric_limits<double>::epsilon()) {
