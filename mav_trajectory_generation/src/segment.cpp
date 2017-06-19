@@ -128,6 +128,7 @@ bool Segment::computeMinMaxMagnitudeCandidateTimes(
       return false;
     }
   }
+  return true;
 }
 
 bool Segment::computeMinMaxMagnitudeCandidates(
