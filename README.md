@@ -70,7 +70,7 @@ source ~/.bashrc
 4. Use [catkin_build](http://catkin-tools.readthedocs.io/en/latest/verbs/catkin_build.html) to build the repository:
 
 ```
-catkin_build
+catkin build
 ```
 
 
