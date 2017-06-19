@@ -168,7 +168,7 @@ InputFeasibilityResult FeasibilityAnalytic::analyticThrustFeasibility(
     if (f_max > f_max_constraint) {
       return InputFeasibilityResult::kInputInfeasibleThrustHigh;
     }
- }
+  }
 
   return InputFeasibilityResult::kInputFeasible;
 }
