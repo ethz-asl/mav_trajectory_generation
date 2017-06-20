@@ -63,7 +63,7 @@ Eigen::VectorXd Trajectory::evaluate(double t, int derivative_order) const {
   // Make sure we don't go off the end of the segments (can happen if t is
   // equal to trajectory max time).
   if (i >= segments_.size()) {
-    i = segments_.size - 1;
+    i = segments_.size() - 1;
   }
   // Go back to the start of this segment.
   accumulated_time -= segments_[i].getTime();
