@@ -139,6 +139,7 @@ bool Polynomial::selectMinMaxFromCandidates(
 }
 
 Eigen::MatrixXd computeBaseCoefficients(int N) {
+  std::cout << "Computing base coefficients.\n";
   Eigen::MatrixXd base_coefficients(N, N);
 
   base_coefficients.setZero();

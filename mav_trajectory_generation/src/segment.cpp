@@ -49,10 +49,14 @@ const Polynomial& Segment::operator[](size_t idx) const {
 }
 
 Eigen::VectorXd Segment::evaluate(double t, int derivative) const {
+  if (D_ > 3) {
+    printSegment(std::cout, *this, 0);
+  }
+
   Eigen::VectorXd result(D_);
   result.setZero();
   for (int d = 0; d < D_; ++d) {
-    result[d] = polynomials_[d].evaluate(t, derivative);
+    result(d) = polynomials_[d].evaluate(t, derivative);
   }
   return result;
 }

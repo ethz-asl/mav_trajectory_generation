@@ -44,10 +44,15 @@ class Segment {
  public:
   typedef std::vector<Segment> Vector;
 
-  Segment(int N, int D) : time_(0.0), N_(N), D_(D) {
+  // Make sure to delete the default constructor.
+  Segment() = delete;
+  Segment(int N, int D) : N_(N), D_(D), time_(0.0) {
     polynomials_.resize(D_, N_);
   }
-  Segment(const Segment& segment) = default;
+  Segment(const Segment& segment)
+      : D_(segment.D()), N_(segment.N()), time_(segment.getTime()) {
+    polynomials_ = segment.getPolynomialsRef();
+  }
 
   bool operator==(const Segment& rhs) const;
   inline bool operator!=(const Segment& rhs) const { return !operator==(rhs); }
@@ -112,15 +117,15 @@ class Segment {
   // Split a segment to get a segment with the specified dimension.
   bool getSegmentWithSingleDimension(int dimension, Segment* new_segment) const;
   // Compose this segment and another segment to a new segment.
-  bool getSegmentWithAppendedDimension(const Segment& segment_to_append, Segment* new_segment) const;
+  bool getSegmentWithAppendedDimension(const Segment& segment_to_append,
+                                       Segment* new_segment) const;
 
  protected:
-  Polynomial::Vector polynomials_;
-  double time_;
-
- private:
   int N_;  // Number of coefficients.
   int D_;  // Number of dimensions.
+  double time_;
+
+  Polynomial::Vector polynomials_;
 };
 
 // Prints the properties of the segment.

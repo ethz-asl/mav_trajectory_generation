@@ -51,6 +51,8 @@ class Polynomial {
   // kMaxConvolutionSize.
   static Eigen::MatrixXd base_coefficients_;
 
+  Polynomial() = delete;
+
   Polynomial(int N) : N_(N), coefficients_(N) { coefficients_.setZero(); }
 
   // Assigns arbitrary coefficients to a polynomial.
@@ -61,6 +63,14 @@ class Polynomial {
 
   Polynomial(const Eigen::VectorXd& coeffs)
       : N_(coeffs.size()), coefficients_(coeffs) {}
+
+  Polynomial(const Polynomial& polynomial) {
+    N_ = polynomial.N();
+    coefficients_ = polynomial.getCoefficients();
+
+    CHECK_EQ(N_, coefficients_.size());
+  }
+
   /// Gets the number of coefficients (order + 1) of the polynomial.
   int N() const { return N_; }
 
@@ -141,6 +151,7 @@ class Polynomial {
     }
     double result;
     const int tmp = N_ - 1;
+
     Eigen::RowVectorXd row = base_coefficients_.block(derivative, 0, 1, N_);
     result = row[tmp] * coefficients_[tmp];
     for (int j = tmp - 1; j >= derivative; --j) {

@@ -127,11 +127,18 @@ bool sampleSegmentAtTime(const Segment& segment, double sample_time,
 template <class T>
 bool sampleFlatStateAtTime(const T& type, double sample_time,
                            mav_msgs::EigenTrajectoryPoint* state) {
+  CHECK_NOTNULL(state);
   if (type.D() < 3) {
     LOG(ERROR) << "Dimension has to be 3 or 4, but is " << type.D();
     return false;
   }
-  type.evaluate(sample_time, derivative_order::POSITION);
+
+  if (!std::isfinite(sample_time) || sample_time < 0) {
+      LOG(ERROR) << "Invalid sample time: " << sample_time;
+    return false;
+  }
+
+  std::cout << "Evaluation: " << type.evaluate(sample_time, derivative_order::POSITION) << std::endl;
 
   state->position_W =
       type.evaluate(sample_time, derivative_order::POSITION).head(3);
