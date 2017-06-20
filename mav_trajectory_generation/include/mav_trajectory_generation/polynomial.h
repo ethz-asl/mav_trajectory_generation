@@ -146,6 +146,7 @@ class Polynomial {
   // Evaluates the specified derivative of the polynomial at time t and returns
   // the result (only one value).
   double evaluate(double t, int derivative) const {
+    CHECK_EQ(coefficients_.size(), N_);
     if (derivative >= N_) {
       return 0.0;
     }

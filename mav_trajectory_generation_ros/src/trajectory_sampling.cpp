@@ -138,6 +138,8 @@ bool sampleFlatStateAtTime(const T& type, double sample_time,
     return false;
   }
 
+  std::cout << "D: " << type.D() << " N: " << type.N() << " Sample Time: " << sample_time << std::endl;
+
   std::cout << "Evaluation: " << type.evaluate(sample_time, derivative_order::POSITION) << std::endl;
 
   state->position_W =

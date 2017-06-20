@@ -55,12 +55,17 @@ Eigen::VectorXd Trajectory::evaluate(double t, int derivative_order) const {
       break;
     }
   }
+  if (i >= segments_.size()) {
+    i = segments_.size() - 1;
+  }
   if (t > accumulated_time) {
     LOG(ERROR) << "Time out of range of the trajectory!";
     return Eigen::VectorXd::Zero(D(), 1);
   }
   // Go back to the start of this segment.
   accumulated_time -= segments_[i].getTime();
+  std::cout << "i: " << i << " segments.size(): " << segments_.size()
+            << " accumulated time: " << accumulated_time << std::endl;
 
   return segments_[i].evaluate(t - accumulated_time, derivative_order);
 }

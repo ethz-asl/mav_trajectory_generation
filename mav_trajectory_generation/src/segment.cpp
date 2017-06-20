@@ -49,10 +49,6 @@ const Polynomial& Segment::operator[](size_t idx) const {
 }
 
 Eigen::VectorXd Segment::evaluate(double t, int derivative) const {
-  if (D_ > 3) {
-    printSegment(std::cout, *this, 0);
-  }
-
   Eigen::VectorXd result(D_);
   result.setZero();
   for (int d = 0; d < D_; ++d) {
@@ -63,6 +59,8 @@ Eigen::VectorXd Segment::evaluate(double t, int derivative) const {
 
 void printSegment(std::ostream& stream, const Segment& s, int derivative) {
   CHECK(derivative >= 0 && derivative < s.N());
+  std::cout << "Segment: D: " << s.D() << " N: " << s.N() << std::endl;
+
   stream << "t: " << s.getTime() << std::endl;
   stream << " coefficients for " << positionDerivativeToString(derivative)
          << ": " << std::endl;
