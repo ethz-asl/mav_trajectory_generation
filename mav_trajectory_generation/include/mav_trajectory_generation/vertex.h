@@ -116,9 +116,9 @@ std::ostream& operator<<(std::ostream& stream,
 // t_est = 2 * distance/v_max * (1 + magic_fabian_constant * v_max/a_max * exp(-
 // distance/v_max * 2);
 // magic_fabian_constant was determined to 6.5 in a student project ...
-std::vector<double> estimateSegmentTimes(const Vertex::Vector& vertices,
-                                         double v_max, double a_max,
-                                         double magic_fabian_constant = 6.5);
+std::vector<double> estimateSegmentTimes(
+    const Vertex::Vector& vertices, double v_max, double a_max,
+    double magic_fabian_constant = 6.5) const;
 
 // Creates random vertices for position within minimum_position and
 // maximum_position.
