@@ -161,7 +161,7 @@ std::ostream& operator<<(std::ostream& stream,
 
 std::vector<double> estimateSegmentTimes(const Vertex::Vector& vertices,
                                          double v_max, double a_max,
-                                         double magic_fabian_constant) {
+                                         double magic_fabian_constant) const {
   std::vector<double> segment_times;
   segment_times.reserve(vertices.size() - 1);
   for (size_t i = 0; i < vertices.size() - 1; ++i) {
