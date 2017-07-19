@@ -4,6 +4,16 @@ project(mav_trajectory_generation_ros)
 find_package(catkin_simple REQUIRED)
 catkin_simple(ALL_DEPS_REQUIRED)
 
+# Link against system yaml-cpp.
+find_package(yaml_cpp_catkin QUIET)
+if(${yaml_cpp_catkin_FOUND})
+  message(STATUS "Found yaml_cpp_catkin, using instead of system library.")
+  set(YAML_CPP_LIBRARIES ${yaml_cpp_catkin_LIBRARIES})
+else()
+  message(STATUS "No yaml_cpp_catkin, using yaml-cpp system library instead.")
+  pkg_check_modules(YamlCpp REQUIRED yaml-cpp>=0.5)
+endif()
+
 set(CMAKE_MACOSX_RPATH 0)
 add_definitions(-std=c++11)
 
@@ -19,7 +29,10 @@ cs_add_library(${PROJECT_NAME}
   src/ros_conversions.cpp
   src/ros_visualization.cpp
   src/trajectory_sampling.cpp
+  src/yaml_io.cpp
 )
+# Link against system yaml-cpp.
+target_link_libraries(${PROJECT_NAME} ${YAML_CPP_LIBRARIES})
 
 ############
 # BINARIES #
