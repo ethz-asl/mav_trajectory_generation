@@ -66,9 +66,10 @@ inline geometry_msgs::Point createPoint(double x, double y, double z) {
 // Input: color = RGBA color of the ellipsoid
 // Input: n_sigma = confidence area / scale of the ellipsoid
 // Output: marker = The marker in which the ellipsoid should be drawn
-void drawCovariance3D(const Eigen::Vector3d& mu, const Eigen::Matrix3d& cov,
-                      const std_msgs::ColorRGBA& color, double n_sigma,
-                      visualization_msgs::Marker* marker) {
+inline void drawCovariance3D(const Eigen::Vector3d& mu,
+                             const Eigen::Matrix3d& cov,
+                             const std_msgs::ColorRGBA& color, double n_sigma,
+                             visualization_msgs::Marker* marker) {
   // TODO(helenol): What does this do???? Does anyone know?
   const Eigen::Matrix3d changed_covariance = (cov + cov.transpose()) * 0.5;
   Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> solver(
@@ -86,9 +87,9 @@ void drawCovariance3D(const Eigen::Vector3d& mu, const Eigen::Matrix3d& cov,
   marker->action = visualization_msgs::Marker::ADD;
 }
 
-void drawAxes(const Eigen::Vector3d& p, const Eigen::Quaterniond& q,
-              double scale, double line_width,
-              visualization_msgs::Marker* marker) {
+inline void drawAxes(const Eigen::Vector3d& p, const Eigen::Quaterniond& q,
+                     double scale, double line_width,
+                     visualization_msgs::Marker* marker) {
   marker->colors.resize(6);
   marker->points.resize(6);
   marker->points[0] = createPoint(0, 0, 0);
@@ -114,11 +115,11 @@ void drawAxes(const Eigen::Vector3d& p, const Eigen::Quaterniond& q,
   tf::quaternionEigenToMsg(q, marker->pose.orientation);
 }
 
-void drawArrowPositionOrientation(const Eigen::Vector3d& p,
-                                  const Eigen::Quaterniond& q,
-                                  const std_msgs::ColorRGBA& color,
-                                  double length, double diameter,
-                                  visualization_msgs::Marker* marker) {
+inline void drawArrowPositionOrientation(const Eigen::Vector3d& p,
+                                         const Eigen::Quaterniond& q,
+                                         const std_msgs::ColorRGBA& color,
+                                         double length, double diameter,
+                                         visualization_msgs::Marker* marker) {
   marker->type = visualization_msgs::Marker::ARROW;
   marker->action = visualization_msgs::Marker::ADD;
   marker->color = color;
@@ -131,9 +132,10 @@ void drawArrowPositionOrientation(const Eigen::Vector3d& p,
   marker->scale.z = length;
 }
 
-void drawArrowPoints(const Eigen::Vector3d& p1, const Eigen::Vector3d& p2,
-                     const std_msgs::ColorRGBA& color, double diameter,
-                     visualization_msgs::Marker* marker) {
+inline void drawArrowPoints(const Eigen::Vector3d& p1,
+                            const Eigen::Vector3d& p2,
+                            const std_msgs::ColorRGBA& color, double diameter,
+                            visualization_msgs::Marker* marker) {
   marker->type = visualization_msgs::Marker::ARROW;
   marker->action = visualization_msgs::Marker::ADD;
   marker->color = color;
@@ -147,9 +149,10 @@ void drawArrowPoints(const Eigen::Vector3d& p1, const Eigen::Vector3d& p2,
   marker->scale.z = 0;
 }
 
-void drawAxesArrows(const Eigen::Vector3d& p, const Eigen::Quaterniond& q,
-                    double scale, double diameter,
-                    visualization_msgs::MarkerArray* marker_array) {
+inline void drawAxesArrows(const Eigen::Vector3d& p,
+                           const Eigen::Quaterniond& q, double scale,
+                           double diameter,
+                           visualization_msgs::MarkerArray* marker_array) {
   marker_array->markers.resize(3);
   Eigen::Vector3d origin;
   origin.setZero();
