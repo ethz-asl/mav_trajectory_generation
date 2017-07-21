@@ -142,7 +142,7 @@ bool FeasibilityBase::checkHalfPlaneFeasibility(const Segment& segment) const {
                                        &extrema_candidates);
     // Evaluate position at these critical points.
     for (double t : extrema_candidates) {
-      if ((segment.evaluate(t) - half_plane.point).dot(half_plane.normal) <=
+      if ((segment.evaluate(t).head(3) - half_plane.point).dot(half_plane.normal) <=
           0.0) {
         // The vector connecting the critical position and the point on the half
         // plane face different / perpendicular direction.
