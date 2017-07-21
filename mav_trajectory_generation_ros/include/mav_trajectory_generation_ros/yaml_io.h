@@ -47,9 +47,6 @@ inline bool trajectoryFromFile(
   bool success = segmentsFromFile(filename, &segments);
   trajectory->setSegments(segments);
   return success;
-  if (!segmentsFromFile(filename, &segments)) {
-    return false;
-  }
 }
 
 }  // namespace mav_trajectory_generation
