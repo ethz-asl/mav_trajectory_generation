@@ -89,6 +89,9 @@ bool segmentsFromFile(const std::string& filename,
 
   if (node[kSegments]) {
     const YAML::Node& segments_yaml = node[kSegments];
+    if (segments_yaml.size() == 0) {
+      return false; // No segments in file.
+    }
     for (size_t i = 0; i < segments_yaml.size(); i++) {
       if (segments_yaml[i][kNumCoefficients] && segments_yaml[i][kDim] &&
           segments_yaml[i][kSegmentTime] && segments_yaml[i][kCoefficients]) {
