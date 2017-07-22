@@ -46,6 +46,7 @@ bool segmentsToFile(
         << YAML::Comment("[ns]");
     // Coefficients.
     out << YAML::Key << kCoefficients;
+    out << YAML::BeginSeq;
     for (size_t i = 0; i < segment.D(); i++) {
       out << YAML::Flow;  // List output format.
       out << YAML::BeginSeq;
@@ -55,6 +56,7 @@ bool segmentsToFile(
       }
       out << YAML::EndSeq;
     }
+    out << YAML::EndSeq;
     out << YAML::EndMap;
   }
   out << YAML::EndSeq;
@@ -85,10 +87,41 @@ segments->clear();
 // Parse YAML.
 YAML::Node node = YAML::LoadFile(filename);
 
-//mav_trajectory_generation::Segment segment()
-const YAML::Node& segments_yaml = node[kSegments];
+if (node[kSegments]) {
+  const YAML::Node& segments_yaml = node[kSegments];
+  for (size_t i = 0; i < segments_yaml.size(); i++) {
+    if (segments_yaml[i][kNumCoefficients] && segments_yaml[i][kDim] &&
+        segments_yaml[i][kSegmentTime] && segments_yaml[i][kCoefficients]) {
+      // Header.
+      int N = segments_yaml[i][kNumCoefficients].as<int>();
+      int D = segments_yaml[i][kDim].as<int>();
+      mav_trajectory_generation::Segment segment(N, D);
+      uint64_t t = segments_yaml[i][kSegmentTime].as<uint64_t>();
+      segment.setTimeNSec(t);
+      // Coefficients.
+      if (segments_yaml[i][kCoefficients].size() != D) {
+        return false; // Coefficients and dimensions do not coincide.
+      }
+      for (size_t j = 0; j < D ; j++) {
+        if (segments_yaml[i][kCoefficients][j].size() != N) {
+          return false; // Number of coefficients does no coincide.
+        }
+        Eigen::VectorXd coeffs(N);
+        for (size_t k = 0; k < N; k++) {
+          coeffs(k) = segments_yaml[i][kCoefficients][j][k].as<double>();
+        }
+        segment[j] = coeffs;
+      }
+      segments->push_back(segment);
+    } else {
+      return false;  // Wrong format, missing elements.
+    }
+  }
+} else {
+  return false;  // No segments element.
+}
 
-
+return true;
 }
 
 }  // namespace mav_trajectory_generation
