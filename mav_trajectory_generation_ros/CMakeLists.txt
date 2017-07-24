@@ -9,7 +9,8 @@ find_package(PkgConfig)
 find_package(yaml_cpp_catkin QUIET)
 if(${yaml_cpp_catkin_FOUND})
   message(STATUS "Found yaml_cpp_catkin, using instead of system library.")
-  set(YAML_CPP_LIBRARIES ${yaml_cpp_catkin_LIBRARIES})
+  set(YamlCpp_LIBRARIES ${yaml_cpp_catkin_LIBRARIES})
+  set(YamlCpp_INCLUDE_DIRS ${yaml_cpp_catkin_INCLUDE_DIRS})
 else()
   message(STATUS "No yaml_cpp_catkin, using yaml-cpp system library instead.")
   pkg_check_modules(YamlCpp REQUIRED yaml-cpp>=0.5)
@@ -33,7 +34,7 @@ cs_add_library(${PROJECT_NAME}
   src/yaml_io.cpp
 )
 # Link against yaml-cpp.
-target_link_libraries(${PROJECT_NAME} ${YAML_CPP_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} ${YamlCpp_LIBRARIES})
 
 ############
 # BINARIES #
