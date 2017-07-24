@@ -40,7 +40,7 @@ To install this package with [ROS Indigo](http://wiki.ros.org/indigo/Installatio
 1. Install additional system dependencies (swap indigo for kinetic as necessary):
 
 ```
-sudo apt-get install python-wstool python-catkin-tools ros-indigo-cmake-modules
+sudo apt-get install python-wstool python-catkin-tools ros-indigo-cmake-modules libyaml-cpp-dev
 ```
 
 2. Set up a catkin workspace (if not already done):
