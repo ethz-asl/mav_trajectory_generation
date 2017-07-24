@@ -49,8 +49,9 @@ InputFeasibilityResult FeasibilityAnalytic::checkInputFeasibility(
   // Thrust:
   std::vector<Extremum> thrust_candidates;
   Segment thrust_segment(segment.N() - 2, kPosDim.size());
-  if (input_constraints_.hasConstraint(ICT::kFMin || ICT::kFMax ||
-                                       ICT::kOmegaXYMax)) {
+  if (input_constraints_.hasConstraint(ICT::kFMin) ||
+      input_constraints_.hasConstraint(ICT::kFMax) ||
+      input_constraints_.hasConstraint(ICT::kOmegaXYMax)) {
     InputFeasibilityResult thrust_result =
         analyticThrustFeasibility(segment, &thrust_candidates, &thrust_segment);
     if (thrust_result != InputFeasibilityResult::kInputFeasible) {

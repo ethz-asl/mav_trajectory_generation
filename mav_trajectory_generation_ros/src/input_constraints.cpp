@@ -38,9 +38,8 @@ void InputConstraints::addConstraint(int constraint_type, double value) {
   } else if (constraint_type == ICT::kFMax && hasConstraint(ICT::kFMin)) {
     constraints_[ICT::kFMin] =
         value < constraints_[ICT::kFMin] ? value : constraints_[ICT::kFMin];
-  } else {
-    constraints_[constraint_type] = value;
   }
+  constraints_[constraint_type] = value;
 }
 
 void InputConstraints::setDefaultValues() {
