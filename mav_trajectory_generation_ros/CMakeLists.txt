@@ -5,6 +5,7 @@ find_package(catkin_simple REQUIRED)
 catkin_simple(ALL_DEPS_REQUIRED)
 
 # Link against system catkin yaml-cpp if installed.
+find_package(PkgConfig)
 find_package(yaml_cpp_catkin QUIET)
 if(${yaml_cpp_catkin_FOUND})
   message(STATUS "Found yaml_cpp_catkin, using instead of system library.")
