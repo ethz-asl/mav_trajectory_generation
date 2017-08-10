@@ -127,9 +127,9 @@ inline void drawArrowPositionOrientation(const Eigen::Vector3d& p,
   tf::pointEigenToMsg(p, marker->pose.position);
   tf::quaternionEigenToMsg(q, marker->pose.orientation);
 
-  marker->scale.x = diameter;
+  marker->scale.x = length;
   marker->scale.y = diameter;
-  marker->scale.z = length;
+  marker->scale.z = diameter;
 }
 
 inline void drawArrowPoints(const Eigen::Vector3d& p1,
