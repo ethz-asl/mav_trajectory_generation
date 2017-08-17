@@ -118,6 +118,7 @@ void HexacopterMarker::createHexacopter(bool simple) {
     int id = marker.id;
     marker = visualization_msgs::Marker();
     marker.id = id + 1;
+    marker.ns = "hexacopter";
     marker.mesh_resource =
         "package://mav_visualization/meshes/firefly_carbon.dae";
     marker.mesh_use_embedded_materials = false;
