@@ -304,6 +304,39 @@ int main(int argc, char** argv) {
 
   ROS_INFO("Initialized time evaluation node.");
 
+  int num_trial_per_num_segments = 5;
+  std::vector<int> num_segments_vector = {1, 2, 10, 50};
+
+  int start_trial_number = 0;
+
+  nh_private.param("start_trial_number", start_trial_number,
+                   start_trial_number);
+
+  int trial_number = 0;
+
+  for (int i = 0; i < num_segments_vector.size(); ++i) {
+    for (int j = 0; j < num_trial_per_num_segments; ++j) {
+      if (trial_number < start_trial_number) {
+        trial_number++;
+        continue;
+      }
+      std::srand(trial_number);
+      time_eval_node.runBenchmark(trial_number, num_segments_vector[i]);
+      trial_number++;
+      ros::spinOnce();
+      if (time_eval_node.visualize()) {
+        ros::Duration(2.0).sleep();
+        ros::spinOnce();
+      }
+      if (!ros::ok()) {
+        ROS_ERROR("Aborted early.");
+        return 1;
+      }
+    }
+  }
+
+  ROS_INFO("Finished evaluations.");
+
   ros::spin();
   return 0;
 }
