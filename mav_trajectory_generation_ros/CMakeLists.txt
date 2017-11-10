@@ -44,6 +44,11 @@ cs_add_executable(trajectory_sampler_node
 )
 target_link_libraries(trajectory_sampler_node ${PROJECT_NAME})
 
+cs_add_executable(time_evaluation_node
+  src/time_evaluation_node.cpp
+)
+target_link_libraries(time_evaluation_node ${PROJECT_NAME})
+
 #########
 # TESTS #
 #########
