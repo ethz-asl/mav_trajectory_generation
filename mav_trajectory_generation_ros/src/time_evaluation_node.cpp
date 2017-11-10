@@ -7,6 +7,7 @@
 
 #include "mav_trajectory_generation_ros/ros_conversions.h"
 #include "mav_trajectory_generation_ros/ros_visualization.h"
+#include "mav_trajectory_generation_ros/trajectory_sampling.h"
 
 namespace mav_trajectory_generation {
 
@@ -68,8 +69,20 @@ class TimeEvaluationNode {
                           const Trajectory& traj,
                           TimeAllocationBenchmarkResult* result) const;
 
+  void visualizeTrajectory(const std::string& method_name,
+                           const Trajectory& traj,
+                           visualization_msgs::MarkerArray* markers);
+
   // Accessors.
   bool visualize() const { return visualize_; }
+
+  // Helpers.
+  visualization_msgs::Marker createMarkerForPath(
+      mav_msgs::EigenTrajectoryPointVector& path,
+      const std_msgs::ColorRGBA& color, const std::string& name,
+      double scale = 0.05) const;
+
+  double computePathLength(mav_msgs::EigenTrajectoryPointVector& path) const;
 
  private:
   ros::NodeHandle nh_;
@@ -130,16 +143,26 @@ void TimeEvaluationNode::runBenchmark(int trial_number, int num_segments) {
   double nominal_length = 0.0;
   // TODO(helenol): compute nominal length from the vertices...
 
+  visualization_msgs::MarkerArray markers;
+
   // Run all the evaluations.
+  std::string method_name = "nfabian";
   Trajectory trajectory_nfabian;
   runNfabian(vertices, &trajectory_nfabian);
-  evaluateTrajectory("nfabian", trajectory_nfabian, &result);
+  evaluateTrajectory(method_name, trajectory_nfabian, &result);
   results_.push_back(result);
+  if (visualize_) {
+    visualizeTrajectory(method_name, trajectory_nfabian, &markers);
+  }
 
+  method_name = "nonlinear";
   Trajectory trajectory_nonlinear;
   runNonlinear(vertices, &trajectory_nonlinear);
-  evaluateTrajectory("nonlinear", trajectory_nonlinear, &result);
+  evaluateTrajectory(method_name, trajectory_nonlinear, &result);
   results_.push_back(result);
+  if (visualize_) {
+    visualizeTrajectory(method_name, trajectory_nonlinear, &markers);
+  }
 }
 
 void TimeEvaluationNode::runNfabian(const Vertex::Vector& vertices,
@@ -170,6 +193,31 @@ void TimeEvaluationNode::runNonlinear(const Vertex::Vector& vertices,
   nlopt.getTrajectory(trajectory);
 }
 
+void TimeEvaluationNode::visualizeTrajectory(
+    const std::string& method_name, const Trajectory& traj,
+    visualization_msgs::MarkerArray* markers) {
+  // Maybe hash the method name to a color somehow????
+  // Just hardcode it for now per method name.
+  mav_visualization::Color trajectory_color;
+
+  if (method_name == "nfabian") {
+    trajectory_color = mav_visualization::Color::Yellow();
+  } else if (method_name == "nonlinear") {
+    trajectory_color = mav_visualization::Color::Red();
+  } else {
+    trajectory_color = mav_visualization::Color::White();
+  }
+
+  const double kDefaultSamplingTime = 0.1;  // In seconds.
+  mav_msgs::EigenTrajectoryPointVector path;
+  sampleWholeTrajectory(traj, kDefaultSamplingTime, &path);
+
+  visualization_msgs::Marker marker;
+  marker = createMarkerForPath(path, trajectory_color, method_name);
+
+  markers->markers.push_back(marker);
+}
+
 void TimeEvaluationNode::evaluateTrajectory(
     const std::string& method_name, const Trajectory& traj,
     TimeAllocationBenchmarkResult* result) const {
@@ -177,7 +225,69 @@ void TimeEvaluationNode::evaluateTrajectory(
 
   result->trajectory_time = traj.getMaxTime();
 
-  // TODO(helenol): evaluate the path length, min/max extrema, etc.
+  // Evaluate path length.
+  const double kDefaultSamplingTime = 0.1;  // In seconds.
+  mav_msgs::EigenTrajectoryPointVector path;
+  mav_trajectory_generation::sampleWholeTrajectory(traj, kDefaultSamplingTime,
+                                                   &path);
+  result->trajectory_length = computePathLength(path);
+
+  // TODO(helenol): evaluate min/max extrema, bounds violations, etc.
+}
+
+visualization_msgs::Marker TimeEvaluationNode::createMarkerForPath(
+    mav_msgs::EigenTrajectoryPointVector& path,
+    const std_msgs::ColorRGBA& color, const std::string& name,
+    double scale) const {
+  visualization_msgs::Marker path_marker;
+
+  const int kPublishEveryNSamples = 1;
+  const double kMaxMagnitude = 100.0;
+
+  path_marker.header.frame_id = "world";
+
+  path_marker.header.stamp = ros::Time::now();
+  path_marker.type = visualization_msgs::Marker::LINE_STRIP;
+  path_marker.color = color;
+  path_marker.ns = name;
+  path_marker.scale.x = scale;
+
+  path_marker.points.reserve(path.size() / kPublishEveryNSamples);
+  int i = 0;
+  for (const mav_msgs::EigenTrajectoryPoint& point : path) {
+    i++;
+    if (i % kPublishEveryNSamples != 0) {
+      continue;
+    }
+    // Check that we're in some reasonable bounds.
+    // Makes rviz stop crashing.
+    if (point.position_W.maxCoeff() > kMaxMagnitude ||
+        point.position_W.minCoeff() < -kMaxMagnitude) {
+      continue;
+    }
+
+    geometry_msgs::Point point_msg;
+    tf::pointEigenToMsg(point.position_W, point_msg);
+    path_marker.points.push_back(point_msg);
+  }
+
+  return path_marker;
+}
+
+double TimeEvaluationNode::computePathLength(
+    mav_msgs::EigenTrajectoryPointVector& path) const {
+  Eigen::Vector3d last_point;
+  double distance = 0;
+  for (int i = 0; i < path.size(); ++i) {
+    const mav_msgs::EigenTrajectoryPoint& point = path[i];
+
+    if (i > 0) {
+      distance += (point.position_W - last_point).norm();
+    }
+    last_point = point.position_W;
+  }
+
+  return distance;
 }
 
 }  // namespace mav_trajectory_generation
