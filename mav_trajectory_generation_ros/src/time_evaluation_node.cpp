@@ -163,6 +163,10 @@ void TimeEvaluationNode::runBenchmark(int trial_number, int num_segments) {
   if (visualize_) {
     visualizeTrajectory(method_name, trajectory_nonlinear, &markers);
   }
+
+  if (visualize_) {
+    path_marker_pub_.publish(markers);
+  }
 }
 
 void TimeEvaluationNode::runNfabian(const Vertex::Vector& vertices,
@@ -320,6 +324,8 @@ int main(int argc, char** argv) {
         trial_number++;
         continue;
       }
+      ROS_INFO("Trial number %d Num segments: %d", trial_number,
+               num_segments_vector[i]);
       std::srand(trial_number);
       time_eval_node.runBenchmark(trial_number, num_segments_vector[i]);
       trial_number++;
