@@ -200,12 +200,12 @@ bool estimateSegmentTimesVelocityRamp(const Vertex::Vector& vertices,
 
   // Estimate all segment times from one vertex with position constraint to the
   // next.
-  for (size_t i = 0; i < segment_times->size() - 1; ++i) {
+  for (size_t i = 0; i < segment_times->size(); ++i) {
     Eigen::VectorXd start, end;
     vertices[i].getConstraint(derivative_order::POSITION, &start);
     // Find first vertex with position constraint.
     size_t end_idx = i + 1;
-    for (size_t j = end_idx; j < segment_times->size(); ++j) {
+    for (size_t j = end_idx; j < vertices.size(); ++j) {
       if (vertices[j].getConstraint(derivative_order::POSITION, &end)) {
         end_idx = j;
         break;
