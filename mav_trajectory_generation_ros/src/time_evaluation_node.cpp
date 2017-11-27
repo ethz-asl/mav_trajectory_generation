@@ -62,6 +62,8 @@ class TimeEvaluationNode {
 
   // Generate trajectories with different methods.
   void runNfabian(const Vertex::Vector& vertices, Trajectory* trajectory) const;
+  void runTrapezoidalTime(const Vertex::Vector& vertices,
+                          Trajectory* trajectory) const;
   void runNonlinear(const Vertex::Vector& vertices,
                     Trajectory* trajectory) const;
 
@@ -83,6 +85,8 @@ class TimeEvaluationNode {
       double scale = 0.05) const;
 
   double computePathLength(mav_msgs::EigenTrajectoryPointVector& path) const;
+
+  std::string printResults() const;
 
  private:
   ros::NodeHandle nh_;
@@ -155,6 +159,15 @@ void TimeEvaluationNode::runBenchmark(int trial_number, int num_segments) {
     visualizeTrajectory(method_name, trajectory_nfabian, &markers);
   }
 
+  method_name = "trapezoidal";
+  Trajectory trajectory_trapezoidal;
+  runTrapezoidalTime(vertices, &trajectory_trapezoidal);
+  evaluateTrajectory(method_name, trajectory_trapezoidal, &result);
+  results_.push_back(result);
+  if (visualize_) {
+    visualizeTrajectory(method_name, trajectory_trapezoidal, &markers);
+  }
+
   method_name = "nonlinear";
   Trajectory trajectory_nonlinear;
   runNonlinear(vertices, &trajectory_nonlinear);
@@ -174,6 +187,19 @@ void TimeEvaluationNode::runNfabian(const Vertex::Vector& vertices,
   std::vector<double> segment_times;
   segment_times =
       mav_trajectory_generation::estimateSegmentTimes(vertices, v_max_, a_max_);
+
+  mav_trajectory_generation::PolynomialOptimization<kN> linopt(kDim);
+  linopt.setupFromVertices(vertices, segment_times, max_derivative_order_);
+  linopt.solveLinear();
+  linopt.getTrajectory(trajectory);
+}
+
+void TimeEvaluationNode::runTrapezoidalTime(const Vertex::Vector& vertices,
+                                            Trajectory* trajectory) const {
+  std::vector<double> segment_times;
+  const double kTimeFactor = 1.0;
+  CHECK(mav_trajectory_generation::estimateSegmentTimesVelocityRamp(
+      vertices, v_max_, a_max_, kTimeFactor, &segment_times));
 
   mav_trajectory_generation::PolynomialOptimization<kN> linopt(kDim);
   linopt.setupFromVertices(vertices, segment_times, max_derivative_order_);
@@ -206,6 +232,8 @@ void TimeEvaluationNode::visualizeTrajectory(
 
   if (method_name == "nfabian") {
     trajectory_color = mav_visualization::Color::Yellow();
+  } else if (method_name == "trapezoidal") {
+    trajectory_color = mav_visualization::Color::Green();
   } else if (method_name == "nonlinear") {
     trajectory_color = mav_visualization::Color::Red();
   } else {
@@ -294,6 +322,25 @@ double TimeEvaluationNode::computePathLength(
   return distance;
 }
 
+std::string TimeEvaluationNode::printResults() const {
+  std::stringstream s;
+  // Header.
+  s << "trial_number, method_name, num_segments, nominal_length, "
+       "optimization_success, bounds_violated, trajectory_time, "
+       "trajectory_length, computation_time, a_max_actual, v_max_actual"
+    << std::endl;
+  for (size_t i = 0; i < results_.size(); ++i) {
+    s << results_[i].trial_number << ", " << results_[i].method_name << ", "
+      << results_[i].num_segments << ", " << results_[i].nominal_length << ", "
+      << results_[i].optimization_success << ", " << results_[i].bounds_violated
+      << ", " << results_[i].trajectory_time << ", "
+      << results_[i].trajectory_length << ", " << results_[i].computation_time
+      << ", " << results_[i].a_max_actual << ", " << results_[i].v_max_actual
+      << std::endl;
+  }
+  return s.str();
+}
+
 }  // namespace mav_trajectory_generation
 
 int main(int argc, char** argv) {
@@ -342,6 +389,7 @@ int main(int argc, char** argv) {
   }
 
   ROS_INFO("Finished evaluations.");
+  ROS_INFO("Results:\n%s", time_eval_node.printResults().c_str());
 
   ros::spin();
   return 0;
