@@ -120,6 +120,20 @@ std::vector<double> estimateSegmentTimes(const Vertex::Vector& vertices,
                                          double v_max, double a_max,
                                          double magic_fabian_constant = 6.5);
 
+// Calculate the velocity assuming instantaneous constant acceleration a_max
+// and straight line rest-to-rest trajectories.
+// The time_factor \in [1..Inf] increases the allocated time making the segments
+// slower and thus feasibility more likely. This method does not take into
+// account the start and goal velocity and acceleration.
+bool estimateSegmentTimesVelocityRamp(const Vertex::Vector& vertices,
+                                      double v_max, double a_max,
+                                      double time_factor,
+                                      std::vector<double>* segment_times);
+
+double computeTimeVelocityRamp(const Eigen::Vector3d& start,
+                               const Eigen::Vector3d& goal, double v_max,
+                               double a_max);
+
 // Creates random vertices for position within minimum_position and
 // maximum_position.
 // Vertices at the beginning and end have only fixed constraints with their

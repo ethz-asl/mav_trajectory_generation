@@ -177,4 +177,78 @@ std::vector<double> estimateSegmentTimes(const Vertex::Vector& vertices,
   return segment_times;
 }
 
+bool estimateSegmentTimesVelocityRamp(const Vertex::Vector& vertices,
+                                      double v_max, double a_max,
+                                      double time_factor,
+                                      std::vector<double>* segment_times) {
+  // Sanity checks.
+  CHECK_NOTNULL(segment_times);
+
+  if (vertices.size() < 2) {
+    return false;  // Segment needs at least two vertices.
+  }
+  if (!vertices.front().hasConstraint(derivative_order::POSITION) ||
+      !vertices.back().hasConstraint(derivative_order::POSITION)) {
+    return false;  // Segment start and goal position need to be set.
+  }
+  for (const Vertex& v : vertices) {
+    if (v.D() < 3) {
+      return false;  // Wrong dimensions.
+    }
+  }
+  segment_times->resize(vertices.size() - 1);
+
+  // Estimate all segment times from one vertex with position constraint to the
+  // next.
+  for (size_t i = 0; i < segment_times->size() - 1; ++i) {
+    Eigen::VectorXd start, end;
+    vertices[i].getConstraint(derivative_order::POSITION, &start);
+    // Find first vertex with position constraint.
+    size_t end_idx = i + 1;
+    for (size_t j = end_idx; j < segment_times->size(); ++j) {
+      if (vertices[j].getConstraint(derivative_order::POSITION, &end)) {
+        end_idx = j;
+        break;
+      }
+    }
+    // Fake intermediate unconstrained vertices to be equally spaced on
+    // straight line.
+    const int num_segments = end_idx - i;
+    const double segment_distance =
+        (end.head(3) - start.head(3)).norm() / num_segments;
+    std::vector<Eigen::Vector3d> positions(num_segments + 1);
+    positions[0] = start.head(3);
+    const Eigen::Vector3d dir = (end.head(3) - start.head(3)).normalized();
+    for (size_t i = 1; i < num_segments + 1; ++i) {
+      positions[i] = positions[i - 1] + segment_distance * dir;
+    }
+    // Calculate velocity ramp segment times for these (fake) vertices.
+    for (size_t k = 0; k < positions.size() - 1; ++k) {
+      (*segment_times)[i + k] =
+          time_factor *
+          computeTimeVelocityRamp(positions[k], positions[k + 1], v_max, a_max);
+    }
+    i = end_idx - 1;  // Skip all vertices that are not position constrained.
+  }
+  return segment_times;
+}
+
+double computeTimeVelocityRamp(const Eigen::Vector3d& start,
+                               const Eigen::Vector3d& goal, double v_max,
+                               double a_max) {
+  const double distance = (start - goal).norm();
+  // Time to accelerate or decelerate to or from maximum velocity:
+  const double acc_time = v_max / a_max;
+  // Distance covered during complete acceleration or decelerate:
+  const double acc_distance = 0.5 * v_max * acc_time;
+  // Compute total segment time:
+  if (distance < 2.0 * acc_distance) {
+    // Case 1: Distance too small to accelerate to maximum velocity.
+    return 2.0 * std::sqrt(distance / a_max);
+  } else {
+    // Case 2: Distance long enough to accelerate to maximum velocity.
+    return 2.0 * acc_time + (distance - 2.0 * acc_distance) / v_max;
+  }
+}
+
 }  // namespace mav_trajectory_generation
