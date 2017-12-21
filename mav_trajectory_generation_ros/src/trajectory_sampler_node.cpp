@@ -37,9 +37,11 @@ TrajectorySamplerNode::TrajectorySamplerNode(const ros::NodeHandle& nh,
       "path_segments", 10, &TrajectorySamplerNode::pathSegmentsCallback, this);
   stop_srv_ = nh_.advertiseService(
       "stop_sampling", &TrajectorySamplerNode::stopSamplingCallback, this);
+  const bool oneshot = false;
+  const bool autostart = false;
   publish_timer_ = nh_.createTimer(ros::Duration(dt_),
                                    &TrajectorySamplerNode::commandTimerCallback,
-                                   this, false);
+                                   this, oneshot, autostart);
 }
 
 TrajectorySamplerNode::~TrajectorySamplerNode() { publish_timer_.stop(); }
@@ -70,7 +72,7 @@ void TrajectorySamplerNode::pathSegmentsCallback(
     command_pub_.publish(msg_pub);
   } else {
     publish_timer_.start();
-    current_sample_time_ = 0;
+    current_sample_time_ = 0.0;
     start_time_ = ros::Time::now();
   }
 }
