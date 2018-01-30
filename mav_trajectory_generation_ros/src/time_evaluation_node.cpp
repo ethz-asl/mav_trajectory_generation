@@ -374,7 +374,8 @@ std::string TimeEvaluationNode::printResults() const {
   // Header.
   s << "trial_number, method_name, num_segments, nominal_length, "
        "optimization_success, bounds_violated, trajectory_time, "
-       "trajectory_length, computation_time, a_max_actual, v_max_actual"
+       "trajectory_length, computation_time, a_max_actual, v_max_actual, "
+       "abs_violation_a, abs_violation_v, rel_violation_a, rel_violation_v"
     << std::endl;
   for (size_t i = 0; i < results_.size(); ++i) {
     s << results_[i].trial_number << ", " << results_[i].method_name << ", "
@@ -382,7 +383,10 @@ std::string TimeEvaluationNode::printResults() const {
       << results_[i].optimization_success << ", " << results_[i].bounds_violated
       << ", " << results_[i].trajectory_time << ", "
       << results_[i].trajectory_length << ", " << results_[i].computation_time
-      << ", " << results_[i].a_max_actual << ", " << results_[i].v_max_actual
+      << ", " << results_[i].a_max_actual.value << ", "
+      << results_[i].v_max_actual.value << ", " << results_[i].abs_violation_a
+      << ", " << results_[i].abs_violation_v << ", "
+      << results_[i].rel_violation_a << ", " << results_[i].rel_violation_v
       << std::endl;
   }
   return s.str();
