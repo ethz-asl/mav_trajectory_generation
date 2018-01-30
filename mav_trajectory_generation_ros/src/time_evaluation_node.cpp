@@ -1,4 +1,5 @@
 #include <ros/ros.h>
+#include <ros/package.h>
 
 #include <mav_visualization/helpers.h>
 #include <mav_trajectory_generation/polynomial_optimization_linear.h>
@@ -101,6 +102,9 @@ class TimeEvaluationNode {
   double computePathLength(mav_msgs::EigenTrajectoryPointVector& path) const;
 
   std::string printResults() const;
+  void outputResults(
+          const std::string& filename,
+          const std::vector<TimeAllocationBenchmarkResult>& results) const;
 
  private:
   ros::NodeHandle nh_;
@@ -389,7 +393,46 @@ std::string TimeEvaluationNode::printResults() const {
       << results_[i].rel_violation_a << ", " << results_[i].rel_violation_v
       << std::endl;
   }
+
+  // File path.
+  std::string path = ros::package::getPath("mav_trajectory_generation_ros");
+  std::string filename = "/results_time_allocation.csv";
+  std::string results_path = path + filename;
+  outputResults(results_path, results_);
+  std::cout << "path: " << results_path << std::endl;
+
   return s.str();
+}
+
+void TimeEvaluationNode::outputResults(
+        const std::string& filename,
+        const std::vector<TimeAllocationBenchmarkResult>& results) const {
+  // Append new lines to file
+  FILE* fp = fopen(filename.c_str(), "w+");
+  if (fp == NULL) {
+    std::cout << "Cannot open file. ABORT wrinting results!" << std::endl;
+    return;
+  }
+
+  fprintf(fp,
+          "#trial_number, method_name, num_segments, nominal_length, "
+                  "optimization_success, bounds_violated, trajectory_time, "
+                  "trajectory_length, computation_time, a_max_actual,"
+                  " v_max_actual, abs_violation_a, abs_violation_v, "
+                  "rel_violation_a, rel_violation_v\n");
+  for (const TimeAllocationBenchmarkResult& result : results) {
+    fprintf(fp, "%d,%s,%d,%f,%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f\n",
+            result.trial_number, result.method_name.c_str(),
+            result.num_segments, result.nominal_length,
+            result.optimization_success, result.bounds_violated,
+            result.trajectory_time, result.trajectory_length,
+            result.computation_time, result.a_max_actual.value,
+            result.v_max_actual.value, result.abs_violation_a,
+            result.abs_violation_v, result.rel_violation_a,
+            result.rel_violation_v);
+  }
+
+  fclose(fp);
 }
 
 }  // namespace mav_trajectory_generation
