@@ -24,7 +24,15 @@ struct TimeAllocationBenchmarkResult {
         bounds_violated(false),
         trajectory_time(0.0),
         trajectory_length(0.0),
-        computation_time(0.0) {}
+        computation_time(0.0),
+        v_min_actual(Extremum(0.0, 0.0, 0)),
+        a_min_actual(Extremum(0.0, 0.0, 0)),
+        v_max_actual(Extremum(0.0, 0.0, 0)),
+        a_max_actual(Extremum(0.0, 0.0, 0)),
+        abs_violation_v(0.0),
+        abs_violation_a(0.0),
+        rel_violation_v(0.0),
+        rel_violation_a(0.0) {}
 
   // Evaluation settings
   int trial_number;
@@ -40,8 +48,14 @@ struct TimeAllocationBenchmarkResult {
   double trajectory_time;
   double trajectory_length;
   double computation_time;
-  double a_max_actual;
-  double v_max_actual;
+  Extremum v_min_actual;
+  Extremum a_min_actual;
+  Extremum v_max_actual;
+  Extremum a_max_actual;
+  double abs_violation_v;
+  double abs_violation_a;
+  double rel_violation_v;
+  double rel_violation_a;
 
   // More to come: convex hull/bounding box, etc.
 };
@@ -281,6 +295,23 @@ void TimeEvaluationNode::evaluateTrajectory(
   result->trajectory_length = computePathLength(path);
 
   // TODO(helenol): evaluate min/max extrema, bounds violations, etc.
+  // Evaluate min/max extrema
+  std::vector<int> dimensions = {0, 1, 2}; // Evaluate dimensions in x, y and z
+  traj.computeMinMaxMagnitude(derivative_order::VELOCITY, dimensions,
+                              &result->v_min_actual, &result->v_max_actual);
+  traj.computeMinMaxMagnitude(derivative_order::ACCELERATION, dimensions,
+                              &result->a_min_actual, &result->a_max_actual);
+
+  // Evaluate constraint/bound violation
+  result->abs_violation_v = result->v_max_actual.value - v_max_;
+  result->abs_violation_a = result->a_max_actual.value - a_max_;
+  result->rel_violation_v = result->abs_violation_v / v_max_;
+  result->rel_violation_a = result->abs_violation_a / a_max_;
+  if ((result->abs_violation_a > 0.0) || (result->abs_violation_v > 0.0)) {
+    result->bounds_violated = true;
+  } else {
+    result->bounds_violated = false;
+  }
 }
 
 visualization_msgs::Marker TimeEvaluationNode::createMarkerForPath(
