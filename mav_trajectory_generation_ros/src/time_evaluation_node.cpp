@@ -144,8 +144,24 @@ void TimeEvaluationNode::runBenchmark(int trial_number, int num_segments) {
   // evaluations.
   result.trial_number = trial_number;
   result.num_segments = num_segments;
+
+  // Compute nominal length from the vertices
   double nominal_length = 0.0;
-  // TODO(helenol): compute nominal length from the vertices...
+  for (size_t i = 0; i < vertices.size()-1; ++i) {
+    Eigen::VectorXd start, end;
+    vertices[i].getConstraint(derivative_order::POSITION, &start);
+    // Find first vertex with position constraint.
+    size_t end_idx = i + 1;
+    for (size_t j = end_idx; j < vertices.size(); ++j) {
+      if (vertices[j].getConstraint(derivative_order::POSITION, &end)) {
+        end_idx = j;
+        break;
+      }
+    }
+    const double segment_length = (end.head(3)-start.head(3)).norm();
+    nominal_length += segment_length;
+  }
+  result.nominal_length = nominal_length;
 
   visualization_msgs::MarkerArray markers;
 
