@@ -280,8 +280,21 @@ double PolynomialOptimizationNonLinear<_N>::objectiveFunctionTime(
   double cost_time = 0;
   double cost_constraints = 0;
   const double total_time = computeTotalTrajectoryTime(segment_times);
-  cost_time = total_time * total_time *
-              optimization_data->optimization_parameters_.time_penalty;
+
+  switch (optimization_data->optimization_parameters_.cost_time_method) {
+    case NonlinearOptimizationParameters::kSquared:
+      cost_time = total_time * total_time *
+                  optimization_data->optimization_parameters_.time_penalty;
+      break;
+    case NonlinearOptimizationParameters::kRichter:
+      cost_time = total_time *
+                  optimization_data->optimization_parameters_.time_penalty;
+      break;
+    default:
+      cost_time = total_time * total_time *
+                  optimization_data->optimization_parameters_.time_penalty;
+      break;
+  }
 
   if (optimization_data->optimization_parameters_.print_debug_info) {
     std::cout << "---- cost at iteration "
