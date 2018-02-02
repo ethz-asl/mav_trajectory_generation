@@ -157,6 +157,59 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTime() {
 }
 
 template <int _N>
+int PolynomialOptimizationNonLinear<_N>::optimizeTimeGradientDescent() {
+  // Get initial parameters.
+  std::vector<double> grad_vec;
+  std::vector<double> segment_times;
+  poly_opt_.getSegmentTimes(&segment_times);
+
+  Eigen::VectorXd grad, increment;
+//  Eigen::VectorXd x(segment_times.data());
+  Eigen::Map<Eigen::VectorXd> x(segment_times.data(),segment_times.size());
+  grad.resize(x.size());
+  grad.setZero();
+  increment = grad;
+
+  int max_iter = 50;
+//  double lambda = 10 * (w_c_ + w_d_);
+  double lambda = 10 * (1 + optimization_parameters_.time_penalty);
+
+  double cost = 0;
+  for (int i = 0; i < max_iter; ++i) {
+    // Evaluate cost.
+    cost = getCostAndGradientTime(&grad_vec);
+
+    // Unpack gradients.
+    for (int j = 0; j < x.size(); ++j) {
+      grad[j] = grad_vec[j];
+    }
+    double step_size = 1.0 / (lambda + i);
+    increment = -step_size * grad;
+    std::cout << "[GD] i: " << i << " step size: " << step_size
+              << " cost: " << cost << " gradient norm: " << grad.norm()
+              << std::endl;
+
+    // Update the parameters.
+    x += increment;
+    //TODO: segment times > 0.0!!
+    for (int n = 0; n < x.size(); ++n) {
+      x[n] = x[n] <= 0.1 ? 0.1 : x[n];
+    }
+
+//    setParameterVector(x);
+    std::vector<double> segment_times_new (x.data(), x.data() + x.size());
+    poly_opt_.updateSegmentTimes(segment_times_new);
+    poly_opt_.solveLinear(); // TODO: needed?
+  }
+
+  std::cout << "[Solution]: " << x.transpose() << std::endl;
+//  for (const auto t : x) {
+//    std::cout << t << " ";
+//  }
+//  std::cout << std::endl << std::endl;
+
+  return nlopt::SUCCESS;
+}
 int PolynomialOptimizationNonLinear<_N>::optimizeTimeAndFreeConstraints() {
   std::vector<double> initial_step, initial_solution, segment_times,
       lower_bounds, upper_bounds;
