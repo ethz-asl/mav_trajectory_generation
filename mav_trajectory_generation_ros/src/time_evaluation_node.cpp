@@ -81,6 +81,8 @@ class TimeEvaluationNode {
                           Trajectory* trajectory) const;
   void runNonlinear(const Vertex::Vector& vertices,
                     Trajectory* trajectory) const;
+  void runNonlinearRichter(const Vertex::Vector& vertices,
+                           Trajectory* trajectory) const;
 
   void evaluateTrajectory(const std::string& method_name,
                           const Trajectory& traj,
@@ -214,6 +216,19 @@ void TimeEvaluationNode::runBenchmark(int trial_number, int num_segments) {
   if (visualize_) {
     path_marker_pub_.publish(markers);
   }
+
+  method_name = "nonlinear_richter";
+  Trajectory trajectory_nonlinear_richter;
+  runNonlinearRichter(vertices, &trajectory_nonlinear_richter);
+  evaluateTrajectory(method_name, trajectory_nonlinear_richter, &result);
+  results_.push_back(result);
+  if (visualize_) {
+    visualizeTrajectory(method_name, trajectory_nonlinear_richter, &markers);
+  }
+
+  if (visualize_) {
+    path_marker_pub_.publish(markers);
+  }
 }
 
 void TimeEvaluationNode::runNfabian(const Vertex::Vector& vertices,
@@ -248,6 +263,23 @@ void TimeEvaluationNode::runNonlinear(const Vertex::Vector& vertices,
       mav_trajectory_generation::estimateSegmentTimes(vertices, v_max_, a_max_);
 
   mav_trajectory_generation::NonlinearOptimizationParameters nlopt_parameters;
+  mav_trajectory_generation::PolynomialOptimizationNonLinear<kN> nlopt(
+      kDim, nlopt_parameters, false);
+  nlopt.setupFromVertices(vertices, segment_times, max_derivative_order_);
+  nlopt.addMaximumMagnitudeConstraint(derivative_order::VELOCITY, v_max_);
+  nlopt.addMaximumMagnitudeConstraint(derivative_order::ACCELERATION, a_max_);
+  nlopt.optimize();
+  nlopt.getTrajectory(trajectory);
+}
+
+void TimeEvaluationNode::runNonlinearRichter(
+        const Vertex::Vector& vertices, Trajectory* trajectory) const {
+  std::vector<double> segment_times;
+  segment_times =
+      mav_trajectory_generation::estimateSegmentTimes(vertices, v_max_, a_max_);
+
+  mav_trajectory_generation::NonlinearOptimizationParameters nlopt_parameters;
+  nlopt_parameters.cost_time_method = NonlinearOptimizationParameters::kRichter;
   mav_trajectory_generation::PolynomialOptimizationNonLinear<kN> nlopt(
       kDim, nlopt_parameters, false);
   nlopt.setupFromVertices(vertices, segment_times, max_derivative_order_);
