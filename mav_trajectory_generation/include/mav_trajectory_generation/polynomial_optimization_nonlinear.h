@@ -46,6 +46,7 @@ struct NonlinearOptimizationParameters {
         random_seed(0),
         use_soft_constraints(true),
         soft_constraint_weight(100.0),
+        cost_time_method(kSquared),
         print_debug_info(false) {}
 
   // Stopping criteria, if objective function changes less than absolute value.
@@ -95,6 +96,12 @@ struct NonlinearOptimizationParameters {
 
   // Weights the relative violation of a soft constraint.
   double soft_constraint_weight;
+
+  enum CostTimeMethod {
+    kSquared,
+    kRichter,
+    kUnknown,
+  } cost_time_method;
 
   bool print_debug_info;
 };
