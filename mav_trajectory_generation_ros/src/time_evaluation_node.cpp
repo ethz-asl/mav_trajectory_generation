@@ -408,6 +408,7 @@ double TimeEvaluationNode::computePathLength(
 }
 
 std::string TimeEvaluationNode::printResults() const {
+  // TODO: compuation_time and optimization_success
   std::stringstream s;
   // Header.
   s << "trial_number, method_name, num_segments, nominal_length, "
