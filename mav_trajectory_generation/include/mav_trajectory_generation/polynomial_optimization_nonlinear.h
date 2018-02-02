@@ -47,6 +47,7 @@ struct NonlinearOptimizationParameters {
         use_soft_constraints(true),
         soft_constraint_weight(100.0),
         cost_time_method(kSquared),
+        use_gradient_descent(false),
         print_debug_info(false) {}
 
   // Stopping criteria, if objective function changes less than absolute value.
@@ -102,6 +103,8 @@ struct NonlinearOptimizationParameters {
     kRichter,
     kUnknown,
   } cost_time_method;
+
+  bool use_gradient_descent;
 
   bool print_debug_info;
 };
@@ -251,6 +254,8 @@ class PolynomialOptimizationNonLinear {
 
   // Does the actual optimization work for the time-only version.
   int optimizeTime();
+  int optimizeTimeGradientDescent();
+  double getCostAndGradientTime(std::vector<double>* gradients);
 
   // Does the actual optimization work for the full optimization version.
   int optimizeTimeAndFreeConstraints();

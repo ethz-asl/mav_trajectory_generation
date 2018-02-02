@@ -96,7 +96,11 @@ int PolynomialOptimizationNonLinear<_N>::optimize() {
       std::chrono::high_resolution_clock::now();
 
   if (optimize_time_only_) {
-    result = optimizeTime();
+    if (!optimization_parameters_.use_gradient_descent) {
+      result = optimizeTime();
+    } else {
+      result = optimizeTimeGradientDescent();
+    }
   } else {
     result = optimizeTimeAndFreeConstraints();
   }
