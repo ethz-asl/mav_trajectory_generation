@@ -302,6 +302,8 @@ void TimeEvaluationNode::visualizeTrajectory(
     trajectory_color = mav_visualization::Color::Green();
   } else if (method_name == "nonlinear") {
     trajectory_color = mav_visualization::Color::Red();
+  } else if (method_name == "nonlinear_richter") {
+    trajectory_color = mav_visualization::Color::Blue();
   } else {
     trajectory_color = mav_visualization::Color::White();
   }
