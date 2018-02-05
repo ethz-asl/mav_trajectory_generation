@@ -184,7 +184,7 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTimeGradientDescent() {
   double cost = 0;
   for (int i = 0; i < max_iter; ++i) {
     // Evaluate cost.
-    cost = getCostAndGradientTime(&grad_vec);
+    cost = getCostAndGradient(&grad_vec);
 
     // Unpack gradients.
     for (int j = 0; j < x.size(); ++j) {
@@ -218,7 +218,7 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTimeGradientDescent() {
 }
 
 template <int _N>
-double PolynomialOptimizationNonLinear<_N>::getCostAndGradientTime(
+double PolynomialOptimizationNonLinear<_N>::getCostAndGradient(
         std::vector<double>* gradients) {
 
   // Weighting terms for different costs
