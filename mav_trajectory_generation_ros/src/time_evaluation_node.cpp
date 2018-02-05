@@ -468,7 +468,7 @@ std::string TimeEvaluationNode::printResults() const {
   std::string filename = "/results_time_allocation.csv";
   std::string results_path = path + filename;
   outputResults(results_path, results_);
-  std::cout << "path: " << results_path << std::endl;
+  ROS_INFO("Save results at %s", results_path.c_str());
 
   return s.str();
 }
