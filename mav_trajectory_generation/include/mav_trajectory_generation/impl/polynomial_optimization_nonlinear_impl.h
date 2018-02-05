@@ -191,7 +191,8 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTimeGradientDescent() {
       grad[j] = grad_vec[j];
     }
     double step_size = 1.0 / (lambda + i);
-    increment = -step_size * grad;
+//    increment = -step_size * grad;
+    increment = step_size * grad; // TODO: negative or positive?
     std::cout << "[GD] i: " << i << " step size: " << step_size
               << " cost: " << cost << " gradient norm: " << grad.norm()
               << std::endl;
