@@ -166,15 +166,20 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTimeGradientDescent() {
   std::vector<double> grad_vec;
   std::vector<double> segment_times;
   poly_opt_.getSegmentTimes(&segment_times);
+  poly_opt_.solveLinear(); // TODO: needed?
 
   Eigen::VectorXd grad, increment;
   Eigen::Map<Eigen::VectorXd> x(segment_times.data(),segment_times.size());
+  Eigen::VectorXd orig_seg_times = x;
+  double sum_seg_times_before = x.sum();
+
   grad.resize(x.size());
   grad.setZero();
   increment = grad;
 
   int max_iter = 50;
-  double lambda = 10 * (1 + optimization_parameters_.time_penalty);
+  double lambda = 10; // TODO: Which value?
+  std::cout << "lambda: " << lambda << std::endl;
 
   double cost = 0;
   for (int i = 0; i < max_iter; ++i) {
@@ -193,17 +198,20 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTimeGradientDescent() {
 
     // Update the parameters.
     x += increment;
-    //TODO: segment times > 0.0!!
+    // TODO: segment times > 0.1!!
     for (int n = 0; n < x.size(); ++n) {
       x[n] = x[n] <= 0.1 ? 0.1 : x[n];
     }
 
-    std::vector<double> segment_times_new (x.data(), x.data() + x.size());
+    std::vector<double> segment_times_new(x.data(), x.data() + x.size());
     poly_opt_.updateSegmentTimes(segment_times_new);
     poly_opt_.solveLinear(); // TODO: needed?
   }
 
+  std::cout << "[Original]: " << orig_seg_times.transpose() << std::endl;
   std::cout << "[Solution]: " << x.transpose() << std::endl;
+  std::cout << "[Trajectory Time] Before: " << sum_seg_times_before
+            << " | After: " << x.sum() << std::endl;
 
   return nlopt::SUCCESS;
 }
@@ -228,7 +236,7 @@ double PolynomialOptimizationNonLinear<_N>::getCostAndGradientTime(
 
     // Initialize changed segment times for numerical derivative
     std::vector<double> segment_times_bigger(n_segments);
-    const double increment_time = 0.001;
+    const double increment_time = 0.1;
     for (int n = 0; n < n_segments; ++n) {
       // Now the same with an increased segment time
       // Calculate cost with higher segment time
