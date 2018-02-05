@@ -230,18 +230,6 @@ double PolynomialOptimizationNonLinear<_N>::getCostAndGradientTime(
     std::vector<double> segment_times_bigger(n_segments);
     const double increment_time = 0.001;
     for (int n = 0; n < n_segments; ++n) {
-      // Calculate cost with lower segment time
-      segment_times_smaller = segment_times;
-      // TODO: check if segment times are bigger than 0.1; else ?
-      segment_times_smaller[n] = segment_times_smaller[n] <= 0.1 ?
-                                 0.1 : segment_times_smaller[n] - increment_time;
-
-      // Update the segment times. This changes the polynomial coefficients.
-      poly_opt_.updateSegmentTimes(segment_times_smaller);
-
-      // Calculate cost and gradient with new segment time
-      const double J_d_smaller = 2*poly_opt_.computeCost();// TODO: *2 necessary?
-
       // Now the same with an increased segment time
       // Calculate cost with higher segment time
       segment_times_bigger = segment_times;
@@ -254,8 +242,7 @@ double PolynomialOptimizationNonLinear<_N>::getCostAndGradientTime(
 
       // Calculate cost and gradient with new segment time
       const double J_d_bigger = 2*poly_opt_.computeCost();// TODO: *2 necessary?
-
-      const double dJd_dt = (J_d_bigger - J_d_smaller) / (2.0 * increment_time);
+      const double dJd_dt = (J_d_bigger - J_d) / increment_time;
 
       // Calculate the gradient
       gradients->at(n) = w_d*dJd_dt;
