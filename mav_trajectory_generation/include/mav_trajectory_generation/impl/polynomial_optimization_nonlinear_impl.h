@@ -233,9 +233,26 @@ double PolynomialOptimizationNonLinear<_N>::getCostAndGradientTime(
       // Now the same with an increased segment time
       // Calculate cost with higher segment time
       segment_times_bigger = segment_times;
-      // TODO: check if segment times are bigger than 0.1; else ?
-      segment_times_bigger[n] = segment_times_bigger[n] <= 0.1 ?
-                                0.1 : segment_times_bigger[n] + increment_time;
+      // Deduct h*(-1/(m-2)) according to paper Mellinger "Minimum snap traject
+      // generation and control for quadrotors"
+      double const_traj_time_corr = increment_time/(n_segments-1.0);
+      for (int i = 0; i < segment_times_bigger.size(); ++i) {
+        if (i==n) {
+          segment_times_bigger[i] += increment_time;
+        } else {
+          segment_times_bigger[i] -= const_traj_time_corr;
+        }
+      }
+
+      // TODO: add case if segment_time is at threshold 0.1s
+      // 1) How many segments > 0.1s
+      // 2) trajectory time correction only on those
+//      for (int j = 0; j < segment_times_bigger.size(); ++j) {
+//        double thresh_corr = 0.0;
+//        if (segment_times_bigger[j] < 0.1) {
+//          thresh_corr = 0.1-segment_times_bigger[j];
+//        }
+//      }
 
       // Update the segment times. This changes the polynomial coefficients.
       poly_opt_.updateSegmentTimes(segment_times_bigger);
