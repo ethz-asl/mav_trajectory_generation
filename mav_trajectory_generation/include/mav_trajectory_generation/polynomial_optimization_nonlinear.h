@@ -256,6 +256,7 @@ class PolynomialOptimizationNonLinear {
   int optimizeTimeAndFreeConstraints();
   int optimizeTimeAndFreeConstraintsGradientDescent();
   double getCostAndGradientTimeForward(std::vector<double>* gradients);
+  double getCostAndGradientDerivative(std::vector<Eigen::VectorXd>* gradients);
 
   // Evaluates the maximum magnitude constraints as soft constraints and
   // returns a cost, depending on the violation of the constraints.

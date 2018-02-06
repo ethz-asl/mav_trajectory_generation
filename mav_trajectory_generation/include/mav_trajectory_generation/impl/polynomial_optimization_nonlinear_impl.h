@@ -388,6 +388,73 @@ double PolynomialOptimizationNonLinear<_N>::getCostAndGradientTimeForward(
 }
 
 template <int _N>
+double PolynomialOptimizationNonLinear<_N>::getCostAndGradientDerivative(
+        std::vector<Eigen::VectorXd>* gradients) {
+
+  // Compare the two approaches: getCost() and the full matrix.
+  const size_t n_free_constraints = poly_opt_.getNumberFreeConstraints();
+  const size_t n_fixed_constraints = poly_opt_.getNumberFixedConstraints();
+  const size_t dim = poly_opt_.getDimension();
+
+  double J_d = 0.0;
+  std::vector<Eigen::VectorXd> grad_d(
+          dim, Eigen::VectorXd::Zero(n_free_constraints));
+
+  // Retrieve R
+  Eigen::MatrixXd R;
+  poly_opt_.getR(&R);
+
+  // Set up mappings to R_FF R_FP R_PP etc. R_FP' = R_PF if that saves
+  // time eventually.
+  // All of these are the same per axis.
+  // R_ff * d_f is actually constant so can cache this term.
+  const Eigen::Block<Eigen::MatrixXd> R_ff =
+          R.block(0, 0, n_fixed_constraints, n_fixed_constraints);
+  const Eigen::Block<Eigen::MatrixXd> R_pf =
+          R.block(n_fixed_constraints, 0, n_free_constraints,
+                  n_fixed_constraints);
+  const Eigen::Block<Eigen::MatrixXd> R_pp =
+          R.block(n_fixed_constraints, n_fixed_constraints, n_free_constraints,
+                  n_free_constraints);
+
+  // Get d_p and d_f vector for all axes.
+  std::vector<Eigen::VectorXd> d_p_vec;
+  std::vector<Eigen::VectorXd> d_f_vec;
+  poly_opt_.getFreeConstraints(&d_p_vec);
+  poly_opt_.getFixedConstraints(&d_f_vec);
+
+  Eigen::MatrixXd J_d_temp;
+  // Compute costs over all axes.
+  for (int k = 0; k < dim; ++k) {
+    // Get a copy of d_p and d_f for this axis.
+    const Eigen::VectorXd& d_p = d_p_vec[k];
+    const Eigen::VectorXd& d_f = d_f_vec[k];
+
+    // Now do the other thing.
+    J_d_temp = d_f.transpose() * R_ff * d_f +
+               d_f.transpose() * R_pf.transpose() * d_p +
+               d_p.transpose() * R_pf * d_f + d_p.transpose() * R_pp * d_p;
+    J_d += J_d_temp(0, 0);
+
+    // And get the gradient.
+    // Should really separate these out by k.
+    grad_d[k] =
+            2 * d_f.transpose() * R_pf.transpose() + 2 * d_p.transpose() * R_pp;
+  }
+
+  if (gradients != NULL) {
+    gradients->clear();
+    gradients->resize(dim);
+
+    for (int k = 0; k < dim; ++k) {
+      (*gradients)[k] = grad_d[k];
+    }
+  }
+
+  return J_d;
+}
+
+template <int _N>
 bool PolynomialOptimizationNonLinear<_N>::addMaximumMagnitudeConstraint(
     int derivative, double maximum_value) {
   CHECK_GE(derivative, 0);
