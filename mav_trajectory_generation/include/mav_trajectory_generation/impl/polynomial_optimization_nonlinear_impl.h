@@ -177,8 +177,8 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTimeGradientDescent() {
   grad.setZero();
   increment = grad;
 
-  int max_iter = 50;
-  double lambda = 10; // TODO: Which value?
+  int max_iter = 100;
+  double lambda = 10.0; // TODO: Which value?
   std::cout << "lambda: " << lambda << std::endl;
 
   double cost = 0;
@@ -222,7 +222,7 @@ double PolynomialOptimizationNonLinear<_N>::getCostAndGradient(
         std::vector<double>* gradients) {
 
   // Weighting terms for different costs
-  const double w_d = 1.0;
+  const double w_d = 100.0;
 
   // Retrieve the current segment times
   std::vector<double> segment_times;
