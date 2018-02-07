@@ -267,6 +267,21 @@ optimizeTimeAndFreeConstraintsGradientDescent() {
             d_p_vec[k];
   }
 
+//  std::cout << "segment_times (size: " << segment_times.size() << "): "
+//            << std::endl;
+//  for (int j = 0; j < segment_times.size(); ++j) {
+//    std::cout << segment_times[j] << " ";
+//  }
+//  std::cout << std::endl;
+//  std::cout << "free constraints (size: 3x" << d_p_vec[0].size() << "): "
+//            << std::endl;
+//  for (int k = 0; k < d_p_vec.size(); ++k) {
+//    std::cout << d_p_vec[k].transpose() << std::endl << std::endl;
+//  }
+//  std::cout << std::endl;
+//  std::cout << "x: " << std::endl << x.transpose() << std::endl;
+
+
   Eigen::VectorXd grad, increment;
   grad.resize(x.size());
   grad.setZero();
@@ -323,6 +338,14 @@ optimizeTimeAndFreeConstraintsGradientDescent() {
     for (size_t i = 0; i < n_segments; ++i) {
       segment_times_new.push_back(x[i]);
     }
+
+//    std::cout << "segment_times_new (size: " << segment_times_new.size() << "): "
+//              << std::endl;
+//    for (int j = 0; j < segment_times_new.size(); ++j) {
+//      std::cout << segment_times_new[j] << " ";
+//    }
+//    std::cout << std::endl;
+
     poly_opt_.updateSegmentTimes(segment_times_new);
     poly_opt_.solveLinear(); // TODO: needed?
   }
