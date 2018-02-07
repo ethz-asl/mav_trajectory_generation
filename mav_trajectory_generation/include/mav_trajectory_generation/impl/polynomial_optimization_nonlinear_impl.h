@@ -303,7 +303,8 @@ optimizeTimeAndFreeConstraintsGradientDescent() {
 //    increment = -step_size * grad;
     increment = step_size * grad; // TODO: negative or positive?
     std::cout << "[GD] i: " << i << " step size: " << step_size
-              << " J_t: " << J_t << " J_d: " << J_t
+              << " w_d*J_d: " << w_d*J_d << " w_t*J_t: " << w_t*J_t
+              << " total cost: " << w_d*J_d+w_t*J_t
               << " gradient norm: " << grad.norm()
               << std::endl;
 //    std::cout << "[GD] i: " << i << " grad: " << grad.transpose()
