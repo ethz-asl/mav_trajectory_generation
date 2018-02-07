@@ -276,12 +276,13 @@ optimizeTimeAndFreeConstraintsGradientDescent() {
   grad_d.resize(dim, Eigen::VectorXd::Zero(n_free_constraints));
 
   int max_iter = 100;
-  double lambda = 10.0; // TODO: Which value?
+  double lambda = 10.0*(1.0+0.1); // TODO: Which value? // TODO: parameterize
   std::cout << "lambda: " << lambda << std::endl;
 
   double J_t = 0.0;
   double J_d = 0.0;
-  const double w_d = 100.0;
+  const double w_d = 0.1;
+  const double w_t = 1.0;
   for (int i = 0; i < max_iter; ++i) {
     // Evaluate cost.
     J_t = getCostAndGradientTimeForward(&grad_t);
@@ -338,7 +339,7 @@ double PolynomialOptimizationNonLinear<_N>::getCostAndGradientTimeForward(
         std::vector<double>* gradients) {
 
   // Weighting terms for different costs
-  const double w_d = 100.0;
+  const double w_d = 0.1;
   const double w_t = 1.0;
 
   // Retrieve the current segment times
