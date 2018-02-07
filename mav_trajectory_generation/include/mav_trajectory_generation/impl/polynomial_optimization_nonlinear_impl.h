@@ -98,7 +98,11 @@ int PolynomialOptimizationNonLinear<_N>::optimize() {
   if (optimize_time_only_) {
     result = optimizeTime();
   } else {
-    result = optimizeTimeAndFreeConstraints();
+    if (!optimization_parameters_.use_gradient_descent) {
+      result = optimizeTimeAndFreeConstraints();
+    } else {
+      result = optimizeTimeAndFreeConstraintsGradientDescent();
+    }
   }
 
   const std::chrono::high_resolution_clock::time_point t_stop =
