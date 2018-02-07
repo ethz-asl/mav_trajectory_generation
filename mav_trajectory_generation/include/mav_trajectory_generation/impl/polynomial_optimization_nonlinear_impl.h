@@ -254,7 +254,7 @@ optimizeTimeAndFreeConstraintsGradientDescent() {
 
   // Create parameter vector [t1, ..., tm, dx1, ... dxv, dy, dz]
   Eigen::VectorXd x;
-  x.resize(segment_times.size()+n_free_constraints);
+  x.resize(segment_times.size()+dim*n_free_constraints);
   for (size_t m = 0; m < n_segments; ++m) {
     x[m] = segment_times[m];
   }
@@ -263,7 +263,7 @@ optimizeTimeAndFreeConstraintsGradientDescent() {
   poly_opt_.getFreeConstraints(&d_p_vec);
   // Append free constraints to parameter vector x
   for (int k = 0; k < dim; ++k) {
-    x.block(0, n_segments+k*n_free_constraints, 1, n_free_constraints) =
+    x.block(n_segments+k*n_free_constraints, 0, n_free_constraints, 1) =
             d_p_vec[k];
   }
 
