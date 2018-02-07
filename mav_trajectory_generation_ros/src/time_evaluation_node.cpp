@@ -230,6 +230,19 @@ void TimeEvaluationNode::runBenchmark(int trial_number, int num_segments) {
   if (visualize_) {
     path_marker_pub_.publish(markers);
   }
+
+  method_name = "nonlinear_richter_gd";
+  Trajectory trajectory_nonlinear_richter_gd;
+  runNonlinearRichter(vertices, true, &trajectory_nonlinear_richter_gd);
+  evaluateTrajectory(method_name, trajectory_nonlinear_richter_gd, &result);
+  results_.push_back(result);
+  if (visualize_) {
+    visualizeTrajectory(method_name, trajectory_nonlinear_richter_gd, &markers);
+  }
+
+  if (visualize_) {
+    path_marker_pub_.publish(markers);
+  }
 }
 
 void TimeEvaluationNode::runNfabian(const Vertex::Vector& vertices,
@@ -307,6 +320,8 @@ void TimeEvaluationNode::visualizeTrajectory(
     trajectory_color = mav_visualization::Color::Red();
   } else if (method_name == "nonlinear_richter") {
     trajectory_color = mav_visualization::Color::Blue();
+  } else if (method_name == "nonlinear_richter_gd") {
+    trajectory_color = mav_visualization::Color::Pink();
   } else {
     trajectory_color = mav_visualization::Color::White();
   }
