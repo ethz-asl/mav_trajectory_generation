@@ -296,6 +296,7 @@ void TimeEvaluationNode::runNonlinearRichter(
   mav_trajectory_generation::NonlinearOptimizationParameters nlopt_parameters;
   nlopt_parameters.cost_time_method = NonlinearOptimizationParameters::kRichter;
   nlopt_parameters.use_gradient_descent = use_gradient_descent;
+//  nlopt_parameters.use_soft_constraints = false; // TODO: needed?
   mav_trajectory_generation::PolynomialOptimizationNonLinear<kN> nlopt(
       kDim, nlopt_parameters, false);
   nlopt.setupFromVertices(vertices, segment_times, max_derivative_order_);
