@@ -82,6 +82,7 @@ class TimeEvaluationNode {
   void runNonlinear(const Vertex::Vector& vertices,
                     Trajectory* trajectory) const;
   void runNonlinearRichter(const Vertex::Vector& vertices,
+                           bool use_gradient_descent,
                            Trajectory* trajectory) const;
 
   void evaluateTrajectory(const std::string& method_name,
@@ -219,7 +220,7 @@ void TimeEvaluationNode::runBenchmark(int trial_number, int num_segments) {
 
   method_name = "nonlinear_richter";
   Trajectory trajectory_nonlinear_richter;
-  runNonlinearRichter(vertices, &trajectory_nonlinear_richter);
+  runNonlinearRichter(vertices, false, &trajectory_nonlinear_richter);
   evaluateTrajectory(method_name, trajectory_nonlinear_richter, &result);
   results_.push_back(result);
   if (visualize_) {
@@ -273,13 +274,15 @@ void TimeEvaluationNode::runNonlinear(const Vertex::Vector& vertices,
 }
 
 void TimeEvaluationNode::runNonlinearRichter(
-        const Vertex::Vector& vertices, Trajectory* trajectory) const {
+        const Vertex::Vector& vertices, bool use_gradient_descent,
+        Trajectory* trajectory) const {
   std::vector<double> segment_times;
   segment_times =
       mav_trajectory_generation::estimateSegmentTimes(vertices, v_max_, a_max_);
 
   mav_trajectory_generation::NonlinearOptimizationParameters nlopt_parameters;
   nlopt_parameters.cost_time_method = NonlinearOptimizationParameters::kRichter;
+  nlopt_parameters.use_gradient_descent = use_gradient_descent;
   mav_trajectory_generation::PolynomialOptimizationNonLinear<kN> nlopt(
       kDim, nlopt_parameters, false);
   nlopt.setupFromVertices(vertices, segment_times, max_derivative_order_);
