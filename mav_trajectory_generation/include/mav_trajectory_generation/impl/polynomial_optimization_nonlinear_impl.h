@@ -370,7 +370,7 @@ double PolynomialOptimizationNonLinear<_N>::getCostAndGradientTimeForward(
       poly_opt_.updateSegmentTimes(segment_times_bigger);
 
       // Calculate cost and gradient with new segment time
-      const double J_d_bigger = poly_opt_.computeCost();
+      const double J_d_bigger = 2*poly_opt_.computeCost();
 
       const double dJd_dt = (J_d_bigger-J_d) / (increment_time);
       const double dJt_dt = 1.0; // J_t = t --> dJt_dt = 1.0 for all tm
