@@ -247,11 +247,6 @@ optimizeTimeAndFreeConstraintsGradientDescent() {
   poly_opt_.getSegmentTimes(&segment_times);
   poly_opt_.solveLinear(); // TODO: needed?
 
-  // Save original segment times
-  Eigen::Map<Eigen::VectorXd> orig_seg_times(segment_times.data(),
-                                             segment_times.size());
-  double sum_seg_times_before = orig_seg_times.sum();
-
   // Create parameter vector [t1, ..., tm, dx1, ... dxv, dy, dz]
   Eigen::VectorXd x;
   x.resize(segment_times.size()+dim*n_free_constraints);
@@ -266,6 +261,9 @@ optimizeTimeAndFreeConstraintsGradientDescent() {
     x.block(n_segments+k*n_free_constraints, 0, n_free_constraints, 1) =
             d_p_vec[k];
   }
+  // Save original parameter vector
+  Eigen::VectorXd x_orig;
+  x_orig = x;
 
 //  std::cout << "segment_times (size: " << segment_times.size() << "): "
 //            << std::endl;
@@ -350,10 +348,11 @@ optimizeTimeAndFreeConstraintsGradientDescent() {
     poly_opt_.solveLinear(); // TODO: needed?
   }
 
-  std::cout << "[Original]: " << orig_seg_times.transpose() << std::endl;
+  std::cout << "[Original]: " << x_orig.transpose() << std::endl;
   std::cout << "[Solution]: " << x.transpose() << std::endl;
-  std::cout << "[Trajectory Time] Before: " << sum_seg_times_before
-            << " | After: " << x.sum() << std::endl;
+  std::cout << "[Trajectory Time] Before: "
+            << x_orig.block(0,0,n_segments,1).sum()
+            << " | After: " << x.block(0,0,n_segments,1).sum() << std::endl;
 
   return nlopt::SUCCESS;
 }
