@@ -494,6 +494,62 @@ double PolynomialOptimizationNonLinear<_N>::getCostAndGradientDerivative(
 }
 
 template <int _N>
+double PolynomialOptimizationNonLinear<_N>::
+getCostAndGradientSoftConstraintsForward(
+        std::vector<Eigen::VectorXd>* gradients) {
+
+  double J_sc = evaluateMaximumMagnitudeAsSoftConstraint(
+          inequality_constraints_,
+          optimization_parameters_.soft_constraint_weight);
+
+  if (gradients != NULL) {
+    const size_t n_free_constraints = poly_opt_.getNumberFreeConstraints();
+    const size_t dim = poly_opt_.getDimension();
+
+    gradients->clear();
+    gradients->resize(dim, Eigen::VectorXd::Zero(n_free_constraints));
+
+    // Get the current free constraints
+    std::vector<Eigen::VectorXd> free_constraints;
+    poly_opt_.getFreeConstraints(&free_constraints);
+
+    std::vector<Eigen::VectorXd> free_constraints_right;
+    free_constraints_right.resize(dim, Eigen::VectorXd::Zero(n_free_constraints));
+    const double increment_dist = 0.05;
+
+    std::vector<Eigen::VectorXd> increment(
+            dim, Eigen::VectorXd::Zero(n_free_constraints));
+    for (int k = 0; k < dim; ++k) {
+      increment.clear();
+      increment.resize(dim, Eigen::VectorXd::Zero(n_free_constraints));
+
+      for (int n = 0; n < n_free_constraints; ++n) {
+        increment[k].setZero();
+        increment[k][n] = increment_dist;
+
+        for (int k2 = 0; k2 < dim; ++k2) {
+          free_constraints_right[k2] = free_constraints[k2] + increment[k2];
+        }
+        poly_opt_.setFreeConstraints(free_constraints_right);
+        const double cost_right =
+                evaluateMaximumMagnitudeAsSoftConstraint(
+                        inequality_constraints_,
+                        optimization_parameters_.soft_constraint_weight);
+
+        const double grad_k_n = (cost_right - J_sc) / (increment_dist);
+        gradients->at(k)[n] = grad_k_n;
+      }
+    }
+
+    // Set again the original constraints from before calculating the numerical
+    // constraints
+    poly_opt_.setFreeConstraints(free_constraints);
+  }
+
+  return J_sc;
+}
+
+template <int _N>
 bool PolynomialOptimizationNonLinear<_N>::addMaximumMagnitudeConstraint(
     int derivative, double maximum_value) {
   CHECK_GE(derivative, 0);
