@@ -284,13 +284,16 @@ optimizeTimeAndFreeConstraintsGradientDescent() {
   grad.setZero();
   increment = grad;
 
-  std::vector<Eigen::VectorXd> grad_d;
   // Weights for cost terms
   const double w_d = 0.1;
   const double w_t = 1.0;
+  const double w_sc = 0.0;
+
   // Gradients for individual const terms
   std::vector<double> grad_t;
+  std::vector<Eigen::VectorXd> grad_d, grad_sc;
   grad_d.resize(dim, Eigen::VectorXd::Zero(n_free_constraints));
+  grad_sc.resize(dim, Eigen::VectorXd::Zero(n_free_constraints));
 
   // Parameter for gradient descent
   int max_iter = 100;
@@ -299,10 +302,12 @@ optimizeTimeAndFreeConstraintsGradientDescent() {
 
   double J_t = 0.0;
   double J_d = 0.0;
+  double J_sc = 0.0;
   for (int i = 0; i < max_iter; ++i) {
     // Evaluate cost.
     J_t = getCostAndGradientTimeForward(&grad_t);
     J_d = getCostAndGradientDerivative(&grad_d);
+    J_sc = getCostAndGradientSoftConstraintsForward(&grad_sc);
 
     // Unpack gradients.
     for (int j = 0; j < n_segments; ++j) {
@@ -311,7 +316,7 @@ optimizeTimeAndFreeConstraintsGradientDescent() {
     for (int k = 0; k < dim; ++k) {
       const int start_idx = n_segments + (k * n_free_constraints);
       for (int i = 0; i < n_free_constraints; ++i) {
-        grad[start_idx + i] = w_d * grad_d[k][i];
+        grad[start_idx + i] = w_d * grad_d[k][i] + w_sc * grad_sc[k][i];
       }
     }
 
@@ -319,8 +324,9 @@ optimizeTimeAndFreeConstraintsGradientDescent() {
     increment = -step_size * grad;
 //    increment = step_size * grad; // TODO: negative or positive?
     std::cout << "[GD] i: " << i << " step size: " << step_size
-              << " w_d*J_d: " << w_d*J_d << " w_t*J_t: " << w_t*J_t
-              << " total cost: " << w_d*J_d+w_t*J_t
+              << " w_t*J_t: " << w_t*J_t << " w_d*J_d: " << w_d*J_d
+              << " w_sc*J_sc: " << w_sc*J_sc
+              << " total cost: " << w_d*J_d+w_t*J_t+w_sc*J_sc
               << " gradient norm: " << grad.norm()
               << std::endl;
 //    std::cout << "[GD] i: " << i << " grad: " << grad.transpose()
