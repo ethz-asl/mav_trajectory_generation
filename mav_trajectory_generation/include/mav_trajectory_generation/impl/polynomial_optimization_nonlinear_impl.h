@@ -287,7 +287,7 @@ optimizeTimeAndFreeConstraintsGradientDescent() {
   // Weights for cost terms
   const double w_d = 0.1;
   const double w_t = 1.0;
-  const double w_sc = 0.0;
+  const double w_sc = 1.0;
 
   // Gradients for individual const terms
   std::vector<double> grad_t;
@@ -381,6 +381,7 @@ double PolynomialOptimizationNonLinear<_N>::getCostAndGradientTimeForward(
   // Weighting terms for different costs
   const double w_d = 0.1;
   const double w_t = 1.0;
+  const double w_sc = 1.0;
 
   // Retrieve the current segment times
   std::vector<double> segment_times;
@@ -389,6 +390,7 @@ double PolynomialOptimizationNonLinear<_N>::getCostAndGradientTimeForward(
   // Calculate current cost
   // TODO: parse from outside?
   const double J_d = 2*poly_opt_.computeCost();// TODO: *2 necessary?
+  const double J_sc = getCostAndGradientSoftConstraintsForward(NULL);
 
   if (gradients != NULL) {
     const size_t n_segments = poly_opt_.getNumberSegments();
@@ -412,12 +414,21 @@ double PolynomialOptimizationNonLinear<_N>::getCostAndGradientTimeForward(
 
       // Calculate cost and gradient with new segment time
       const double J_d_bigger = 2*poly_opt_.computeCost();
+      double J_sc_bigger = 0.0;
+      if (optimization_parameters_.use_soft_constraints) {
+        J_sc_bigger = getCostAndGradientSoftConstraintsForward(NULL);
+      }
 
       const double dJd_dt = (J_d_bigger-J_d) / (increment_time);
+      const double dJsc_dt = (J_sc_bigger-J_sc) / (increment_time);
       const double dJt_dt = 1.0; // J_t = t --> dJt_dt = 1.0 for all tm
 
       // Calculate the gradient
-      gradients->at(n) = w_d*dJd_dt + w_t*dJt_dt;
+      if (optimization_parameters_.use_soft_constraints) {
+        gradients->at(n) = w_d * dJd_dt + w_sc * dJsc_dt + w_t * dJt_dt;
+      } else {
+        gradients->at(n) = w_d * dJd_dt + w_t * dJt_dt;
+      }
     }
 
     // Set again the original segment times from before calculating the
