@@ -334,6 +334,24 @@ optimizeTimeAndFreeConstraintsGradientDescent() {
 //    std::cout << "[GD] i: " << i << " increment: " << increment.transpose()
 //              << std::endl;
 
+//    std::cout << "grad_d | grad_sc: "
+//              << std::endl;
+//    for (int k = 0; k < dim; ++k) {
+//      for (int n = 0; n < n_free_constraints; ++n) {
+//        std::cout << k << " " << n << ": " << grad_d[k][n] << " | "
+//                  << grad_sc[k][n] << std::endl;
+//      }
+//      std::cout << std::endl;
+//    }
+//    std::cout << std::endl;
+//
+//    std::cout << "grad_t: " << std::endl;
+//    for (int i = 0; i < n_segments; ++i) {
+//      std::cout << grad_t[i] << " | ";
+//    }
+//    std::cout << std::endl << std::endl;
+
+
     // Update the parameters.
     x += increment;
 //    std::cout << "[GD] i: " << i << " x: " << x.transpose()
@@ -430,6 +448,10 @@ double PolynomialOptimizationNonLinear<_N>::getCostAndGradientTimeForward(
       } else {
         gradients->at(n) = w_d * dJd_dt + w_t * dJt_dt;
       }
+
+//      std::cout << "dJd_dt: " << dJd_dt << " | dJsc_dt: " << dJsc_dt
+//                << " | dJt_dt: " << dJt_dt << " | grad_t: " << gradients->at(n)
+//                << std::endl;
     }
 
     // Set again the original segment times from before calculating the
