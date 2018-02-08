@@ -241,13 +241,12 @@ optimizeTimeAndFreeConstraintsGradientDescent() {
   const size_t n_free_constraints = poly_opt_.getNumberFreeConstraints();
   const size_t dim = poly_opt_.getDimension();
 
-  // Get initial parameters.
-  std::vector<double> grad_t;
+  // Get initial segment times.
   std::vector<double> segment_times;
   poly_opt_.getSegmentTimes(&segment_times);
   poly_opt_.solveLinear(); // TODO: needed?
 
-  // Create parameter vector [t1, ..., tm, dx1, ... dxv, dy, dz]
+  // Create parameter vector x=[t1, ..., tm, dx1, ... dxv, dy, dz]
   Eigen::VectorXd x;
   x.resize(segment_times.size()+dim*n_free_constraints);
   for (size_t m = 0; m < n_segments; ++m) {
@@ -279,23 +278,27 @@ optimizeTimeAndFreeConstraintsGradientDescent() {
 //  std::cout << std::endl;
 //  std::cout << "x: " << std::endl << x.transpose() << std::endl;
 
-
+  // Set up gradients (of param vector x) and increment vector
   Eigen::VectorXd grad, increment;
   grad.resize(x.size());
   grad.setZero();
   increment = grad;
 
   std::vector<Eigen::VectorXd> grad_d;
+  // Weights for cost terms
+  const double w_d = 0.1;
+  const double w_t = 1.0;
+  // Gradients for individual const terms
+  std::vector<double> grad_t;
   grad_d.resize(dim, Eigen::VectorXd::Zero(n_free_constraints));
 
+  // Parameter for gradient descent
   int max_iter = 100;
   double lambda = 10.0*(1.0+0.1); // TODO: Which value? // TODO: parameterize
   std::cout << "lambda: " << lambda << std::endl;
 
   double J_t = 0.0;
   double J_d = 0.0;
-  const double w_d = 0.1;
-  const double w_t = 1.0;
   for (int i = 0; i < max_iter; ++i) {
     // Evaluate cost.
     J_t = getCostAndGradientTimeForward(&grad_t);
@@ -330,7 +333,7 @@ optimizeTimeAndFreeConstraintsGradientDescent() {
 //    std::cout << "[GD] i: " << i << " x: " << x.transpose()
 //              << std::endl;
 
-    // Set new segment times
+    // Set new segment times and new free constraints
     std::vector<double> segment_times_new;
     segment_times_new.reserve(n_segments);
     for (size_t i = 0; i < n_segments; ++i) {
