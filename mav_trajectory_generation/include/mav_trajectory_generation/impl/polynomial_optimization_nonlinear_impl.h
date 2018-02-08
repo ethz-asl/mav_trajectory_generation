@@ -354,6 +354,11 @@ optimizeTimeAndFreeConstraintsGradientDescent() {
 
     // Update the parameters.
     x += increment;
+    // Check that segment times are > 0.1s
+    for (int n = 0; n < n_segments; ++n) {
+      x[n] = x[n] <= 0.1 ? 0.1 : x[n];
+    }
+
 //    std::cout << "[GD] i: " << i << " x: " << x.transpose()
 //              << std::endl;
 
