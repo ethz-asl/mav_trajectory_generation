@@ -339,6 +339,12 @@ optimizeTimeAndFreeConstraintsGradientDescent() {
     for (size_t i = 0; i < n_segments; ++i) {
       segment_times_new.push_back(x[i]);
     }
+    std::vector<Eigen::VectorXd> d_p_vec_new;
+    d_p_vec_new.resize(dim, Eigen::VectorXd::Zero(n_free_constraints));
+    for (int k = 0; k < dim; ++k) {
+      d_p_vec_new[k] = x.block(n_segments+k*n_free_constraints, 0,
+                               n_free_constraints, 1);
+    }
 
 //    std::cout << "segment_times_new (size: " << segment_times_new.size() << "): "
 //              << std::endl;
@@ -347,7 +353,9 @@ optimizeTimeAndFreeConstraintsGradientDescent() {
 //    }
 //    std::cout << std::endl;
 
+    // Update segement times and free constraints
     poly_opt_.updateSegmentTimes(segment_times_new);
+    poly_opt_.setFreeConstraints(d_p_vec_new);
     poly_opt_.solveLinear(); // TODO: needed?
   }
 
