@@ -475,7 +475,8 @@ std::string TimeEvaluationNode::printResults() const {
   s << "trial_number, method_name, num_segments, nominal_length, "
        "optimization_success, bounds_violated, trajectory_time, "
        "trajectory_length, computation_time, a_max_actual, v_max_actual, "
-       "abs_violation_a, abs_violation_v, rel_violation_a, rel_violation_v"
+       "abs_violation_a, abs_violation_v, rel_violation_a, rel_violation_v, "
+       "max_dist_sl_traj"
     << std::endl;
   for (size_t i = 0; i < results_.size(); ++i) {
     s << results_[i].trial_number << ", " << results_[i].method_name << ", "
@@ -487,6 +488,7 @@ std::string TimeEvaluationNode::printResults() const {
       << results_[i].v_max_actual.value << ", " << results_[i].abs_violation_a
       << ", " << results_[i].abs_violation_v << ", "
       << results_[i].rel_violation_a << ", " << results_[i].rel_violation_v
+      << ", " << results_[i].max_dist_from_straigh_line
       << std::endl;
   }
 
@@ -515,9 +517,9 @@ void TimeEvaluationNode::outputResults(
                   "optimization_success, bounds_violated, trajectory_time, "
                   "trajectory_length, computation_time, a_max_actual,"
                   " v_max_actual, abs_violation_a, abs_violation_v, "
-                  "rel_violation_a, rel_violation_v\n");
+                  "rel_violation_a, rel_violation_v, max_dist_sl_traj\n");
   for (const TimeAllocationBenchmarkResult& result : results) {
-    fprintf(fp, "%d,%s,%d,%f,%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f\n",
+    fprintf(fp, "%d,%s,%d,%f,%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f\n",
             result.trial_number, result.method_name.c_str(),
             result.num_segments, result.nominal_length,
             result.optimization_success, result.bounds_violated,
@@ -525,7 +527,7 @@ void TimeEvaluationNode::outputResults(
             result.computation_time, result.a_max_actual.value,
             result.v_max_actual.value, result.abs_violation_a,
             result.abs_violation_v, result.rel_violation_a,
-            result.rel_violation_v);
+            result.rel_violation_v, result.max_dist_from_straigh_line);
   }
 
   fclose(fp);
