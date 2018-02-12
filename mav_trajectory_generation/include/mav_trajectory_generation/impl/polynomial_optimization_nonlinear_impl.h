@@ -286,7 +286,7 @@ optimizeTimeAndFreeConstraintsGradientDescent() {
 
   // Weights for cost terms
   const double w_d = 0.1;
-  const double w_t = 1.0;
+  const double w_t = 5.0;
   const double w_sc = 1.0;
 
   // Gradients for individual const terms
@@ -407,7 +407,7 @@ double PolynomialOptimizationNonLinear<_N>::getCostAndGradientTimeForward(
 
   // Weighting terms for different costs
   const double w_d = 0.1;
-  const double w_t = 1.0;
+  const double w_t = 5.0;
   const double w_sc = 1.0;
 
   // Retrieve the current segment times
