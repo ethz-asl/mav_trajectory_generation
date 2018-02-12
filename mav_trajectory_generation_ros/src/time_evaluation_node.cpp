@@ -33,7 +33,8 @@ struct TimeAllocationBenchmarkResult {
         abs_violation_v(0.0),
         abs_violation_a(0.0),
         rel_violation_v(0.0),
-        rel_violation_a(0.0) {}
+        rel_violation_a(0.0),
+        max_dist_from_straigh_line(0.0) {}
 
   // Evaluation settings
   int trial_number;
@@ -57,6 +58,7 @@ struct TimeAllocationBenchmarkResult {
   double abs_violation_a;
   double rel_violation_v;
   double rel_violation_a;
+  double max_dist_from_straigh_line;
 
   // More to come: convex hull/bounding box, etc.
 };
@@ -371,6 +373,32 @@ void TimeEvaluationNode::evaluateTrajectory(
   } else {
     result->bounds_violated = false;
   }
+
+  // Todo: Add success variable to check for allowed relative violation, ...
+//  const double allowed_rel_violation = 0.1;
+
+  // Evaluate maximum trajectory distance per segment from straight line path
+  // 1) Sample trajectory
+  // 2) Check for biggest distance in each segment
+  std::vector<Segment> segments;
+  traj.getSegments(&segments);
+
+  double max_dist = 0.0;
+  for (const auto& segment : segments) {
+    for (double t = 0.0; t < segment.getTime(); t+=kDefaultSamplingTime) {
+      Eigen::Vector3d point = segment.evaluate(t, derivative_order::POSITION);
+      Eigen::Vector3d start = segment.evaluate(0.0, derivative_order::POSITION);
+      Eigen::Vector3d end = segment.evaluate(segment.getTime(),
+                                             derivative_order::POSITION);
+
+      // Absolute distance of point AP from line BC
+      double dist = computePointLineDistance(point, start, end);
+      if (dist > max_dist) { max_dist = dist; }
+    }
+  }
+  // TODO: Distinguish max_dist for each segment?
+  // TODO: Compare area between straight line and trajectory?
+  result->max_dist_from_straigh_line = max_dist;
 }
 
 visualization_msgs::Marker TimeEvaluationNode::createMarkerForPath(
