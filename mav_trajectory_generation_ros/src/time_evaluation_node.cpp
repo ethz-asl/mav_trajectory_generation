@@ -103,7 +103,9 @@ class TimeEvaluationNode {
       double scale = 0.05) const;
 
   double computePathLength(mav_msgs::EigenTrajectoryPointVector& path) const;
-
+  double computePointLineDistance(const Eigen::Vector3d& A,
+                                  const Eigen::Vector3d& B,
+                                  const Eigen::Vector3d& C) const;
   std::string printResults() const;
   void outputResults(
           const std::string& filename,
@@ -408,6 +410,18 @@ visualization_msgs::Marker TimeEvaluationNode::createMarkerForPath(
   }
 
   return path_marker;
+}
+
+
+double TimeEvaluationNode::computePointLineDistance(
+        const Eigen::Vector3d& A, const Eigen::Vector3d& B,
+        const Eigen::Vector3d& C) const {
+  // Distance of point A from line CB
+  Eigen::Vector3d d = (C - B) / (C-B).norm();
+  Eigen::Vector3d v = A - B;
+  double t = v.dot(d);
+  Eigen::Vector3d P = B + t * d;
+  return (P-A).norm();
 }
 
 double TimeEvaluationNode::computePathLength(
