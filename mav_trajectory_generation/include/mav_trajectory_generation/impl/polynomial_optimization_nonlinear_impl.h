@@ -388,8 +388,12 @@ optimizeTimeAndFreeConstraintsGradientDescent() {
     poly_opt_.solveLinear(); // TODO: needed?
   }
 
-  std::cout << "[Original]: " << x_orig.transpose() << std::endl;
-  std::cout << "[Solution]: " << x.transpose() << std::endl;
+//  std::cout << "[Original]: " << x_orig.transpose() << std::endl;
+//  std::cout << "[Solution]: " << x.transpose() << std::endl;
+  std::cout << "[Original]: " << x_orig.block(0,0,n_segments,1).transpose()
+            << std::endl;
+  std::cout << "[Solution]: " << x.block(0,0,n_segments,1).transpose()
+            << std::endl;
   std::cout << "[Trajectory Time] Before: "
             << x_orig.block(0,0,n_segments,1).sum()
             << " | After: " << x.block(0,0,n_segments,1).sum() << std::endl;
