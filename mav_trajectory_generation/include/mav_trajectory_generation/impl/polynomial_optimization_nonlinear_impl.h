@@ -183,7 +183,6 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTimeGradientDescent() {
 
   int max_iter = 100;
   double lambda = 10.0; // TODO: Which value?
-  std::cout << "lambda: " << lambda << std::endl;
 
   double cost = 0;
   for (int i = 0; i < max_iter; ++i) {
@@ -197,7 +196,7 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTimeGradientDescent() {
     double step_size = 1.0 / (lambda + i);
 //    increment = -step_size * grad;
     increment = step_size * grad; // TODO: negative or positive?
-    std::cout << "[GD] i: " << i << " step size: " << step_size
+    std::cout << "[GD MEL] i: " << i << " step size: " << step_size
               << " cost: " << cost << " gradient norm: " << grad.norm()
               << std::endl;
 //    std::cout << "[GD] i: " << i << " grad: " << grad.transpose()
@@ -219,9 +218,9 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTimeGradientDescent() {
     poly_opt_.solveLinear(); // TODO: needed?
   }
 
-  std::cout << "[Original]: " << orig_seg_times.transpose() << std::endl;
-  std::cout << "[Solution]: " << x.transpose() << std::endl;
-  std::cout << "[Trajectory Time] Before: " << sum_seg_times_before
+  std::cout << "[GD MEL Original]: " << orig_seg_times.transpose() << std::endl;
+  std::cout << "[GD MEL Solution]: " << x.transpose() << std::endl;
+  std::cout << "[GD MEL Trajectory Time] Before: " << sum_seg_times_before
             << " | After: " << x.sum() << std::endl;
 
   return nlopt::SUCCESS;
