@@ -96,7 +96,11 @@ int PolynomialOptimizationNonLinear<_N>::optimize() {
       std::chrono::high_resolution_clock::now();
 
   if (optimize_time_only_) {
-    result = optimizeTime();
+    if (!optimization_parameters_.use_gradient_descent) {
+      result = optimizeTime();
+    } else {
+      result = optimizeTimeGradientDescent();
+    }
   } else {
     if (!optimization_parameters_.use_gradient_descent) {
       result = optimizeTimeAndFreeConstraints();
@@ -158,6 +162,150 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTime() {
   }
 
   return result;
+}
+
+template <int _N>
+int PolynomialOptimizationNonLinear<_N>::optimizeTimeGradientDescent() {
+  // Get initial parameters.
+  std::vector<double> grad_vec;
+  std::vector<double> segment_times;
+  poly_opt_.getSegmentTimes(&segment_times);
+  poly_opt_.solveLinear(); // TODO: needed?
+
+  Eigen::VectorXd grad, increment;
+  Eigen::Map<Eigen::VectorXd> x(segment_times.data(),segment_times.size());
+  Eigen::VectorXd orig_seg_times = x;
+  double sum_seg_times_before = x.sum();
+
+  grad.resize(x.size());
+  grad.setZero();
+  increment = grad;
+
+  int max_iter = 100;
+  double lambda = 10.0; // TODO: Which value?
+  std::cout << "lambda: " << lambda << std::endl;
+
+  double cost = 0;
+  for (int i = 0; i < max_iter; ++i) {
+    // Evaluate cost.
+    cost = getCostAndGradient(&grad_vec);
+
+    // Unpack gradients.
+    for (int j = 0; j < x.size(); ++j) {
+      grad[j] = grad_vec[j];
+    }
+    double step_size = 1.0 / (lambda + i);
+//    increment = -step_size * grad;
+    increment = step_size * grad; // TODO: negative or positive?
+    std::cout << "[GD] i: " << i << " step size: " << step_size
+              << " cost: " << cost << " gradient norm: " << grad.norm()
+              << std::endl;
+//    std::cout << "[GD] i: " << i << " grad: " << grad.transpose()
+//              << std::endl;
+//    std::cout << "[GD] i: " << i << " increment: " << increment.transpose()
+//              << std::endl;
+
+    // Update the parameters.
+    x += increment;
+//    std::cout << "[GD] i: " << i << " x: " << x.transpose()
+//              << std::endl;
+    // TODO: segment times > 0.1!!
+    for (int n = 0; n < x.size(); ++n) {
+      x[n] = x[n] <= 0.1 ? 0.1 : x[n];
+    }
+
+    std::vector<double> segment_times_new(x.data(), x.data() + x.size());
+    poly_opt_.updateSegmentTimes(segment_times_new);
+    poly_opt_.solveLinear(); // TODO: needed?
+  }
+
+  std::cout << "[Original]: " << orig_seg_times.transpose() << std::endl;
+  std::cout << "[Solution]: " << x.transpose() << std::endl;
+  std::cout << "[Trajectory Time] Before: " << sum_seg_times_before
+            << " | After: " << x.sum() << std::endl;
+
+  return nlopt::SUCCESS;
+}
+
+template <int _N>
+double PolynomialOptimizationNonLinear<_N>::getCostAndGradient(
+        std::vector<double>* gradients) {
+
+  // Weighting terms for different costs
+  const double w_d = 100.0;
+
+  // Retrieve the current segment times
+  std::vector<double> segment_times;
+  poly_opt_.getSegmentTimes(&segment_times);
+  const double J_d = 2*poly_opt_.computeCost();// TODO: *2 necessary?
+
+  if (gradients != NULL) {
+    const size_t n_segments = poly_opt_.getNumberSegments();
+
+    gradients->clear();
+    gradients->resize(n_segments);
+
+    // Initialize changed segment times for numerical derivative
+    std::vector<double> segment_times_bigger(n_segments);
+    const double increment_time = 0.1;
+    for (int n = 0; n < n_segments; ++n) {
+      // Now the same with an increased segment time
+      // Calculate cost with higher segment time
+      segment_times_bigger = segment_times;
+      // Deduct h*(-1/(m-2)) according to paper Mellinger "Minimum snap traject
+      // generation and control for quadrotors"
+      double const_traj_time_corr = increment_time/(n_segments-1.0);
+      for (int i = 0; i < segment_times_bigger.size(); ++i) {
+        if (i==n) {
+          segment_times_bigger[i] += increment_time;
+        } else {
+          segment_times_bigger[i] -= const_traj_time_corr;
+        }
+      }
+
+//      std::cout << "sum: " << std::accumulate(
+//              segment_times_bigger.begin(), segment_times_bigger.end(), 0.0)
+//                << " seg times: " << std::endl;
+//      for (int j = 0; j < segment_times_bigger.size(); ++j) {
+//        std::cout << segment_times_bigger[j] << " ";
+//      }
+//      std::cout << std::endl;
+
+      // TODO: add case if segment_time is at threshold 0.1s
+      // 1) How many segments > 0.1s
+      // 2) trajectory time correction only on those
+//      for (int j = 0; j < segment_times_bigger.size(); ++j) {
+//        double thresh_corr = 0.0;
+//        if (segment_times_bigger[j] < 0.1) {
+//          thresh_corr = 0.1-segment_times_bigger[j];
+//        }
+//      }
+
+      // Update the segment times. This changes the polynomial coefficients.
+      poly_opt_.updateSegmentTimes(segment_times_bigger);
+
+      // Calculate cost and gradient with new segment time
+      const double J_d_bigger = 2*poly_opt_.computeCost();// TODO: *2 necessary?
+      const double dJd_dt = (J_d_bigger - J_d) / increment_time;
+
+//      std::cout << "J_d: " << J_d
+//                << " | J_d_bigger: " << J_d_bigger
+//                << " | dJd_dt: " << dJd_dt
+//                << " | h*dJd_dt: " << increment_time*dJd_dt
+//                << " | J_d_bigger=J_d+h*dJd_dt: " << J_d+(increment_time*dJd_dt)
+//                << std::endl;
+
+      // Calculate the gradient
+      gradients->at(n) = w_d*dJd_dt;
+    }
+
+    // Set again the original segment times from before calculating the
+    // numerical gradient
+    poly_opt_.updateSegmentTimes(segment_times);
+  }
+
+  // Compute cost without gradient
+  return w_d*J_d;
 }
 
 template <int _N>

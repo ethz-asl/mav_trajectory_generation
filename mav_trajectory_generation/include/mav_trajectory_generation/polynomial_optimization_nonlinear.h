@@ -254,6 +254,8 @@ class PolynomialOptimizationNonLinear {
 
   // Does the actual optimization work for the time-only version.
   int optimizeTime();
+  int optimizeTimeGradientDescent();
+  double getCostAndGradient(std::vector<double>* gradients);
 
   // Does the actual optimization work for the full optimization version.
   int optimizeTimeAndFreeConstraints();

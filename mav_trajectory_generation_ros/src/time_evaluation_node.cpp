@@ -86,6 +86,9 @@ class TimeEvaluationNode {
   void runNonlinearRichter(const Vertex::Vector& vertices,
                            bool use_gradient_descent,
                            Trajectory* trajectory) const;
+  void runMellingerOuterLoop(const Vertex::Vector& vertices,
+                             bool use_gradient_descent,
+                             Trajectory* trajectory) const;
 
   void evaluateTrajectory(const std::string& method_name,
                           const Trajectory& traj,
@@ -244,6 +247,15 @@ void TimeEvaluationNode::runBenchmark(int trial_number, int num_segments) {
     visualizeTrajectory(method_name, trajectory_nonlinear_richter_gd, &markers);
   }
 
+  method_name = "mellinger_outer_loop";
+  Trajectory trajectory_mellinger_outer_loop;
+  runMellingerOuterLoop(vertices, true, &trajectory_mellinger_outer_loop);
+  evaluateTrajectory(method_name, trajectory_mellinger_outer_loop, &result);
+  results_.push_back(result);
+  if (visualize_) {
+    visualizeTrajectory(method_name, trajectory_mellinger_outer_loop, &markers);
+  }
+
   if (visualize_) {
     path_marker_pub_.publish(markers);
   }
@@ -309,6 +321,24 @@ void TimeEvaluationNode::runNonlinearRichter(
   nlopt.getTrajectory(trajectory);
 }
 
+void TimeEvaluationNode::runMellingerOuterLoop(
+        const Vertex::Vector& vertices, bool use_gradient_descent,
+        Trajectory* trajectory) const {
+  std::vector<double> segment_times;
+  segment_times =
+      mav_trajectory_generation::estimateSegmentTimes(vertices, v_max_, a_max_);
+
+  mav_trajectory_generation::NonlinearOptimizationParameters nlopt_parameters;
+  nlopt_parameters.use_gradient_descent = use_gradient_descent;
+  mav_trajectory_generation::PolynomialOptimizationNonLinear<kN> nlopt(
+      kDim, nlopt_parameters, true);
+  nlopt.setupFromVertices(vertices, segment_times, max_derivative_order_);
+  nlopt.addMaximumMagnitudeConstraint(derivative_order::VELOCITY, v_max_);
+  nlopt.addMaximumMagnitudeConstraint(derivative_order::ACCELERATION, a_max_);
+  nlopt.optimize();
+  nlopt.getTrajectory(trajectory);
+}
+
 void TimeEvaluationNode::visualizeTrajectory(
     const std::string& method_name, const Trajectory& traj,
     visualization_msgs::MarkerArray* markers) {
@@ -326,6 +356,8 @@ void TimeEvaluationNode::visualizeTrajectory(
     trajectory_color = mav_visualization::Color::Blue();
   } else if (method_name == "nonlinear_richter_gd") {
     trajectory_color = mav_visualization::Color::Pink();
+  } else if (method_name == "mellinger_outer_loop") {
+    trajectory_color = mav_visualization::Color::Orange();
   } else {
     trajectory_color = mav_visualization::Color::White();
   }
@@ -496,7 +528,7 @@ std::string TimeEvaluationNode::printResults() const {
   std::string filename = "/results_time_allocation.csv";
   std::string results_path = path + filename;
   outputResults(results_path, results_);
-  std::cout << "path: " << results_path << std::endl;
+  ROS_INFO("Save results at %s", results_path.c_str());
 
   return s.str();
 }
