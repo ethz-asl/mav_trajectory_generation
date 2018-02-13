@@ -249,11 +249,20 @@ void TimeEvaluationNode::runBenchmark(int trial_number, int num_segments) {
 
   method_name = "mellinger_outer_loop";
   Trajectory trajectory_mellinger_outer_loop;
-  runMellingerOuterLoop(vertices, true, &trajectory_mellinger_outer_loop);
+  runMellingerOuterLoop(vertices, false, &trajectory_mellinger_outer_loop);
   evaluateTrajectory(method_name, trajectory_mellinger_outer_loop, &result);
   results_.push_back(result);
   if (visualize_) {
     visualizeTrajectory(method_name, trajectory_mellinger_outer_loop, &markers);
+  }
+
+  method_name = "mellinger_outer_loop_gd";
+  Trajectory trajectory_mellinger_outer_loop_gd;
+  runMellingerOuterLoop(vertices, true, &trajectory_mellinger_outer_loop_gd);
+  evaluateTrajectory(method_name, trajectory_mellinger_outer_loop_gd, &result);
+  results_.push_back(result);
+  if (visualize_) {
+    visualizeTrajectory(method_name, trajectory_mellinger_outer_loop_gd, &markers);
   }
 
   if (visualize_) {
@@ -358,6 +367,8 @@ void TimeEvaluationNode::visualizeTrajectory(
     trajectory_color = mav_visualization::Color::Pink();
   } else if (method_name == "mellinger_outer_loop") {
     trajectory_color = mav_visualization::Color::Orange();
+  } else if (method_name == "mellinger_outer_loop_gd") {
+    trajectory_color = mav_visualization::Color::Purple();
   } else {
     trajectory_color = mav_visualization::Color::White();
   }
