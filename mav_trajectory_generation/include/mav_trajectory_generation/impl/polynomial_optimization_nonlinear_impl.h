@@ -167,23 +167,27 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTime() {
 template <int _N>
 int PolynomialOptimizationNonLinear<_N>::optimizeTimeGradientDescent() {
   // Get initial parameters.
-  std::vector<double> grad_vec;
   std::vector<double> segment_times;
   poly_opt_.getSegmentTimes(&segment_times);
   poly_opt_.solveLinear(); // TODO: needed?
 
-  Eigen::VectorXd grad, increment;
+  // Create parameter vector x=[t1, ..., tm] --> segment times
   Eigen::Map<Eigen::VectorXd> x(segment_times.data(),segment_times.size());
-  Eigen::VectorXd orig_seg_times = x;
-  double sum_seg_times_before = x.sum();
+  // Save original parameter vector
+  Eigen::VectorXd x_orig;
+  x_orig = x;
 
+  // Set up gradients (of param vector x) and increment vector
+  Eigen::VectorXd grad, increment;
   grad.resize(x.size());
   grad.setZero();
   increment = grad;
 
+  // Parameter for gradient descent
   int max_iter = 100;
   double lambda = 10.0; // TODO: Which value?
 
+  std::vector<double> grad_vec;
   double cost = 0;
   for (int i = 0; i < max_iter; ++i) {
     // Evaluate cost.
@@ -193,9 +197,11 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTimeGradientDescent() {
     for (int j = 0; j < x.size(); ++j) {
       grad[j] = grad_vec[j];
     }
+
     double step_size = 1.0 / (lambda + i);
 //    increment = -step_size * grad;
     increment = step_size * grad; // TODO: negative or positive?
+
     std::cout << "[GD MEL] i: " << i << " step size: " << step_size
               << " cost: " << cost << " gradient norm: " << grad.norm()
               << std::endl;
@@ -208,19 +214,22 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTimeGradientDescent() {
     x += increment;
 //    std::cout << "[GD] i: " << i << " x: " << x.transpose()
 //              << std::endl;
+
     // TODO: segment times > 0.1!!
     for (int n = 0; n < x.size(); ++n) {
       x[n] = x[n] <= 0.1 ? 0.1 : x[n];
     }
 
+    // Set and update new segement times
     std::vector<double> segment_times_new(x.data(), x.data() + x.size());
     poly_opt_.updateSegmentTimes(segment_times_new);
     poly_opt_.solveLinear(); // TODO: needed?
   }
 
-  std::cout << "[GD MEL Original]: " << orig_seg_times.transpose() << std::endl;
+  // Print all parameter
+  std::cout << "[GD MEL Original]: " << x_orig.transpose() << std::endl;
   std::cout << "[GD MEL Solution]: " << x.transpose() << std::endl;
-  std::cout << "[GD MEL Trajectory Time] Before: " << sum_seg_times_before
+  std::cout << "[GD MEL Trajectory Time] Before: " << x_orig.sum()
             << " | After: " << x.sum() << std::endl;
 
   return nlopt::SUCCESS;
@@ -516,11 +525,11 @@ optimizeTimeAndFreeConstraintsGradientDescent() {
 //  std::cout << "[GD Original]: " << x_orig.transpose() << std::endl;
 //  std::cout << "[GD Solution]: " << x.transpose() << std::endl;
   // Print only segment times
-  std::cout << "[GD Original]: " << x_orig.block(0,0,n_segments,1).transpose()
+  std::cout << "[GD RICHTER Original]: " << x_orig.block(0,0,n_segments,1).transpose()
             << std::endl;
-  std::cout << "[GD Solution]: " << x.block(0,0,n_segments,1).transpose()
+  std::cout << "[GD RICHTER Solution]: " << x.block(0,0,n_segments,1).transpose()
             << std::endl;
-  std::cout << "[GD Trajectory Time] Before: "
+  std::cout << "[GD RICHTER Trajectory Time] Before: "
             << x_orig.block(0,0,n_segments,1).sum()
             << " | After: " << x.block(0,0,n_segments,1).sum() << std::endl;
 
