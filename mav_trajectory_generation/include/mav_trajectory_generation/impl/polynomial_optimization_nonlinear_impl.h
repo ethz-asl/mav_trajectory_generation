@@ -291,6 +291,7 @@ double PolynomialOptimizationNonLinear<_N>::getCostAndGradient(
 
       // Update the segment times. This changes the polynomial coefficients.
       poly_opt_.updateSegmentTimes(segment_times_bigger);
+      poly_opt_.solveLinear();
 
       // Calculate cost and gradient with new segment time
       const double J_d_bigger = 2*poly_opt_.computeCost();// TODO: *2 necessary?
@@ -310,6 +311,7 @@ double PolynomialOptimizationNonLinear<_N>::getCostAndGradient(
     // Set again the original segment times from before calculating the
     // numerical gradient
     poly_opt_.updateSegmentTimes(segment_times);
+    poly_opt_.solveLinear();
   }
 
   // Compute cost without gradient
