@@ -428,6 +428,7 @@ double PolynomialOptimizationNonLinear<_N>::getCostAndGradientTimeForward(
 
       const double dJd_dt = (J_d_bigger-J_d) / (increment_time);
       const double dJsc_dt = (J_sc_bigger-J_sc) / (increment_time);
+      // TODO: also for cost_time_method = kSquared
       const double dJt_dt = 1.0; // J_t = t --> dJt_dt = 1.0 for all tm
 
       // Calculate the gradient
