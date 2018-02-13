@@ -264,20 +264,6 @@ optimizeTimeAndFreeConstraintsGradientDescent() {
   Eigen::VectorXd x_orig;
   x_orig = x;
 
-//  std::cout << "segment_times (size: " << segment_times.size() << "): "
-//            << std::endl;
-//  for (int j = 0; j < segment_times.size(); ++j) {
-//    std::cout << segment_times[j] << " ";
-//  }
-//  std::cout << std::endl;
-//  std::cout << "free constraints (size: 3x" << d_p_vec[0].size() << "): "
-//            << std::endl;
-//  for (int k = 0; k < d_p_vec.size(); ++k) {
-//    std::cout << d_p_vec[k].transpose() << std::endl << std::endl;
-//  }
-//  std::cout << std::endl;
-//  std::cout << "x: " << std::endl << x.transpose() << std::endl;
-
   // Set up gradients (of param vector x) and increment vector
   Eigen::VectorXd grad, increment;
   grad.resize(x.size());
@@ -323,17 +309,19 @@ optimizeTimeAndFreeConstraintsGradientDescent() {
     double step_size = 1.0 / (lambda + i);
     increment = -step_size * grad;
 //    increment = step_size * grad; // TODO: negative or positive?
-    std::cout << "[GD] i: " << i << " step size: " << step_size
-              << " w_t*J_t: " << w_t*J_t << " w_d*J_d: " << w_d*J_d
-              << " w_sc*J_sc: " << w_sc*J_sc
-              << " total cost: " << w_d*J_d+w_t*J_t+w_sc*J_sc
-              << " gradient norm: " << grad.norm()
-              << std::endl;
+
+//    std::cout << "[GD] i: " << i << " step size: " << step_size
+//              << " w_t*J_t: " << w_t*J_t << " w_d*J_d: " << w_d*J_d
+//              << " w_sc*J_sc: " << w_sc*J_sc
+//              << " total cost: " << w_d*J_d+w_t*J_t+w_sc*J_sc
+//              << " gradient norm: " << grad.norm()
+//              << std::endl;
+//
 //    std::cout << "[GD] i: " << i << " grad: " << grad.transpose()
 //              << std::endl;
 //    std::cout << "[GD] i: " << i << " increment: " << increment.transpose()
 //              << std::endl;
-
+//
 //    std::cout << "grad_d | grad_sc: "
 //              << std::endl;
 //    for (int k = 0; k < dim; ++k) {
@@ -351,16 +339,12 @@ optimizeTimeAndFreeConstraintsGradientDescent() {
 //    }
 //    std::cout << std::endl << std::endl;
 
-
     // Update the parameters.
     x += increment;
     // Check that segment times are > 0.1s
     for (int n = 0; n < n_segments; ++n) {
       x[n] = x[n] <= 0.1 ? 0.1 : x[n];
     }
-
-//    std::cout << "[GD] i: " << i << " x: " << x.transpose()
-//              << std::endl;
 
     // Set new segment times and new free constraints
     std::vector<double> segment_times_new;
@@ -375,21 +359,16 @@ optimizeTimeAndFreeConstraintsGradientDescent() {
                                n_free_constraints, 1);
     }
 
-//    std::cout << "segment_times_new (size: " << segment_times_new.size() << "): "
-//              << std::endl;
-//    for (int j = 0; j < segment_times_new.size(); ++j) {
-//      std::cout << segment_times_new[j] << " ";
-//    }
-//    std::cout << std::endl;
-
     // Update segement times and free constraints
     poly_opt_.updateSegmentTimes(segment_times_new);
     poly_opt_.setFreeConstraints(d_p_vec_new);
     poly_opt_.solveLinear(); // TODO: needed?
   }
 
+  // Print all parameter
 //  std::cout << "[GD Original]: " << x_orig.transpose() << std::endl;
 //  std::cout << "[GD Solution]: " << x.transpose() << std::endl;
+  // Print only segment times
   std::cout << "[GD Original]: " << x_orig.block(0,0,n_segments,1).transpose()
             << std::endl;
   std::cout << "[GD Solution]: " << x.block(0,0,n_segments,1).transpose()
