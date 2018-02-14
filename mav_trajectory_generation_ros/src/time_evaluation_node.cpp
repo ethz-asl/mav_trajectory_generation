@@ -35,6 +35,7 @@ struct TimeAllocationBenchmarkResult {
         rel_violation_v(0.0),
         rel_violation_a(0.0),
         max_dist_from_straight_line(0.0),
+        area_traj_straight_line(0.0) {}
 
   // Evaluation settings
   int trial_number;
@@ -59,6 +60,7 @@ struct TimeAllocationBenchmarkResult {
   double rel_violation_v;
   double rel_violation_a;
   double max_dist_from_straight_line;
+  double area_traj_straight_line;
 
   // More to come: convex hull/bounding box, etc.
 };
@@ -429,21 +431,35 @@ void TimeEvaluationNode::evaluateTrajectory(
   traj.getSegments(&segments);
 
   double max_dist = 0.0;
+  double prev_dist = 0.0;
+  double dist = 0.0;
+  double area = 0.0;
+  Eigen::Vector3d prev_pos, point;
   for (const auto& segment : segments) {
+    // Get start and end of segment
+    Eigen::Vector3d start = segment.evaluate(0.0, derivative_order::POSITION);
+    Eigen::Vector3d end = segment.evaluate(segment.getTime(),
+                                           derivative_order::POSITION);
+    // Set point to start position of segment
+    point = start;
     for (double t = 0.0; t < segment.getTime(); t+=kDefaultSamplingTime) {
-      Eigen::Vector3d point = segment.evaluate(t, derivative_order::POSITION);
-      Eigen::Vector3d start = segment.evaluate(0.0, derivative_order::POSITION);
-      Eigen::Vector3d end = segment.evaluate(segment.getTime(),
-                                             derivative_order::POSITION);
+      // Get previous and current position on trajectory
+      prev_pos = point;
+      point = segment.evaluate(t, derivative_order::POSITION);
 
       // Absolute distance of point AP from line BC
-      double dist = computePointLineDistance(point, start, end);
+      prev_dist = dist;
+      dist = computePointLineDistance(point, start, end);
       if (dist > max_dist) { max_dist = dist; }
+
+      // Integrate area
+      area += 0.5*(dist+prev_dist) * (point-prev_pos).norm();
     }
   }
   // TODO: Distinguish max_dist for each segment?
-  // TODO: Compare area between straight line and trajectory?
-  result->max_dist_from_straigh_line = max_dist;
+  result->max_dist_from_straight_line = max_dist;
+  result->area_traj_straight_line = area;
+
 }
 
 visualization_msgs::Marker TimeEvaluationNode::createMarkerForPath(
@@ -521,7 +537,7 @@ std::string TimeEvaluationNode::printResults() const {
        "optimization_success, bounds_violated, trajectory_time, "
        "trajectory_length, computation_time, a_max_actual, v_max_actual, "
        "abs_violation_a, abs_violation_v, rel_violation_a, rel_violation_v, "
-       "max_dist_sl_traj"
+       "max_dist_sl_traj, area_traj_sl"
     << std::endl;
   for (size_t i = 0; i < results_.size(); ++i) {
     s << results_[i].trial_number << ", " << results_[i].method_name << ", "
@@ -534,6 +550,7 @@ std::string TimeEvaluationNode::printResults() const {
       << ", " << results_[i].abs_violation_v << ", "
       << results_[i].rel_violation_a << ", " << results_[i].rel_violation_v
       << ", " << results_[i].max_dist_from_straight_line
+      << ", " << results_[i].area_traj_straight_line
       << std::endl;
   }
 
@@ -562,9 +579,10 @@ void TimeEvaluationNode::outputResults(
                   "optimization_success, bounds_violated, trajectory_time, "
                   "trajectory_length, computation_time, a_max_actual,"
                   " v_max_actual, abs_violation_a, abs_violation_v, "
-                  "rel_violation_a, rel_violation_v, max_dist_sl_traj\n");
+                  "rel_violation_a, rel_violation_v, max_dist_sl_traj,"
+                  "area_traj_sl\n");
   for (const TimeAllocationBenchmarkResult& result : results) {
-    fprintf(fp, "%d,%s,%d,%f,%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f\n",
+    fprintf(fp, "%d,%s,%d,%f,%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f\n",
             result.trial_number, result.method_name.c_str(),
             result.num_segments, result.nominal_length,
             result.optimization_success, result.bounds_violated,
@@ -573,6 +591,7 @@ void TimeEvaluationNode::outputResults(
             result.v_max_actual.value, result.abs_violation_a,
             result.abs_violation_v, result.rel_violation_a,
             result.rel_violation_v, result.max_dist_from_straight_line,
+            result.area_traj_straight_line);
   }
 
   fclose(fp);

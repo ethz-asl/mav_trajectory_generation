@@ -297,6 +297,7 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTimeGradientDescent() {
   std::cout << "[GD MEL   Trajectory Time] Before: " << x_orig.sum()
             << " | After Rel Change: " << x_rel_change.sum()
             << " | After Scaling: " << x.sum() << std::endl;
+
   return nlopt::SUCCESS;
 }
 
