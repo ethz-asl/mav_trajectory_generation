@@ -198,7 +198,9 @@ void TimeEvaluationNode::runBenchmark(int trial_number, int num_segments) {
   // Run all the evaluations.
   std::string method_name = "nfabian";
   Trajectory trajectory_nfabian;
+  timing::Timer timer_nfabian(method_name);
   runNfabian(vertices, &trajectory_nfabian);
+  timer_nfabian.Stop();
   evaluateTrajectory(method_name, trajectory_nfabian, &result);
   results_.push_back(result);
   if (visualize_) {
@@ -207,7 +209,9 @@ void TimeEvaluationNode::runBenchmark(int trial_number, int num_segments) {
 
   method_name = "trapezoidal";
   Trajectory trajectory_trapezoidal;
+  timing::Timer timer_trapezoidal(method_name);
   runTrapezoidalTime(vertices, &trajectory_trapezoidal);
+  timer_trapezoidal.Stop();
   evaluateTrajectory(method_name, trajectory_trapezoidal, &result);
   results_.push_back(result);
   if (visualize_) {
@@ -216,7 +220,9 @@ void TimeEvaluationNode::runBenchmark(int trial_number, int num_segments) {
 
   method_name = "nonlinear";
   Trajectory trajectory_nonlinear;
+  timing::Timer timer_nonlinear(method_name);
   runNonlinear(vertices, &trajectory_nonlinear);
+  timer_nonlinear.Stop();
   evaluateTrajectory(method_name, trajectory_nonlinear, &result);
   results_.push_back(result);
   if (visualize_) {
@@ -229,7 +235,9 @@ void TimeEvaluationNode::runBenchmark(int trial_number, int num_segments) {
 
   method_name = "nonlinear_richter";
   Trajectory trajectory_nonlinear_richter;
+  timing::Timer timer_nonlinear_richter(method_name);
   runNonlinearRichter(vertices, false, &trajectory_nonlinear_richter);
+  timer_nonlinear_richter.Stop();
   evaluateTrajectory(method_name, trajectory_nonlinear_richter, &result);
   results_.push_back(result);
   if (visualize_) {
@@ -242,7 +250,9 @@ void TimeEvaluationNode::runBenchmark(int trial_number, int num_segments) {
 
   method_name = "nonlinear_richter_gd";
   Trajectory trajectory_nonlinear_richter_gd;
+  timing::Timer timer_nonlinear_richter_gd(method_name);
   runNonlinearRichter(vertices, true, &trajectory_nonlinear_richter_gd);
+  timer_nonlinear_richter_gd.Stop();
   evaluateTrajectory(method_name, trajectory_nonlinear_richter_gd, &result);
   results_.push_back(result);
   if (visualize_) {
@@ -251,7 +261,9 @@ void TimeEvaluationNode::runBenchmark(int trial_number, int num_segments) {
 
   method_name = "mellinger_outer_loop";
   Trajectory trajectory_mellinger_outer_loop;
+  timing::Timer timer_mellinger(method_name);
   runMellingerOuterLoop(vertices, false, &trajectory_mellinger_outer_loop);
+  timer_mellinger.Stop();
   evaluateTrajectory(method_name, trajectory_mellinger_outer_loop, &result);
   results_.push_back(result);
   if (visualize_) {
@@ -260,7 +272,9 @@ void TimeEvaluationNode::runBenchmark(int trial_number, int num_segments) {
 
   method_name = "mellinger_outer_loop_gd";
   Trajectory trajectory_mellinger_outer_loop_gd;
+  timing::Timer timer_mellinger_gd(method_name);
   runMellingerOuterLoop(vertices, true, &trajectory_mellinger_outer_loop_gd);
+  timer_mellinger_gd.Stop();
   evaluateTrajectory(method_name, trajectory_mellinger_outer_loop_gd, &result);
   results_.push_back(result);
   if (visualize_) {
@@ -401,6 +415,7 @@ void TimeEvaluationNode::evaluateTrajectory(
   mav_trajectory_generation::sampleWholeTrajectory(traj, kDefaultSamplingTime,
                                                    &path);
   result->trajectory_length = computePathLength(path);
+  result->computation_time = timing::Timing::GetTotalSeconds(method_name);
 
   // TODO(helenol): evaluate min/max extrema, bounds violations, etc.
   // Evaluate min/max extrema
@@ -646,6 +661,8 @@ int main(int argc, char** argv) {
 
   ROS_INFO("Finished evaluations.");
   ROS_INFO("Results:\n%s", time_eval_node.printResults().c_str());
+  // Print all timing results
+  mav_trajectory_generation::timing::Timing::Print(std::cout);
 
   ros::spin();
   return 0;
