@@ -34,7 +34,7 @@ struct TimeAllocationBenchmarkResult {
         abs_violation_a(0.0),
         rel_violation_v(0.0),
         rel_violation_a(0.0),
-        max_dist_from_straigh_line(0.0) {}
+        max_dist_from_straight_line(0.0),
 
   // Evaluation settings
   int trial_number;
@@ -58,7 +58,7 @@ struct TimeAllocationBenchmarkResult {
   double abs_violation_a;
   double rel_violation_v;
   double rel_violation_a;
-  double max_dist_from_straigh_line;
+  double max_dist_from_straight_line;
 
   // More to come: convex hull/bounding box, etc.
 };
@@ -533,7 +533,7 @@ std::string TimeEvaluationNode::printResults() const {
       << results_[i].v_max_actual.value << ", " << results_[i].abs_violation_a
       << ", " << results_[i].abs_violation_v << ", "
       << results_[i].rel_violation_a << ", " << results_[i].rel_violation_v
-      << ", " << results_[i].max_dist_from_straigh_line
+      << ", " << results_[i].max_dist_from_straight_line
       << std::endl;
   }
 
@@ -572,7 +572,7 @@ void TimeEvaluationNode::outputResults(
             result.computation_time, result.a_max_actual.value,
             result.v_max_actual.value, result.abs_violation_a,
             result.abs_violation_v, result.rel_violation_a,
-            result.rel_violation_v, result.max_dist_from_straigh_line);
+            result.rel_violation_v, result.max_dist_from_straight_line,
   }
 
   fclose(fp);
