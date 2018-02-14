@@ -228,11 +228,6 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTimeGradientDescent() {
     poly_opt_.solveLinear(); // TODO: needed?
   }
 
-  // Print all parameter
-  std::cout << "[GD MEL Original]: " << x_orig.transpose() << std::endl;
-  std::cout << "[GD MEL Solution]: " << x.transpose() << std::endl;
-  std::cout << "[GD MEL Trajectory Time] Before: " << x_orig.sum()
-            << " | After: " << x.sum() << std::endl;
   x_rel_change = x;
 
   // Get trajectory
@@ -293,6 +288,15 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTimeGradientDescent() {
     rel_violation_a = abs_violation_a / a_max;
   }
 
+  // Print all parameter after scaling
+  std::cout << "[GD MEL          Original]: " << x_orig.transpose()
+            << std::endl;
+  std::cout << "[GD MEL RELATIVE Solution]: " << x_rel_change.transpose()
+            << std::endl;
+  std::cout << "[GD MEL          Solution]: " << x.transpose() << std::endl;
+  std::cout << "[GD MEL   Trajectory Time] Before: " << x_orig.sum()
+            << " | After Rel Change: " << x_rel_change.sum()
+            << " | After Scaling: " << x.sum() << std::endl;
   return nlopt::SUCCESS;
 }
 
@@ -587,9 +591,11 @@ optimizeTimeAndFreeConstraintsGradientDescent() {
 //  std::cout << "[GD Original]: " << x_orig.transpose() << std::endl;
 //  std::cout << "[GD Solution]: " << x.transpose() << std::endl;
   // Print only segment times
-  std::cout << "[GD RICHTER Original]: " << x_orig.block(0,0,n_segments,1).transpose()
+  std::cout << "[GD RICHTER Original]: "
+            << x_orig.block(0,0,n_segments,1).transpose()
             << std::endl;
-  std::cout << "[GD RICHTER Solution]: " << x.block(0,0,n_segments,1).transpose()
+  std::cout << "[GD RICHTER Solution]: "
+            << x.block(0,0,n_segments,1).transpose()
             << std::endl;
   std::cout << "[GD RICHTER Trajectory Time] Before: "
             << x_orig.block(0,0,n_segments,1).sum()

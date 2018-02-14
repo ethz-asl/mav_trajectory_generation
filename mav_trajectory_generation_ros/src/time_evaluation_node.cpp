@@ -338,6 +338,9 @@ void TimeEvaluationNode::runMellingerOuterLoop(
       mav_trajectory_generation::estimateSegmentTimes(vertices, v_max_, a_max_);
 
   mav_trajectory_generation::NonlinearOptimizationParameters nlopt_parameters;
+  // TODO: Implement Mellinger with nonlinear optimization (not gd)
+  // right now if use_grad_descent=false
+  // --> optimize Time only without keeping total trajectory time constant
   nlopt_parameters.use_gradient_descent = use_gradient_descent;
   mav_trajectory_generation::PolynomialOptimizationNonLinear<kN> nlopt(
       kDim, nlopt_parameters, true);
