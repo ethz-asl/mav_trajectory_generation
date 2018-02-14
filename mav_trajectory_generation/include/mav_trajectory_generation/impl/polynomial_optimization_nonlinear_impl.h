@@ -188,7 +188,7 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTimeGradientDescent() {
 
   // Parameter for gradient descent
   int max_iter = 100;
-  double lambda = 10.0*(w_d); // TODO: Which value?
+  double lambda = 0.01*(w_d); // TODO: Which value?
 
   std::vector<double> grad_vec;
   double cost = 0;
