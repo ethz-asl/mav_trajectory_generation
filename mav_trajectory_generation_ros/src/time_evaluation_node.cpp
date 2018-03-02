@@ -91,6 +91,8 @@ class TimeEvaluationNode {
   void runMellingerOuterLoop(const Vertex::Vector& vertices,
                              bool use_gradient_descent,
                              Trajectory* trajectory) const;
+  void runSegmentViolationScalingTime(const Vertex::Vector& vertices,
+                                      Trajectory* trajectory) const;
 
   void evaluateTrajectory(const std::string& method_name,
                           const Trajectory& traj,
@@ -369,6 +371,90 @@ void TimeEvaluationNode::runMellingerOuterLoop(
   nlopt.addMaximumMagnitudeConstraint(derivative_order::ACCELERATION, a_max_);
   nlopt.optimize();
   nlopt.getTrajectory(trajectory);
+}
+
+void TimeEvaluationNode::runSegmentViolationScalingTime(
+        const Vertex::Vector& vertices, Trajectory* trajectory) const {
+  std::vector<double> segment_times;
+  segment_times =
+          mav_trajectory_generation::estimateSegmentTimes(vertices, v_max_,
+                                                          a_max_);
+  mav_trajectory_generation::PolynomialOptimization<kN> linopt(kDim);
+  linopt.setupFromVertices(vertices, segment_times, max_derivative_order_);
+  linopt.solveLinear();
+  linopt.getTrajectory(trajectory);
+
+  // Check violation and rescale segments
+  Segment::Vector segments;
+  trajectory->getSegments(&segments);
+
+  // Get relative violation at each segment
+  // Taken and modified from Trajectory::computeMinMaxMagnitude()
+  std::vector<int> dimensions = {0, 1, 2}; // Evaluate dimensions in x, y and z
+  std::vector<Extremum> maxima_vel, maxima_acc;
+  computeMinMaxMagnitudeAllSegments(segments, derivative_order::VELOCITY,
+                                    dimensions, &maxima_vel);
+  computeMinMaxMagnitudeAllSegments(segments, derivative_order::ACCELERATION,
+                                    dimensions, &maxima_acc);
+
+  // Print segment times before scaling
+  std::cout << "[Violation Scaling Original]: "
+            << std::accumulate(segment_times.begin(), segment_times.end(),
+                               0.0) << std::endl;
+
+  // Scale segment times according to violation
+  for (int i = 0; i < segment_times.size(); ++i) {
+
+    // Evaluate constraint/bound violation
+    double abs_violation_v, abs_violation_a, rel_violation_v, rel_violation_a;
+    abs_violation_v = maxima_vel[i].value - v_max_;
+    abs_violation_a = maxima_acc[i].value - a_max_;
+    rel_violation_v = abs_violation_v / v_max_;
+    rel_violation_a = abs_violation_a / a_max_;
+
+    double smallest_rel_violation = rel_violation_a > rel_violation_v ?
+                                    rel_violation_a : rel_violation_v;
+
+    std::cout << i << " segment time: " << segment_times[i]
+              << " | rel_vio_v: " << rel_violation_v
+              << " | rel_vio_a: " << rel_violation_a << std::endl;
+
+    segment_times[i] /= (1.0-smallest_rel_violation);
+  }
+
+  // Solve again with new segment times scaled according to relative violations
+  linopt.updateSegmentTimes(segment_times);
+  linopt.solveLinear();
+  linopt.getTrajectory(trajectory);
+
+  // Check violation and rescale segments
+  Segment::Vector segments_after;
+  trajectory->getSegments(&segments_after);
+
+  // TODO: only debug
+  // Check violation afterwards
+  std::vector<Extremum> maxima_vel_after, maxima_acc_after;
+  computeMinMaxMagnitudeAllSegments(segments_after, derivative_order::VELOCITY,
+                                    dimensions, &maxima_vel_after);
+  computeMinMaxMagnitudeAllSegments(segments_after,
+                                    derivative_order::ACCELERATION,
+                                    dimensions, &maxima_acc_after);
+
+  // Print segment times after scaling
+  std::cout << "[Violation Scaling Solution]: "
+            << std::accumulate(segment_times.begin(), segment_times.end(),
+                               0.0) << std::endl;
+  for (int m = 0; m < segments_after.size(); ++m) {
+    double abs_violation_v, abs_violation_a, rel_violation_v, rel_violation_a;
+    abs_violation_v = maxima_vel_after[m].value - v_max_;
+    abs_violation_a = maxima_acc_after[m].value - a_max_;
+    rel_violation_v = abs_violation_v / v_max_;
+    rel_violation_a = abs_violation_a / a_max_;
+
+    std::cout << m << " segment time: " << segment_times[m]
+              << " | rel_vio_v: " << rel_violation_v
+              << " | rel_vio_a: " << rel_violation_a << std::endl;
+  }
 }
 
 void TimeEvaluationNode::visualizeTrajectory(
