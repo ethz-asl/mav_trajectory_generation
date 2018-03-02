@@ -290,6 +290,23 @@ void TimeEvaluationNode::runBenchmark(int trial_number, int num_segments) {
   if (visualize_) {
     path_marker_pub_.publish(markers);
   }
+
+  method_name = "segment_violation_scaling";
+  Trajectory trajectory_segment_violation_scaling;
+  timing::Timer timer_segment_violation_scaling(method_name);
+  runSegmentViolationScalingTime(vertices,
+                                 &trajectory_segment_violation_scaling);
+  timer_segment_violation_scaling.Stop();
+  evaluateTrajectory(method_name, trajectory_segment_violation_scaling, &result);
+  results_.push_back(result);
+  if (visualize_) {
+    visualizeTrajectory(method_name, trajectory_segment_violation_scaling,
+                        &markers);
+  }
+
+  if (visualize_) {
+    path_marker_pub_.publish(markers);
+  }
 }
 
 void TimeEvaluationNode::runNfabian(const Vertex::Vector& vertices,
@@ -478,6 +495,8 @@ void TimeEvaluationNode::visualizeTrajectory(
     trajectory_color = mav_visualization::Color::Orange();
   } else if (method_name == "mellinger_outer_loop_gd") {
     trajectory_color = mav_visualization::Color::Purple();
+  } else if (method_name == "segment_violation_scaling") {
+    trajectory_color = mav_visualization::Color::Chartreuse();
   } else {
     trajectory_color = mav_visualization::Color::White();
   }
