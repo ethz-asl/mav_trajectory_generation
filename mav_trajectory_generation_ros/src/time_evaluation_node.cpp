@@ -109,6 +109,10 @@ class TimeEvaluationNode {
       const std_msgs::ColorRGBA& color, const std::string& name,
       double scale = 0.05) const;
 
+  bool computeMinMaxMagnitudeAllSegments(
+          const Segment::Vector& segments, int derivative,
+          const std::vector<int>& dimensions,
+          std::vector<Extremum>* maxima) const;
   double computePathLength(mav_msgs::EigenTrajectoryPointVector& path) const;
   double computePointLineDistance(const Eigen::Vector3d& A,
                                   const Eigen::Vector3d& B,
@@ -474,7 +478,30 @@ void TimeEvaluationNode::evaluateTrajectory(
   // TODO: Distinguish max_dist for each segment?
   result->max_dist_from_straight_line = max_dist;
   result->area_traj_straight_line = area;
+}
 
+bool TimeEvaluationNode::computeMinMaxMagnitudeAllSegments(
+        const Segment::Vector& segments, int derivative,
+        const std::vector<int>& dimensions, std::vector<Extremum>* maxima) const {
+  // For all segments in the trajectory:
+  for (size_t segment_idx = 0; segment_idx < segments.size(); segment_idx++) {
+    // Compute candidates.
+    std::vector<Extremum> candidates;
+    if (!segments[segment_idx].computeMinMaxMagnitudeCandidates(
+            derivative, 0.0, segments[segment_idx].getTime(), dimensions,
+            &candidates)) {
+      return false;
+    }
+    // Evaluate candidates.
+    Extremum minimum_candidate, maximum_candidate;
+    if (!segments[segment_idx].selectMinMaxMagnitudeFromCandidates(
+            0.0, segments[segment_idx].getTime(), derivative, dimensions,
+            candidates, &minimum_candidate, &maximum_candidate)) {
+      return false;
+    }
+    maxima->push_back(maximum_candidate);
+  }
+  return true;
 }
 
 visualization_msgs::Marker TimeEvaluationNode::createMarkerForPath(
