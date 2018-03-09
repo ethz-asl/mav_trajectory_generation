@@ -506,9 +506,8 @@ optimizeTimeAndFreeConstraintsGradientDescent() {
   grad_sc.resize(dim, Eigen::VectorXd::Zero(n_free_constraints));
 
   // Parameter for gradient descent
-  int max_iter = 100;
-  double lambda = 10.0*(1.0+0.1); // TODO: Which value? // TODO: parameterize
-  std::cout << "lambda: " << lambda << std::endl;
+  int max_iter = 50;
+  double lambda = 10.0*(2.0+0.1); // TODO: Which value? // TODO: parameterize
 
   double J_t = 0.0;
   double J_d = 0.0;
