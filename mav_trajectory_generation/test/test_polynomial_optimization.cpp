@@ -820,6 +820,14 @@ TEST(MavTrajectoryGeneration,
 
   EXPECT_TRUE(checkCost(opt2.getPolynomialOptimizationRef().computeCost(),
                         segments2, derivative_to_optimize, 0.1));
+
+  Trajectory trajectory;
+  opt2.getTrajectory(&trajectory);
+  std::string file_base =
+          "/home/mgrimm/Documents/ASL/trajectories/";
+  std::stringstream file_path;
+  file_path << file_base << "001_trajectory.txt";
+  printMatlabSampledTrajectory(trajectory, file_path.str());
 }
 
 TEST(MavTrajectoryGeneration, 2_vertices_setup) {
