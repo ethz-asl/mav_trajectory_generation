@@ -472,6 +472,58 @@ PolynomialOptimizationNonLinear<_N>::evaluateMaximumMagnitudeAsSoftConstraint(
 }
 
 template <int _N>
+void
+PolynomialOptimizationNonLinear<_N>::setFreeEndpointDerivativeHardConstraints(
+    const std::vector<double>& initial_solution,
+    std::vector<double>* lower_bounds, std::vector<double>* upper_bounds) {
+  const size_t n_free_constraints = poly_opt_.getNumberFreeConstraints();
+  const size_t n_segments = poly_opt_.getNumberSegments();
+  const size_t dim = poly_opt_.getDimension();
+  const int derivative_to_optimize = poly_opt_.getDerivativeToOptimize();
+
+  LOG(INFO) << "USE HARD CONSTRAINTS FOR ENDPOINT DERIVATIVE BOUNDARIES";
+
+  // Set all values to -inf/inf and reset only bounded opti param with values
+  for (const double x : initial_solution) {
+    lower_bounds->push_back(-HUGE_VAL);
+    upper_bounds->push_back(HUGE_VAL);
+  }
+
+  // Add hard constraints with lower and upper bounds for opti parameters
+  const bool solve_with_position_constraint = true; // TODO: Implement
+  for (int k = 0; k < dim; ++k) {
+    for (int n = 0; n < n_segments - 1; ++n) {
+      unsigned int start_idx = 0;
+      if (solve_with_position_constraint) {
+        start_idx = k*n_free_constraints + n*derivative_to_optimize;
+      } else {
+        // Add position constraints given through the map boundaries
+        start_idx = k*n_free_constraints + n*(derivative_to_optimize + 1);
+
+        // TODO: implement
+//        lower_bounds->at(start_idx) = optimization_parameters_.min_bound[k];
+//        upper_bounds->at(start_idx) = optimization_parameters_.max_bound[k];
+      }
+
+      // Add higher order derivative constraints (v_max and a_max)
+      for (const auto& constraint_data : inequality_constraints_) {
+        unsigned int deriv_idx = 0;
+        if (solve_with_position_constraint) {
+          deriv_idx = constraint_data->derivative - 1;
+        } else {
+          deriv_idx = constraint_data->derivative;
+        }
+
+        lower_bounds->at(start_idx + deriv_idx) =
+                -std::abs(constraint_data->value);
+        upper_bounds->at(start_idx + deriv_idx) =
+                std::abs(constraint_data->value);
+      }
+    }
+  }
+}
+
+template <int _N>
 double PolynomialOptimizationNonLinear<_N>::computeTotalTrajectoryTime(
     const std::vector<double>& segment_times) {
   double total_time = 0;
