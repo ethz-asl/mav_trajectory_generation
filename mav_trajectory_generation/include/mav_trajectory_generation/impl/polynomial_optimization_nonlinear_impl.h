@@ -190,17 +190,44 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTimeAndFreeConstraints() {
     }
   }
 
+  // Retrieve the free endpoint derivative initial solution
+  std::vector<double> initial_solution_free(
+          initial_solution.begin()+n_segments, initial_solution.end());
+  // Setup for getting bounds on the free endpoint derivatives
+  std::vector<double> lower_bounds_free, upper_bounds_free;
+  const size_t n_optmization_variables_free =
+          free_constraints.size() * free_constraints.front().size();
+  lower_bounds_free.reserve(n_optmization_variables_free);
+  upper_bounds_free.reserve(n_optmization_variables_free);
+
+  // Get the lower and upper bounds constraints on the free endpoint derivatives
+  setFreeEndpointDerivativeHardConstraints(
+          initial_solution_free, &lower_bounds_free, &upper_bounds_free);
+
+  // Set segment time constraints
+  for (int l = 0; l < n_segments; ++l) {
+    const double abs_x = std::abs(initial_solution[l]);
+    lower_bounds.push_back(0.1);
+    upper_bounds.push_back(HUGE_VAL);
+  }
+  // Append free endpoint derivative constraints
+  lower_bounds.insert(std::end(lower_bounds), std::begin(lower_bounds_free),
+                      std::end(lower_bounds_free));
+  upper_bounds.insert(std::end(upper_bounds), std::begin(upper_bounds_free),
+                      std::end(upper_bounds_free));
+
   initial_step.reserve(n_optmization_variables);
   for (double x : initial_solution) {
     const double abs_x = std::abs(x);
     initial_step.push_back(optimization_parameters_.initial_stepsize_rel *
                            abs_x);
-    lower_bounds.push_back(-abs_x * 2);
-    upper_bounds.push_back(abs_x * 2);
+//    lower_bounds.push_back(-abs_x * 2);
+//    upper_bounds.push_back(abs_x * 2);
   }
 
-  for (size_t i = 0; i < n_segments; ++i) {
-    lower_bounds[i] = 0.1;
+//  for (size_t i = 0; i < n_segments; ++i) {
+//    lower_bounds[i] = 0.1;
+//  }
   }
 
   try {
