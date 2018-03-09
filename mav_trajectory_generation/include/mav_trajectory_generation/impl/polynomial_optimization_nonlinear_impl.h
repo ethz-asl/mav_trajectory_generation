@@ -125,6 +125,7 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTime() {
     initial_step.push_back(optimization_parameters_.initial_stepsize_rel * t);
   }
 
+  // TODO(magrimm): test and replace with HUGE_VAL instead of (t * 2.0)
   for (double t : segment_times) {
     upper_bounds.push_back(t * 2.0);
   }
