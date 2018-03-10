@@ -172,8 +172,10 @@ void TimeEvaluationNode::runBenchmark(int trial_number, int num_segments) {
 
   // Use trial number as seed to create the trajectory.
   Vertex::Vector vertices;
-  vertices = createRandomVertices(max_derivative_order_, num_segments, min_pos,
-                                  max_pos, trial_number);
+//  vertices = createRandomVertices(max_derivative_order_, num_segments, min_pos,
+//                                  max_pos, trial_number);
+  vertices = createSquareVertices(max_derivative_order_,
+                                  Eigen::Vector3d::Zero(), 4.0, 1);
 
   TimeAllocationBenchmarkResult result;
   // Fill in all the basics in the results that are shared between all the

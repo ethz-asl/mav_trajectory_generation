@@ -78,6 +78,40 @@ Vertex::Vector createRandomVertices(int maximum_derivative, size_t n_segments,
   return vertices;
 }
 
+Vertex::Vector createSquareVertices(int maximum_derivative,
+                                    const Eigen::Vector3d& center,
+                                    double side_length, int rounds) {
+  Vertex::Vector vertices;
+  const size_t dimension = center.size();
+
+  Eigen::Vector3d pos1(center[0]-side_length/2.0, center[1]-side_length/2.0, center[2]);
+  Vertex v1(dimension);
+  v1.addConstraint(derivative_order::POSITION, pos1);
+  Eigen::Vector3d pos2(center[0]-side_length/2.0, center[1]+side_length/2.0, center[2]);
+  Vertex v2(dimension);
+  v2.addConstraint(derivative_order::POSITION, pos2);
+  Eigen::Vector3d pos3(center[0]+side_length/2.0, center[1]+side_length/2.0, center[2]);
+  Vertex v3(dimension);
+  v3.addConstraint(derivative_order::POSITION, pos3);
+  Eigen::Vector3d pos4(center[0]+side_length/2.0, center[1]-side_length/2.0, center[2]);
+  Vertex v4(dimension);
+  v4.addConstraint(derivative_order::POSITION, pos4);
+
+  vertices.reserve(4*rounds);
+  vertices.push_back(v1);
+  vertices.front().makeStartOrEnd(pos1, maximum_derivative);
+
+  for (int i = 0; i < rounds; ++i) {
+    vertices.push_back(v2);
+    vertices.push_back(v3);
+    vertices.push_back(v4);
+    vertices.push_back(v1);
+  }
+  vertices.back().makeStartOrEnd(pos1, maximum_derivative);
+
+  return vertices;
+}
+
 Vertex::Vector createRandomVertices1D(int maximum_derivative, size_t n_segments,
                                       double pos_min, double pos_max,
                                       size_t seed) {
