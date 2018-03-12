@@ -84,16 +84,20 @@ Vertex::Vector createSquareVertices(int maximum_derivative,
   Vertex::Vector vertices;
   const size_t dimension = center.size();
 
-  Eigen::Vector3d pos1(center[0]-side_length/2.0, center[1]-side_length/2.0, center[2]);
+  Eigen::Vector3d pos1(center[0]-side_length/2.0, center[1]-side_length/2.0,
+                       center[2]);
   Vertex v1(dimension);
   v1.addConstraint(derivative_order::POSITION, pos1);
-  Eigen::Vector3d pos2(center[0]-side_length/2.0, center[1]+side_length/2.0, center[2]);
+  Eigen::Vector3d pos2(center[0]-side_length/2.0, center[1]+side_length/2.0,
+                       center[2]);
   Vertex v2(dimension);
   v2.addConstraint(derivative_order::POSITION, pos2);
-  Eigen::Vector3d pos3(center[0]+side_length/2.0, center[1]+side_length/2.0, center[2]);
+  Eigen::Vector3d pos3(center[0]+side_length/2.0, center[1]+side_length/2.0,
+                       center[2]);
   Vertex v3(dimension);
   v3.addConstraint(derivative_order::POSITION, pos3);
-  Eigen::Vector3d pos4(center[0]+side_length/2.0, center[1]-side_length/2.0, center[2]);
+  Eigen::Vector3d pos4(center[0]+side_length/2.0, center[1]-side_length/2.0,
+                       center[2]);
   Vertex v4(dimension);
   v4.addConstraint(derivative_order::POSITION, pos4);
 
