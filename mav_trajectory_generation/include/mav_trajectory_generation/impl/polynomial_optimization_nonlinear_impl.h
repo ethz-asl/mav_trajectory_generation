@@ -479,7 +479,7 @@ optimizeTimeAndFreeConstraintsRichterGD() {
   // Get initial segment times.
   std::vector<double> segment_times;
   poly_opt_.getSegmentTimes(&segment_times);
-  poly_opt_.solveLinear(); // TODO: needed?
+  poly_opt_.solveLinear();
 
   // Create parameter vector x=[t1, ..., tm, dx1, ... dxv, dy, dz]
   Eigen::VectorXd x;
@@ -543,35 +543,6 @@ optimizeTimeAndFreeConstraintsRichterGD() {
     double step_size = 1.0 / (lambda + i);
     increment = -step_size * grad;
 
-//    std::cout << "[GD] i: " << i << " step size: " << step_size
-//              << " w_t*J_t: " << w_t*J_t << " w_d*J_d: " << w_d*J_d
-//              << " w_sc*J_sc: " << w_sc*J_sc
-//              << " total cost: " << w_d*J_d+w_t*J_t+w_sc*J_sc
-//              << " gradient norm: " << grad.norm()
-//              << std::endl;
-//
-//    std::cout << "[GD] i: " << i << " grad: " << grad.transpose()
-//              << std::endl;
-//    std::cout << "[GD] i: " << i << " increment: " << increment.transpose()
-//              << std::endl;
-//
-//    std::cout << "grad_d | grad_sc: "
-//              << std::endl;
-//    for (int k = 0; k < dim; ++k) {
-//      for (int n = 0; n < n_free_constraints; ++n) {
-//        std::cout << k << " " << n << ": " << grad_d[k][n] << " | "
-//                  << grad_sc[k][n] << std::endl;
-//      }
-//      std::cout << std::endl;
-//    }
-//    std::cout << std::endl;
-//
-//    std::cout << "grad_t: " << std::endl;
-//    for (int i = 0; i < n_segments; ++i) {
-//      std::cout << grad_t[i] << " | ";
-//    }
-//    std::cout << std::endl << std::endl;
-
     // Update the parameters.
     x += increment;
     // Check that segment times are > 0.1s
@@ -598,9 +569,6 @@ optimizeTimeAndFreeConstraintsRichterGD() {
     poly_opt_.solveLinear(); // TODO: needed?
   }
 
-  // Print all parameter
-//  std::cout << "[GD Original]: " << x_orig.transpose() << std::endl;
-//  std::cout << "[GD Solution]: " << x.transpose() << std::endl;
   // Print only segment times
   std::cout << "[GD RICHTER Original]: "
             << x_orig.block(0,0,n_segments,1).transpose()
@@ -642,13 +610,15 @@ double PolynomialOptimizationNonLinear<_N>::getCostAndGradientTimeForward(
     // Initialize changed segment times for numerical derivative
     std::vector<double> segment_times_bigger(n_segments);
     const double increment_time = 0.1;
+    const double min_segment_time = 0.1; // Minimum segment duration
     for (int n = 0; n < n_segments; ++n) {
       // Now the same with an increased segment time
       // Calculate cost with higher segment time
       segment_times_bigger = segment_times;
-      // TODO: check if segment times are bigger than 0.1; else ?
-      segment_times_bigger[n] = segment_times_bigger[n] <= 0.1 ?
-                                0.1 : segment_times_bigger[n] + increment_time;
+      // Check if segment times are bigger than 0.1
+      segment_times_bigger[n] =
+              segment_times_bigger[n] <= min_segment_time ?
+              min_segment_time : segment_times_bigger[n] + increment_time;
 
       // Update the segment times. This changes the polynomial coefficients.
       poly_opt_.updateSegmentTimes(segment_times_bigger);
@@ -672,10 +642,6 @@ double PolynomialOptimizationNonLinear<_N>::getCostAndGradientTimeForward(
       } else {
         gradients->at(n) = w_d * dJd_dt + w_t * dJt_dt;
       }
-
-//      std::cout << "dJd_dt: " << dJd_dt << " | dJsc_dt: " << dJsc_dt
-//                << " | dJt_dt: " << dJt_dt << " | grad_t: " << gradients->at(n)
-//                << std::endl;
     }
 
     // Set again the original segment times from before calculating the
@@ -870,7 +836,7 @@ double PolynomialOptimizationNonLinear<_N>::objectiveFunctionTime(
       cost_time = total_time *
                   optimization_data->optimization_parameters_.time_penalty;
       break;
-    default: // kRichterTime
+    default: // kSquaredTime
       cost_time = total_time * total_time *
                   optimization_data->optimization_parameters_.time_penalty;
       break;
@@ -953,7 +919,7 @@ double PolynomialOptimizationNonLinear<_N>::objectiveFunctionTimeAndConstraints(
       cost_time = total_time *
               optimization_data->optimization_parameters_.time_penalty;
       break;
-    default: // kRichterTimeAndConstraints
+    default: // kSquaredTimeAndConstraints
       cost_time = total_time * total_time *
               optimization_data->optimization_parameters_.time_penalty;
       break;
