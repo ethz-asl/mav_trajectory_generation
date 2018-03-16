@@ -267,17 +267,6 @@ void TimeEvaluationNode::runBenchmark(int trial_number, int num_segments) {
     visualizeTrajectory(method_name, trajectory_nonlinear_richter_gd, &markers);
   }
 
-  method_name = "mellinger_outer_loop";
-  Trajectory trajectory_mellinger_outer_loop;
-  timing::Timer timer_mellinger(method_name);
-  runMellingerOuterLoop(vertices, false, &trajectory_mellinger_outer_loop);
-  timer_mellinger.Stop();
-  evaluateTrajectory(method_name, trajectory_mellinger_outer_loop, &result);
-  results_.push_back(result);
-  if (visualize_) {
-    visualizeTrajectory(method_name, trajectory_mellinger_outer_loop, &markers);
-  }
-
   method_name = "mellinger_outer_loop_gd";
   Trajectory trajectory_mellinger_outer_loop_gd;
   timing::Timer timer_mellinger_gd(method_name);
