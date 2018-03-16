@@ -38,7 +38,7 @@ namespace mav_trajectory_generation {
 // where N = number of coefficients of the polynomial.
 class Polynomial {
  public:
-  typedef std::vector<Polynomial, Eigen::aligned_allocator<Polynomial>> Vector;
+  typedef std::vector<Polynomial> Vector;
 
   // Maximum degree of a polynomial for which the static derivative (basis
   // coefficient) matrix should be evaluated for.
@@ -256,8 +256,6 @@ class Polynomial {
   }
 
  private:
-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-
   int N_;
   Eigen::VectorXd coefficients_;
 };
