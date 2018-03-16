@@ -58,12 +58,17 @@ bool PolynomialOptimizationNonLinear<_N>::setupFromVertices(
                                          derivative_to_optimize);
 
   size_t n_optimization_parameters;
-  if (optimize_time_only_) {
-    n_optimization_parameters = segment_times.size();
-  } else {
-    n_optimization_parameters =
-        segment_times.size() +
-        poly_opt_.getNumberFreeConstraints() * poly_opt_.getDimension();
+  switch (optimization_parameters_.time_alloc_method) {
+    case NonlinearOptimizationParameters::kSquaredTime:
+    case NonlinearOptimizationParameters::kRichterTime:
+    case NonlinearOptimizationParameters::kMellingerOuterLoop:
+      n_optimization_parameters = segment_times.size();
+      break;
+    default:
+      n_optimization_parameters =
+              segment_times.size() +
+              poly_opt_.getNumberFreeConstraints() * poly_opt_.getDimension();
+      break;
   }
 
   nlopt_.reset(new nlopt::opt(optimization_parameters_.algorithm,
@@ -95,18 +100,26 @@ int PolynomialOptimizationNonLinear<_N>::optimize() {
   const std::chrono::high_resolution_clock::time_point t_start =
       std::chrono::high_resolution_clock::now();
 
-  if (optimize_time_only_) {
-    if (!optimization_parameters_.use_gradient_descent) {
+  switch (optimization_parameters_.time_alloc_method) {
+    case NonlinearOptimizationParameters::kSquaredTime:
+    case NonlinearOptimizationParameters::kRichterTime:
       result = optimizeTime();
-    } else {
-      result = optimizeTimeGradientDescent();
-    }
-  } else {
-    if (!optimization_parameters_.use_gradient_descent) {
+      break;
+    case NonlinearOptimizationParameters::kSquaredTimeAndConstraints:
+    case NonlinearOptimizationParameters::kRichterTimeAndConstraints:
       result = optimizeTimeAndFreeConstraints();
-    } else {
-      result = optimizeTimeAndFreeConstraintsGradientDescent();
-    }
+      break;
+    case NonlinearOptimizationParameters::kRichterTimeAndConstraintsGD:
+      result = optimizeTimeAndFreeConstraintsRichterGD();
+      break;
+    case NonlinearOptimizationParameters::kMellingerOuterLoop:
+      // TODO: implement
+      break;
+    case NonlinearOptimizationParameters::kMellingerOuterLoopGD:
+      result = optimizeTimeMellingerOuterLoopGD();
+      break;
+    default:
+      break;
   }
 
   const std::chrono::high_resolution_clock::time_point t_stop =
@@ -854,16 +867,12 @@ double PolynomialOptimizationNonLinear<_N>::objectiveFunctionTime(
   double cost_constraints = 0;
   const double total_time = computeTotalTrajectoryTime(segment_times);
 
-  switch (optimization_data->optimization_parameters_.cost_time_method) {
-    case NonlinearOptimizationParameters::kSquared:
-      cost_time = total_time * total_time *
-                  optimization_data->optimization_parameters_.time_penalty;
-      break;
-    case NonlinearOptimizationParameters::kRichter:
+  switch (optimization_data->optimization_parameters_.time_alloc_method) {
+    case NonlinearOptimizationParameters::kRichterTime:
       cost_time = total_time *
                   optimization_data->optimization_parameters_.time_penalty;
       break;
-    default:
+    default: // kRichterTime
       cost_time = total_time * total_time *
                   optimization_data->optimization_parameters_.time_penalty;
       break;
@@ -941,16 +950,12 @@ double PolynomialOptimizationNonLinear<_N>::objectiveFunctionTimeAndConstraints(
   double cost_constraints = 0;
 
   const double total_time = computeTotalTrajectoryTime(segment_times);
-  switch (optimization_data->optimization_parameters_.cost_time_method) {
-    case NonlinearOptimizationParameters::kSquared:
-      cost_time = total_time * total_time *
-              optimization_data->optimization_parameters_.time_penalty;
-      break;
-    case NonlinearOptimizationParameters::kRichter:
+  switch (optimization_data->optimization_parameters_.time_alloc_method) {
+    case NonlinearOptimizationParameters::kRichterTimeAndConstraints:
       cost_time = total_time *
               optimization_data->optimization_parameters_.time_penalty;
       break;
-    default:
+    default: // kRichterTimeAndConstraints
       cost_time = total_time * total_time *
               optimization_data->optimization_parameters_.time_penalty;
       break;

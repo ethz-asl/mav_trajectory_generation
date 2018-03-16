@@ -46,8 +46,8 @@ struct NonlinearOptimizationParameters {
         random_seed(0),
         use_soft_constraints(true),
         soft_constraint_weight(100.0),
-        cost_time_method(kSquared),
         use_gradient_descent(false),
+        time_alloc_method(kSquaredTimeAndConstraints),
         print_debug_info(false) {}
 
   // Stopping criteria, if objective function changes less than absolute value.
@@ -98,13 +98,18 @@ struct NonlinearOptimizationParameters {
   // Weights the relative violation of a soft constraint.
   double soft_constraint_weight;
 
-  enum CostTimeMethod {
-    kSquared,
-    kRichter,
-    kUnknown,
-  } cost_time_method;
 
   bool use_gradient_descent;
+  enum TimeAllocMethod {
+    kSquaredTime,
+    kRichterTime,
+    kMellingerOuterLoop,
+    kMellingerOuterLoopGD,
+    kSquaredTimeAndConstraints,
+    kRichterTimeAndConstraints,
+    kRichterTimeAndConstraintsGD,
+    kUnknown
+  } time_alloc_method;
 
   bool print_debug_info;
 };
@@ -295,9 +300,6 @@ class PolynomialOptimizationNonLinear {
 
   // Holds the data for evaluating inequality constraints.
   std::vector<std::shared_ptr<ConstraintData> > inequality_constraints_;
-
-  // Specifies whether to run the time only, or the full optimization.
-  bool optimize_time_only_;
 
   OptimizationInfo optimization_info_;
 };
