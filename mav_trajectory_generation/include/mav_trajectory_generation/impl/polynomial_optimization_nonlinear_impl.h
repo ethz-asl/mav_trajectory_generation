@@ -44,11 +44,9 @@ inline void OptimizationInfo::print(std::ostream& stream) const {
 
 template <int _N>
 PolynomialOptimizationNonLinear<_N>::PolynomialOptimizationNonLinear(
-    size_t dimension, const NonlinearOptimizationParameters& parameters,
-    bool optimize_time_only)
+    size_t dimension, const NonlinearOptimizationParameters& parameters)
     : poly_opt_(dimension),
-      optimization_parameters_(parameters),
-      optimize_time_only_(optimize_time_only) {}
+      optimization_parameters_(parameters){}
 
 template <int _N>
 bool PolynomialOptimizationNonLinear<_N>::setupFromVertices(

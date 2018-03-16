@@ -346,7 +346,7 @@ void TimeEvaluationNode::runNonlinear(const Vertex::Vector& vertices,
   nlopt_parameters.time_alloc_method ==
           NonlinearOptimizationParameters::kSquaredTimeAndConstraints;
   mav_trajectory_generation::PolynomialOptimizationNonLinear<kN> nlopt(
-      kDim, nlopt_parameters, false);
+      kDim, nlopt_parameters);
   nlopt.setupFromVertices(vertices, segment_times, max_derivative_order_);
   nlopt.addMaximumMagnitudeConstraint(derivative_order::VELOCITY, v_max_);
   nlopt.addMaximumMagnitudeConstraint(derivative_order::ACCELERATION, a_max_);
@@ -362,7 +362,6 @@ void TimeEvaluationNode::runNonlinearRichter(
       mav_trajectory_generation::estimateSegmentTimes(vertices, v_max_, a_max_);
 
   mav_trajectory_generation::NonlinearOptimizationParameters nlopt_parameters;
-  nlopt_parameters.use_gradient_descent = use_gradient_descent;
   if (use_gradient_descent) {
     nlopt_parameters.time_alloc_method =
             NonlinearOptimizationParameters::kRichterTimeAndConstraintsGD;
@@ -371,7 +370,7 @@ void TimeEvaluationNode::runNonlinearRichter(
             NonlinearOptimizationParameters::kRichterTimeAndConstraints;
   }
   mav_trajectory_generation::PolynomialOptimizationNonLinear<kN> nlopt(
-      kDim, nlopt_parameters, false);
+      kDim, nlopt_parameters);
   nlopt.setupFromVertices(vertices, segment_times, max_derivative_order_);
   nlopt.addMaximumMagnitudeConstraint(derivative_order::VELOCITY, v_max_);
   nlopt.addMaximumMagnitudeConstraint(derivative_order::ACCELERATION, a_max_);
@@ -396,7 +395,7 @@ void TimeEvaluationNode::runMellingerOuterLoop(
             NonlinearOptimizationParameters::kMellingerOuterLoop;
   }
   mav_trajectory_generation::PolynomialOptimizationNonLinear<kN> nlopt(
-      kDim, nlopt_parameters, true);
+      kDim, nlopt_parameters);
   nlopt.setupFromVertices(vertices, segment_times, max_derivative_order_);
   nlopt.addMaximumMagnitudeConstraint(derivative_order::VELOCITY, v_max_);
   nlopt.addMaximumMagnitudeConstraint(derivative_order::ACCELERATION, a_max_);

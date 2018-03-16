@@ -46,7 +46,6 @@ struct NonlinearOptimizationParameters {
         random_seed(0),
         use_soft_constraints(true),
         soft_constraint_weight(100.0),
-        use_gradient_descent(false),
         time_alloc_method(kSquaredTimeAndConstraints),
         print_debug_info(false) {}
 
@@ -98,8 +97,6 @@ struct NonlinearOptimizationParameters {
   // Weights the relative violation of a soft constraint.
   double soft_constraint_weight;
 
-
-  bool use_gradient_descent;
   enum TimeAllocMethod {
     kSquaredTime,
     kRichterTime,
@@ -158,8 +155,7 @@ class PolynomialOptimizationNonLinear {
   // variables. The latter case is theoretically correct, but may result in
   // more iterations.
   PolynomialOptimizationNonLinear(
-      size_t dimension, const NonlinearOptimizationParameters& parameters,
-      bool optimize_time_only);
+      size_t dimension, const NonlinearOptimizationParameters& parameters);
 
   // Sets up the optimization problem from a vector of Vertex objects and
   // a vector of times between the vertices.
