@@ -332,7 +332,7 @@ optimizeTimeAndFreeConstraintsGradientDescent() {
     // Update segement times and free constraints
     poly_opt_.updateSegmentTimes(segment_times_new);
     poly_opt_.setFreeConstraints(d_p_vec_new);
-    poly_opt_.solveLinear(); // TODO: needed?
+    poly_opt_.solveLinear(); 
   }
 
   // Print only segment times
