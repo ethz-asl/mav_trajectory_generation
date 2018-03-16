@@ -255,12 +255,12 @@ class PolynomialOptimizationNonLinear {
 
   // Does the actual optimization work for the time-only version.
   int optimizeTime();
-  int optimizeTimeGradientDescent();
+  int optimizeTimeMellingerOuterLoopGD();
   double getCostAndGradient(std::vector<double>* gradients);
 
   // Does the actual optimization work for the full optimization version.
   int optimizeTimeAndFreeConstraints();
-  int optimizeTimeAndFreeConstraintsGradientDescent();
+  int optimizeTimeAndFreeConstraintsRichterGD();
   double getCostAndGradientTimeForward(std::vector<double>* gradients);
   double getCostAndGradientDerivative(std::vector<Eigen::VectorXd>* gradients);
   double getCostAndGradientSoftConstraintsForward(

@@ -176,7 +176,7 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTime() {
 }
 
 template <int _N>
-int PolynomialOptimizationNonLinear<_N>::optimizeTimeGradientDescent() {
+int PolynomialOptimizationNonLinear<_N>::optimizeTimeMellingerOuterLoopGD() {
   // Get initial parameters.
   std::vector<double> segment_times;
   poly_opt_.getSegmentTimes(&segment_times);
@@ -471,7 +471,7 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTimeAndFreeConstraints() {
 
 template <int _N>
 int PolynomialOptimizationNonLinear<_N>::
-optimizeTimeAndFreeConstraintsGradientDescent() {
+optimizeTimeAndFreeConstraintsRichterGD() {
   const size_t n_segments = poly_opt_.getNumberSegments();
   const size_t n_free_constraints = poly_opt_.getNumberFreeConstraints();
   const size_t dim = poly_opt_.getDimension();
