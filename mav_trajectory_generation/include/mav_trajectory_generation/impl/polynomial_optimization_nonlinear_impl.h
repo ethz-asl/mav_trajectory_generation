@@ -245,10 +245,11 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTimeMellingerOuterLoopGD() {
   poly_opt_.solveLinear(); // TODO: needed?
 
   // Create parameter vector x=[t1, ..., tm] --> segment times
-  Eigen::Map<Eigen::VectorXd> x(segment_times.data(),segment_times.size());
+  Eigen::Map<Eigen::VectorXd> x_orig(segment_times.data(),
+                                     segment_times.size());
   // Save original parameter vector
-  Eigen::VectorXd x_orig, x_rel_change;
-  x_orig = x;
+  Eigen::VectorXd x, x_rel_change;
+  x = x_orig;
 
   // Set up gradients (of param vector x) and increment vector
   Eigen::VectorXd grad, increment;
