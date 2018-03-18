@@ -230,6 +230,17 @@ class PolynomialOptimizationNonLinear {
                                       std::vector<double>& gradient,
                                       void* data);
 
+  // Objective function for the time-only Mellinger Outer Loop.
+  // Input: segment_times = Segment times in the current iteration.
+  // Input: gradient = Gradient of the objective function w.r.t. changes of
+  // parameters. We can't compute the gradient analytically here.
+  // Thus, only gradient-free optimization methods are possible.
+  // Input: Custom data pointer = In our case, it's an ConstraintData object.
+  // Output: Cost = based on the parameters passed in.
+  static double objectiveFunctionTimeMellingerOuterLoop(
+          const std::vector<double>& segment_times,
+          std::vector<double>& gradient, void* data);
+
   // Objective function for the version optimizing segment times and free
   // derivatives.
   // Input: optimization_variables = Optimization variables times in the

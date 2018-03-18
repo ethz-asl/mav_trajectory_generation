@@ -917,6 +917,44 @@ double PolynomialOptimizationNonLinear<_N>::objectiveFunctionTime(
 }
 
 template <int _N>
+double PolynomialOptimizationNonLinear<_N>::
+objectiveFunctionTimeMellingerOuterLoop(
+    const std::vector<double>& segment_times, std::vector<double>& gradient,
+    void* data) {
+  CHECK(!gradient.empty())
+      << "only with gradients possible, choose a gradient based method";
+  CHECK_NOTNULL(data);
+
+  PolynomialOptimizationNonLinear<N>* optimization_data =
+      static_cast<PolynomialOptimizationNonLinear<N>*>(data);  // wheee ...
+
+  CHECK_EQ(segment_times.size(),
+           optimization_data->poly_opt_.getNumberSegments());
+
+  optimization_data->poly_opt_.updateSegmentTimes(segment_times);
+  optimization_data->poly_opt_.solveLinear();
+  double cost_trajectory;
+  if (!gradient.empty()) {
+    cost_trajectory = optimization_data->getCostAndGradient(&gradient);
+  } else {
+    cost_trajectory = optimization_data->getCostAndGradient(NULL);
+  }
+
+  if (optimization_data->optimization_parameters_.print_debug_info) {
+    std::cout << "---- cost at iteration "
+              << optimization_data->optimization_info_.n_iterations << "---- "
+              << std::endl;
+    std::cout << "  trajectory: " << cost_trajectory << std::endl;
+    std::cout << "  sum: " << cost_trajectory<< std::endl;
+  }
+
+  optimization_data->optimization_info_.n_iterations++;
+  optimization_data->optimization_info_.cost_trajectory = cost_trajectory;
+  
+  return cost_trajectory;
+}
+
+template <int _N>
 double PolynomialOptimizationNonLinear<_N>::objectiveFunctionTimeAndConstraints(
     const std::vector<double>& x, std::vector<double>& gradient, void* data) {
   CHECK(gradient.empty())
