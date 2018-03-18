@@ -177,17 +177,10 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTime() {
 
 template <int _N>
 int PolynomialOptimizationNonLinear<_N>::optimizeTimeMellingerOuterLoop() {
-  std::vector<double> initial_step, segment_times, upper_bounds;
-
+  std::vector<double> segment_times;
   poly_opt_.getSegmentTimes(&segment_times);
-  const size_t n_segments = segment_times.size();
 
-  initial_step.reserve(n_segments);
-  for (const double t : segment_times) {
-    initial_step.push_back(optimization_parameters_.initial_stepsize_rel * t);
-  }
-
-  // Create parameter vector x=[t1, ..., tm] --> segment times
+  // Save original segment times
   Eigen::Map<Eigen::VectorXd> x_orig(segment_times.data(),
                                      segment_times.size());
 
@@ -195,7 +188,6 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTimeMellingerOuterLoop() {
     // Set a lower bound on the segment time per segment to avoid numerical
     // issues.
     constexpr double kOptimizationTimeLowerBound = 0.1;
-    nlopt_->set_initial_step(initial_step);
     nlopt_->set_upper_bounds(HUGE_VAL);
     nlopt_->set_lower_bounds(kOptimizationTimeLowerBound);
     nlopt_->set_min_objective(
@@ -302,6 +294,7 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTimeMellingerOuterLoopGD() {
   }
 
   x_rel_change = x;
+
   // Scale segment times according to violation
   scaleSegmentTimesWithViolation(&x);
 
