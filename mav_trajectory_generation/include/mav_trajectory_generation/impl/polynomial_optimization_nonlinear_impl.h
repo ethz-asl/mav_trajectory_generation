@@ -111,7 +111,7 @@ int PolynomialOptimizationNonLinear<_N>::optimize() {
       result = optimizeTimeAndFreeConstraintsRichterGD();
       break;
     case NonlinearOptimizationParameters::kMellingerOuterLoop:
-      // TODO: implement
+      result = optimizeTimeMellingerOuterLoop();
       break;
     case NonlinearOptimizationParameters::kMellingerOuterLoopGD:
       result = optimizeTimeMellingerOuterLoopGD();
@@ -157,6 +157,50 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTime() {
     nlopt_->set_lower_bounds(kOptimizationTimeLowerBound);
     nlopt_->set_min_objective(
         &PolynomialOptimizationNonLinear<N>::objectiveFunctionTime, this);
+  } catch (std::exception& e) {
+    LOG(ERROR) << "error while setting up nlopt: " << e.what() << std::endl;
+    return nlopt::FAILURE;
+  }
+
+  double final_cost = std::numeric_limits<double>::max();
+  int result;
+
+  try {
+    result = nlopt_->optimize(segment_times, final_cost);
+  } catch (std::exception& e) {
+    LOG(ERROR) << "error while running nlopt: " << e.what() << std::endl;
+    return nlopt::FAILURE;
+  }
+
+  return result;
+}
+
+template <int _N>
+int PolynomialOptimizationNonLinear<_N>::optimizeTimeMellingerOuterLoop() {
+  std::vector<double> initial_step, segment_times, upper_bounds;
+
+  poly_opt_.getSegmentTimes(&segment_times);
+  const size_t n_segments = segment_times.size();
+
+  initial_step.reserve(n_segments);
+  for (const double t : segment_times) {
+    initial_step.push_back(optimization_parameters_.initial_stepsize_rel * t);
+  }
+
+  // Create parameter vector x=[t1, ..., tm] --> segment times
+  Eigen::Map<Eigen::VectorXd> x_orig(segment_times.data(),
+                                     segment_times.size());
+
+  try {
+    // Set a lower bound on the segment time per segment to avoid numerical
+    // issues.
+    constexpr double kOptimizationTimeLowerBound = 0.1;
+    nlopt_->set_initial_step(initial_step);
+    nlopt_->set_upper_bounds(HUGE_VAL);
+    nlopt_->set_lower_bounds(kOptimizationTimeLowerBound);
+    nlopt_->set_min_objective(
+        &PolynomialOptimizationNonLinear<N>::
+        objectiveFunctionTimeMellingerOuterLoop, this);
   } catch (std::exception& e) {
     LOG(ERROR) << "error while setting up nlopt: " << e.what() << std::endl;
     return nlopt::FAILURE;

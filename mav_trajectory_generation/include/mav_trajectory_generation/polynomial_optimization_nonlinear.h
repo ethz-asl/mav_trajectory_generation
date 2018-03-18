@@ -255,6 +255,7 @@ class PolynomialOptimizationNonLinear {
 
   // Does the actual optimization work for the time-only version.
   int optimizeTime();
+  int optimizeTimeMellingerOuterLoop();
   int optimizeTimeMellingerOuterLoopGD();
   double getCostAndGradient(std::vector<double>* gradients);
 
