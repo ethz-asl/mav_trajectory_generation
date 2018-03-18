@@ -242,7 +242,7 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTimeMellingerOuterLoopGD() {
   // Get initial parameters.
   std::vector<double> segment_times;
   poly_opt_.getSegmentTimes(&segment_times);
-  poly_opt_.solveLinear(); // TODO: needed?
+  poly_opt_.solveLinear();
 
   // Create parameter vector x=[t1, ..., tm] --> segment times
   Eigen::Map<Eigen::VectorXd> x_orig(segment_times.data(),
@@ -278,9 +278,9 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTimeMellingerOuterLoopGD() {
     double step_size = 1.0 / (lambda + i);
     increment = -step_size * grad;
 
-    std::cout << "[GD MEL] i: " << i << " step size: " << step_size
-              << " cost: " << cost << " gradient norm: " << grad.norm()
-              << std::endl;
+//    std::cout << "[GD MEL] i: " << i << " step size: " << step_size
+//              << " cost: " << cost << " gradient norm: " << grad.norm()
+//              << std::endl;
 //    std::cout << "[GD] i: " << i << " grad: " << grad.transpose()
 //              << std::endl;
 //    std::cout << "[GD] i: " << i << " increment: " << increment.transpose()
@@ -291,7 +291,6 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTimeMellingerOuterLoopGD() {
 //    std::cout << "[GD] i: " << i << " x: " << x.transpose()
 //              << std::endl;
 
-    // TODO: segment times > 0.1!!
     for (int n = 0; n < x.size(); ++n) {
       x[n] = x[n] <= 0.1 ? 0.1 : x[n];
     }
@@ -976,7 +975,7 @@ objectiveFunctionTimeMellingerOuterLoop(
 
   optimization_data->optimization_info_.n_iterations++;
   optimization_data->optimization_info_.cost_trajectory = cost_trajectory;
-  
+
   return cost_trajectory;
 }
 
