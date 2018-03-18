@@ -259,6 +259,17 @@ void TimeEvaluationNode::runBenchmark(int trial_number, int num_segments) {
     visualizeTrajectory(method_name, trajectory_nonlinear_richter_gd, &markers);
   }
 
+  method_name = "mellinger_outer_loop";
+  Trajectory trajectory_mellinger_outer_loop;
+  timing::Timer timer_mellinger(method_name);
+  runMellingerOuterLoop(vertices, false, &trajectory_mellinger_outer_loop);
+  timer_mellinger.Stop();
+  evaluateTrajectory(method_name, trajectory_mellinger_outer_loop, &result);
+  results_.push_back(result);
+  if (visualize_) {
+    visualizeTrajectory(method_name, trajectory_mellinger_outer_loop, &markers);
+  }
+
   method_name = "mellinger_outer_loop_gd";
   Trajectory trajectory_mellinger_outer_loop_gd;
   timing::Timer timer_mellinger_gd(method_name);
@@ -363,11 +374,11 @@ void TimeEvaluationNode::runMellingerOuterLoop(
       mav_trajectory_generation::estimateSegmentTimes(vertices, v_max_, a_max_);
 
   mav_trajectory_generation::NonlinearOptimizationParameters nlopt_parameters;
-  // TODO: Implement Mellinger with nonlinear optimization (not gd)
   if (use_gradient_descent) {
     nlopt_parameters.time_alloc_method =
             NonlinearOptimizationParameters::kMellingerOuterLoopGD;
   } else {
+    nlopt_parameters.algorithm = nlopt::LD_LBFGS;
     nlopt_parameters.time_alloc_method =
             NonlinearOptimizationParameters::kMellingerOuterLoop;
   }
