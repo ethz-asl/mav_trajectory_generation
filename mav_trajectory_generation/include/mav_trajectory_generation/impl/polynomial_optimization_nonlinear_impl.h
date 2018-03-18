@@ -216,6 +216,24 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTimeMellingerOuterLoop() {
     return nlopt::FAILURE;
   }
 
+  Eigen::Map<Eigen::VectorXd> x_rel_change(segment_times.data(),
+                                           segment_times.size());
+
+  // Scaling of segment times
+  Eigen::VectorXd x = x_rel_change;
+  scaleSegmentTimesWithViolation(&x);
+
+  // Print all parameter after scaling
+  std::cout << "[MEL          Original]: " << x_orig.transpose()
+            << std::endl;
+  std::cout << "[MEL RELATIVE Solution]: " << x_rel_change.transpose()
+            << std::endl;
+  std::cout << "[MEL          Solution]: " << x.transpose() << std::endl;
+  std::cout << "[MEL   Trajectory Time] Before: " << x_orig.sum()
+            << " | After Rel Change: " << x_rel_change.sum()
+            << " | After Scaling: " << x.sum()
+            << std::endl;
+
   return result;
 }
 
