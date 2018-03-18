@@ -237,10 +237,6 @@ void TimeEvaluationNode::runBenchmark(int trial_number, int num_segments) {
     visualizeTrajectory(method_name, trajectory_nonlinear, &markers);
   }
 
-  if (visualize_) {
-    path_marker_pub_.publish(markers);
-  }
-
   method_name = "nonlinear_richter";
   Trajectory trajectory_nonlinear_richter;
   timing::Timer timer_nonlinear_richter(method_name);
@@ -250,10 +246,6 @@ void TimeEvaluationNode::runBenchmark(int trial_number, int num_segments) {
   results_.push_back(result);
   if (visualize_) {
     visualizeTrajectory(method_name, trajectory_nonlinear_richter, &markers);
-  }
-
-  if (visualize_) {
-    path_marker_pub_.publish(markers);
   }
 
   method_name = "nonlinear_richter_gd";
@@ -276,10 +268,6 @@ void TimeEvaluationNode::runBenchmark(int trial_number, int num_segments) {
   results_.push_back(result);
   if (visualize_) {
     visualizeTrajectory(method_name, trajectory_mellinger_outer_loop_gd, &markers);
-  }
-
-  if (visualize_) {
-    path_marker_pub_.publish(markers);
   }
 
   method_name = "segment_violation_scaling";
