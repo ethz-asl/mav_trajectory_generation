@@ -284,64 +284,8 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTimeMellingerOuterLoopGD() {
   }
 
   x_rel_change = x;
-
-  // Get trajectory
-  Trajectory traj;
-  poly_opt_.getTrajectory(&traj);
-
-  // Evaluate min/max extrema
-  Extremum v_min_actual, v_max_actual, a_min_actual, a_max_actual;
-  std::vector<int> dimensions = {0, 1, 2}; // Evaluate dimensions in x, y and z
-  traj.computeMinMaxMagnitude(derivative_order::VELOCITY, dimensions,
-                              &v_min_actual, &v_max_actual);
-  traj.computeMinMaxMagnitude(derivative_order::ACCELERATION, dimensions,
-                              &a_min_actual, &a_max_actual);
-
-  // Get constraints
-  // TODO: do not hardcode
-  double v_max = 0.0;
-  double a_max = 0.0;
-  for (const auto& constraint : inequality_constraints_) {
-    if (constraint->derivative == derivative_order::VELOCITY) {
-      v_max = constraint->value;
-    } else if (constraint->derivative == derivative_order::ACCELERATION) {
-      a_max = constraint->value;
-    }
-  }
-
-  // Evaluate constraint/bound violation
-  double abs_violation_v = v_max_actual.value - v_max;
-  double abs_violation_a = a_max_actual.value - a_max;
-  double rel_violation_v = abs_violation_v / v_max;
-  double rel_violation_a = abs_violation_a / a_max;
-
-  while ((rel_violation_a < 0.0) && (rel_violation_v < 0.0)) {
-    // Scale segment times
-    double smallest_rel_violation = rel_violation_a > rel_violation_v ?
-                                    rel_violation_a : rel_violation_v;
-    x /= (1.0-smallest_rel_violation);
-
-    // Set and update new segement times
-    std::vector<double> segment_times_new(x.data(), x.data() + x.size());
-    poly_opt_.updateSegmentTimes(segment_times_new);
-    poly_opt_.solveLinear();
-
-    // Get new trajectory
-    traj.clear();
-    poly_opt_.getTrajectory(&traj);
-
-    // Reevaluate min/max extrema
-    traj.computeMinMaxMagnitude(derivative_order::VELOCITY, dimensions,
-                                &v_min_actual, &v_max_actual);
-    traj.computeMinMaxMagnitude(derivative_order::ACCELERATION, dimensions,
-                                &a_min_actual, &a_max_actual);
-
-    // Reevaluate constraint/bound violation
-    abs_violation_v = v_max_actual.value - v_max;
-    abs_violation_a = a_max_actual.value - a_max;
-    rel_violation_v = abs_violation_v / v_max;
-    rel_violation_a = abs_violation_a / a_max;
-  }
+  // Scale segment times according to violation
+  scaleSegmentTimesWithViolation(&x);
 
   // Print all parameter after scaling
   std::cout << "[GD MEL          Original]: " << x_orig.transpose()
@@ -437,6 +381,69 @@ double PolynomialOptimizationNonLinear<_N>::getCostAndGradient(
 
   // Compute cost without gradient
   return w_d*J_d;
+}
+
+template <int _N>
+void PolynomialOptimizationNonLinear<_N>::scaleSegmentTimesWithViolation(
+        Eigen::VectorXd* segment_times) {
+  // Get trajectory
+  Trajectory traj;
+  poly_opt_.getTrajectory(&traj);
+
+  // Evaluate min/max extrema
+  Extremum v_min_actual, v_max_actual, a_min_actual, a_max_actual;
+  std::vector<int> dimensions = {0, 1, 2}; // Evaluate dimensions in x, y and z
+  traj.computeMinMaxMagnitude(derivative_order::VELOCITY, dimensions,
+                              &v_min_actual, &v_max_actual);
+  traj.computeMinMaxMagnitude(derivative_order::ACCELERATION, dimensions,
+                              &a_min_actual, &a_max_actual);
+
+  // Get constraints
+  double v_max = 0.0;
+  double a_max = 0.0;
+  for (const auto& constraint : inequality_constraints_) {
+    if (constraint->derivative == derivative_order::VELOCITY) {
+      v_max = constraint->value;
+    } else if (constraint->derivative == derivative_order::ACCELERATION) {
+      a_max = constraint->value;
+    }
+  }
+
+  // Evaluate constraint/bound violation
+  double abs_violation_v = v_max_actual.value - v_max;
+  double abs_violation_a = a_max_actual.value - a_max;
+  double rel_violation_v = abs_violation_v / v_max;
+  double rel_violation_a = abs_violation_a / a_max;
+
+  while ((rel_violation_a < 0.0) && (rel_violation_v < 0.0)) {
+    // Scale segment times
+    double smallest_rel_violation = rel_violation_a > rel_violation_v ?
+                                    rel_violation_a : rel_violation_v;
+    *segment_times /= (1.0-smallest_rel_violation);
+
+    // Set and update new segement times
+    std::vector<double> segment_times_new(segment_times->data(),
+                                          segment_times->data() +
+                                                  segment_times->size());
+    poly_opt_.updateSegmentTimes(segment_times_new);
+    poly_opt_.solveLinear();
+
+    // Get new trajectory
+    traj.clear();
+    poly_opt_.getTrajectory(&traj);
+
+    // Reevaluate min/max extrema
+    traj.computeMinMaxMagnitude(derivative_order::VELOCITY, dimensions,
+                                &v_min_actual, &v_max_actual);
+    traj.computeMinMaxMagnitude(derivative_order::ACCELERATION, dimensions,
+                                &a_min_actual, &a_max_actual);
+
+    // Reevaluate constraint/bound violation
+    abs_violation_v = v_max_actual.value - v_max;
+    abs_violation_a = a_max_actual.value - a_max;
+    rel_violation_v = abs_violation_v / v_max;
+    rel_violation_a = abs_violation_a / a_max;
+  }
 }
 
 template <int _N>

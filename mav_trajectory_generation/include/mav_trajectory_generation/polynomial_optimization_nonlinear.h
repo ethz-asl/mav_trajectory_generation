@@ -269,6 +269,7 @@ class PolynomialOptimizationNonLinear {
   int optimizeTimeMellingerOuterLoop();
   int optimizeTimeMellingerOuterLoopGD();
   double getCostAndGradient(std::vector<double>* gradients);
+  void scaleSegmentTimesWithViolation(Eigen::VectorXd* segment_times);
 
   // Does the actual optimization work for the full optimization version.
   int optimizeTimeAndFreeConstraints();
