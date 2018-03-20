@@ -723,7 +723,7 @@ void TimeEvaluationNode::outputResults(
   }
 
   fprintf(fp,
-          "#trial_number, method_name, num_segments, nominal_length, "
+          "trial_num, method_name, #segments, nominal_length, "
                   "optimization_success, bounds_violated, trajectory_time, "
                   "trajectory_length, computation_time, a_max_actual,"
                   " v_max_actual, abs_violation_a, abs_violation_v, "
