@@ -426,7 +426,12 @@ void PolynomialOptimizationNonLinear<_N>::scaleSegmentTimesWithViolation(
   double rel_violation_v = abs_violation_v / v_max;
   double rel_violation_a = abs_violation_a / a_max;
 
-  while ((rel_violation_a < 0.0) && (rel_violation_v < 0.0)) {
+  int counter = 0;
+  const double violation_range = 0.01;
+  const int max_counter = 20;
+  bool within_range = false;
+
+  while (!within_range && (counter < max_counter)) {
     // Scale segment times
     double smallest_rel_violation = rel_violation_a > rel_violation_v ?
                                     rel_violation_a : rel_violation_v;
@@ -454,6 +459,10 @@ void PolynomialOptimizationNonLinear<_N>::scaleSegmentTimesWithViolation(
     abs_violation_a = a_max_actual.value - a_max;
     rel_violation_v = abs_violation_v / v_max;
     rel_violation_a = abs_violation_a / a_max;
+
+    within_range = ((std::abs(rel_violation_v) <= violation_range) ||
+            (std::abs(rel_violation_v) <= violation_range));
+    counter++;
   }
 }
 
