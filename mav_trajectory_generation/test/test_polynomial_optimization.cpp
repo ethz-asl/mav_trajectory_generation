@@ -212,19 +212,8 @@ bool sampleWholeTrajectory(const Trajectory& trajectory,
                            mav_msgs::EigenTrajectoryPoint::Vector* states) {
   const double min_time = trajectory.getMinTime();
   const double max_time = trajectory.getMaxTime();
-//  std::cout << "min_time: " << min_time << std::endl;
-//  std::cout << "max_time: " << max_time << std::endl;
-//  std::cout << "state address: " << states << std::endl;
-
   bool success = sampleTrajectoryInRange(trajectory, min_time, max_time,
                                          sampling_interval, states);
-
-//  for (int i = 0; i < states->size(); ++i) {
-//    std::cout << "states j  : " << i << ": "
-//              << states->at(i).position_W.transpose()
-//              << std::endl;
-//  }
-
   return success;
 }
 
