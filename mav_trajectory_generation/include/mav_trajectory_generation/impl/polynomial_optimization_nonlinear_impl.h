@@ -134,7 +134,7 @@ int PolynomialOptimizationNonLinear<_N>::optimize() {
 
 template <int _N>
 int PolynomialOptimizationNonLinear<_N>::optimizeTime() {
-  std::vector<double> initial_step, segment_times, upper_bounds;
+  std::vector<double> initial_step, segment_times;
 
   poly_opt_.getSegmentTimes(&segment_times);
   const size_t n_segments = segment_times.size();
@@ -144,16 +144,12 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTime() {
     initial_step.push_back(optimization_parameters_.initial_stepsize_rel * t);
   }
 
-  for (double t : segment_times) {
-    upper_bounds.push_back(t * 2.0);
-  }
-
   try {
     // Set a lower bound on the segment time per segment to avoid numerical
     // issues.
     constexpr double kOptimizationTimeLowerBound = 0.1;
     nlopt_->set_initial_step(initial_step);
-    nlopt_->set_upper_bounds(upper_bounds);
+    nlopt_->set_upper_bounds(HUGE_VAL);
     nlopt_->set_lower_bounds(kOptimizationTimeLowerBound);
     nlopt_->set_min_objective(
         &PolynomialOptimizationNonLinear<N>::objectiveFunctionTime, this);
@@ -500,6 +496,31 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTimeAndFreeConstraints() {
     }
   }
 
+  // Retrieve the free endpoint derivative initial solution
+  std::vector<double> initial_solution_free(
+          initial_solution.begin()+n_segments, initial_solution.end());
+  // Setup for getting bounds on the free endpoint derivatives
+  std::vector<double> lower_bounds_free, upper_bounds_free;
+  const size_t n_optmization_variables_free =
+          free_constraints.size() * free_constraints.front().size();
+  lower_bounds_free.reserve(n_optmization_variables_free);
+  upper_bounds_free.reserve(n_optmization_variables_free);
+
+  // Get the lower and upper bounds constraints on the free endpoint derivatives
+  setFreeEndpointDerivativeHardConstraints(
+          initial_solution_free, &lower_bounds_free, &upper_bounds_free);
+
+  // Set segment time constraints
+  for (int l = 0; l < n_segments; ++l) {
+    lower_bounds.push_back(0.1);
+    upper_bounds.push_back(HUGE_VAL);
+  }
+  // Append free endpoint derivative constraints
+  lower_bounds.insert(std::end(lower_bounds), std::begin(lower_bounds_free),
+                      std::end(lower_bounds_free));
+  upper_bounds.insert(std::end(upper_bounds), std::begin(upper_bounds_free),
+                      std::end(upper_bounds_free));
+
   initial_step.reserve(n_optmization_variables);
   for (double x : initial_solution) {
     const double abs_x = std::abs(x);
@@ -510,13 +531,17 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTimeAndFreeConstraints() {
       initial_step.push_back(optimization_parameters_.initial_stepsize_rel *
                              abs_x);
     }
-    lower_bounds.push_back(-abs_x * 2);
-    upper_bounds.push_back(abs_x * 2);
   }
 
-  for (size_t i = 0; i < n_segments; ++i) {
-    lower_bounds[i] = 0.1;
+  std::cout << "NLOPT X BOUNDS: LOWER | UPPER || INITIAL SOL || INITIAL STEP"
+            << std::endl;
+  for (int j = 0; j < lower_bounds.size(); ++j) {
+    std::cout << j << ": " << lower_bounds[j] << " | "
+              << upper_bounds[j] << " || "
+              << initial_solution[j] << " || "
+              << initial_step[j] << std::endl;
   }
+  std::cout << std::endl;
 
   try {
     nlopt_->set_initial_step(initial_step);
@@ -1150,6 +1175,58 @@ PolynomialOptimizationNonLinear<_N>::evaluateMaximumMagnitudeAsSoftConstraint(
     }
   }
   return cost;
+}
+
+template <int _N>
+void
+PolynomialOptimizationNonLinear<_N>::setFreeEndpointDerivativeHardConstraints(
+    const std::vector<double>& initial_solution,
+    std::vector<double>* lower_bounds, std::vector<double>* upper_bounds) {
+  const size_t n_free_constraints = poly_opt_.getNumberFreeConstraints();
+  const size_t n_segments = poly_opt_.getNumberSegments();
+  const size_t dim = poly_opt_.getDimension();
+  const int derivative_to_optimize = poly_opt_.getDerivativeToOptimize();
+
+  LOG(INFO) << "USE HARD CONSTRAINTS FOR ENDPOINT DERIVATIVE BOUNDARIES";
+
+  // Set all values to -inf/inf and reset only bounded opti param with values
+  for (const double x : initial_solution) {
+    lower_bounds->push_back(-HUGE_VAL);
+    upper_bounds->push_back(HUGE_VAL);
+  }
+
+  // Add hard constraints with lower and upper bounds for opti parameters
+  const bool solve_with_position_constraint = true; // TODO: Implement
+  for (int k = 0; k < dim; ++k) {
+    for (int n = 0; n < n_segments - 1; ++n) {
+      unsigned int start_idx = 0;
+      if (solve_with_position_constraint) {
+        start_idx = k*n_free_constraints + n*derivative_to_optimize;
+      } else {
+        // Add position constraints given through the map boundaries
+        start_idx = k*n_free_constraints + n*(derivative_to_optimize + 1);
+
+        // TODO: implement
+        // lower_bounds->at(start_idx) = optimization_parameters_.min_bound[k];
+        // upper_bounds->at(start_idx) = optimization_parameters_.max_bound[k];
+      }
+
+      // Add higher order derivative constraints (v_max and a_max)
+      for (const auto& constraint_data : inequality_constraints_) {
+        unsigned int deriv_idx = 0;
+        if (solve_with_position_constraint) {
+          deriv_idx = constraint_data->derivative - 1;
+        } else {
+          deriv_idx = constraint_data->derivative;
+        }
+
+        lower_bounds->at(start_idx + deriv_idx) =
+                -std::abs(constraint_data->value);
+        upper_bounds->at(start_idx + deriv_idx) =
+                std::abs(constraint_data->value);
+      }
+    }
+  }
 }
 
 template <int _N>
