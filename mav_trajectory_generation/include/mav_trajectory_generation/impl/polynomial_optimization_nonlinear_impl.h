@@ -217,15 +217,8 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTimeAndFreeConstraints() {
     const double abs_x = std::abs(x);
     initial_step.push_back(optimization_parameters_.initial_stepsize_rel *
                            abs_x);
-//    lower_bounds.push_back(-abs_x * 2);
-//    upper_bounds.push_back(abs_x * 2);
   }
 
-//  for (size_t i = 0; i < n_segments; ++i) {
-//    lower_bounds[i] = 0.1;
-//  }
-
-//  if (optimization_parameters_.print_debug_info) {
   std::cout << "NLOPT X BOUNDS: LOWER | UPPER || INITIAL SOL || INITIAL STEP"
             << std::endl;
   for (int j = 0; j < lower_bounds.size(); ++j) {
@@ -235,7 +228,6 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTimeAndFreeConstraints() {
               << initial_step[j] << std::endl;
   }
   std::cout << std::endl;
-//  }
 
   try {
     nlopt_->set_initial_step(initial_step);
