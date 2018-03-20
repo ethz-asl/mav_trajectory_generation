@@ -504,6 +504,7 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTimeAndFreeConstraints() {
   for (double x : initial_solution) {
     const double abs_x = std::abs(x);
     // Initial step size cannot be 0.0 --> invalid arg
+    // TOD0: std::numerical_limits necessary or only for exactly 0.0?
     if (abs_x == 0.0) {
       initial_step.push_back(1e-13);
     } else {
