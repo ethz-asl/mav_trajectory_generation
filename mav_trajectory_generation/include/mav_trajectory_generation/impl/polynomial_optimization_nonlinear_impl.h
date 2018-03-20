@@ -115,7 +115,7 @@ int PolynomialOptimizationNonLinear<_N>::optimize() {
 
 template <int _N>
 int PolynomialOptimizationNonLinear<_N>::optimizeTime() {
-  std::vector<double> initial_step, segment_times, upper_bounds;
+  std::vector<double> initial_step, segment_times;
 
   poly_opt_.getSegmentTimes(&segment_times);
   const size_t n_segments = segment_times.size();
@@ -125,17 +125,12 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTime() {
     initial_step.push_back(optimization_parameters_.initial_stepsize_rel * t);
   }
 
-  // TODO(magrimm): test and replace with HUGE_VAL instead of (t * 2.0)
-  for (double t : segment_times) {
-    upper_bounds.push_back(t * 2.0);
-  }
-
   try {
     // Set a lower bound on the segment time per segment to avoid numerical
     // issues.
     constexpr double kOptimizationTimeLowerBound = 0.1;
     nlopt_->set_initial_step(initial_step);
-    nlopt_->set_upper_bounds(upper_bounds);
+    nlopt_->set_upper_bounds(HUGE_VAL);
     nlopt_->set_lower_bounds(kOptimizationTimeLowerBound);
     nlopt_->set_min_objective(
         &PolynomialOptimizationNonLinear<N>::objectiveFunctionTime, this);
