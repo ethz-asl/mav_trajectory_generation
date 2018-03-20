@@ -527,7 +527,6 @@ void TimeEvaluationNode::evaluateTrajectory(
   result->trajectory_length = computePathLength(path);
   result->computation_time = timing::Timing::GetTotalSeconds(method_name);
 
-  // TODO(helenol): evaluate min/max extrema, bounds violations, etc.
   // Evaluate min/max extrema
   std::vector<int> dimensions = {0, 1, 2}; // Evaluate dimensions in x, y and z
   traj.computeMinMaxMagnitude(derivative_order::VELOCITY, dimensions,
@@ -546,7 +545,7 @@ void TimeEvaluationNode::evaluateTrajectory(
     result->bounds_violated = false;
   }
 
-  // Todo: Add success variable to check for allowed relative violation, ...
+  // TODO: Add success variable to check for allowed relative violation, ...
 //  const double allowed_rel_violation = 0.1;
 
   // Evaluate maximum trajectory distance per segment from straight line path
@@ -678,7 +677,7 @@ double TimeEvaluationNode::computePathLength(
 }
 
 std::string TimeEvaluationNode::printResults() const {
-  // TODO: compuation_time and optimization_success
+  // TODO: add optimization_success
   std::stringstream s;
   // Header.
   s << "trial_number, method_name, num_segments, nominal_length, "
