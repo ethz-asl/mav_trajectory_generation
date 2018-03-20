@@ -527,8 +527,8 @@ PolynomialOptimizationNonLinear<_N>::setFreeEndpointDerivativeHardConstraints(
         start_idx = k*n_free_constraints + n*(derivative_to_optimize + 1);
 
         // TODO: implement
-//        lower_bounds->at(start_idx) = optimization_parameters_.min_bound[k];
-//        upper_bounds->at(start_idx) = optimization_parameters_.max_bound[k];
+        // lower_bounds->at(start_idx) = optimization_parameters_.min_bound[k];
+        // upper_bounds->at(start_idx) = optimization_parameters_.max_bound[k];
       }
 
       // Add higher order derivative constraints (v_max and a_max)
