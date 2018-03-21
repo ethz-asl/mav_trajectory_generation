@@ -513,6 +513,8 @@ PolynomialOptimizationNonLinear<_N>::setFreeEndpointDerivativeHardConstraints(
   LOG(INFO) << "USE HARD CONSTRAINTS FOR ENDPOINT DERIVATIVE BOUNDARIES";
 
   // Set all values to -inf/inf and reset only bounded opti param with values
+  // TODO: Do outside and dont parse initial_solution?
+  // TODO: Check that lower and upper bounds are empty
   for (const double x : initial_solution) {
     lower_bounds->push_back(-HUGE_VAL);
     upper_bounds->push_back(HUGE_VAL);
