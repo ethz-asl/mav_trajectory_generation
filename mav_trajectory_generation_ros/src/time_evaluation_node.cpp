@@ -374,7 +374,7 @@ void TimeEvaluationNode::evaluateTrajectory(
   }
 
   // Todo: Add success variable to check for allowed relative violation, ...
-//  const double allowed_rel_violation = 0.1;
+  // const double allowed_rel_violation = 0.1;
 
   // Evaluate maximum trajectory distance per segment from straight line path
   // 1) Sample trajectory
