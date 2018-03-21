@@ -265,6 +265,7 @@ class PolynomialOptimizationNonLinear {
 
   // Set lower and upper bounds on the optimization parameters
   void setFreeEndpointDerivativeHardConstraints(
+          const Vertex::Vector& vertices,
           const std::vector<double>& initial_solution,
           std::vector<double>* lower_bounds, std::vector<double>* upper_bounds);
 
