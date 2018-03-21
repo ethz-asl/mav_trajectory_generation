@@ -362,7 +362,9 @@ double PolynomialOptimizationNonLinear<_N>::getCostAndGradientTimeForward(
 
   // Calculate current cost
   // TODO: parse from outside?
-  const double J_d = 2*poly_opt_.computeCost();// TODO: *2 necessary?
+  // According to paper the endpoint derivative cost is cost = c^T * Q * c
+  // However, computeCost() returns 0.5 * c^T * Q * c; therefore 2*computeCost()
+  const double J_d = 2.0*poly_opt_.computeCost();
   const double J_sc = getCostAndGradientSoftConstraintsForward(NULL);
 
   if (gradients != NULL) {
@@ -389,7 +391,8 @@ double PolynomialOptimizationNonLinear<_N>::getCostAndGradientTimeForward(
       poly_opt_.solveLinear();
 
       // Calculate cost and gradient with new segment time
-      const double J_d_bigger = 2*poly_opt_.computeCost();
+      // computeCost() returns 0.5 * c^T * Q * c; therefore 2*computeCost()
+      const double J_d_bigger = 2.0*poly_opt_.computeCost();
       double J_sc_bigger = 0.0;
       if (optimization_parameters_.use_soft_constraints) {
         J_sc_bigger = getCostAndGradientSoftConstraintsForward(NULL);
