@@ -506,6 +506,11 @@ PolynomialOptimizationNonLinear<_N>::setFreeEndpointDerivativeHardConstraints(
         const Vertex::Vector& vertices,
         const std::vector<double>& initial_solution,
         std::vector<double>* lower_bounds, std::vector<double>* upper_bounds) {
+  CHECK_NOTNULL(lower_bounds);
+  CHECK_NOTNULL(upper_bounds);
+  CHECK(lower_bounds->empty()) << "Lower bounds not empty!";
+  CHECK(upper_bounds->empty()) << "Upper bounds not empty!";
+
   const size_t n_free_constraints = poly_opt_.getNumberFreeConstraints();
   const size_t dim = poly_opt_.getDimension();
   const int derivative_to_optimize = poly_opt_.getDerivativeToOptimize();
@@ -513,7 +518,6 @@ PolynomialOptimizationNonLinear<_N>::setFreeEndpointDerivativeHardConstraints(
   LOG(INFO) << "USE HARD CONSTRAINTS FOR ENDPOINT DERIVATIVE BOUNDARIES";
 
   // Set all values to -inf/inf and reset only bounded opti param with values
-  // TODO: Check that lower and upper bounds are empty
   for (const double x : initial_solution) {
     lower_bounds->push_back(-HUGE_VAL);
     upper_bounds->push_back(HUGE_VAL);
