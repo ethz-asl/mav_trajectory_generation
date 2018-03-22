@@ -748,7 +748,7 @@ TEST(MavTrajectoryGeneration,
   parameters.inequality_constraint_tolerance = 0.1;
   //  parameters.algorithm = nlopt::GN_ORIG_DIRECT;
   //  parameters.algorithm = nlopt::GN_ORIG_DIRECT_L;
-//  parameters.algorithm = nlopt::GN_ISRES;
+  //  parameters.algorithm = nlopt::GN_ISRES;
   //  parameters.algorithm = nlopt::LN_COBYLA;
   parameters.algorithm = nlopt::LN_SBPLX;
 
