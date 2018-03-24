@@ -189,9 +189,6 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTimeAndFreeConstraints() {
     }
   }
 
-  // Retrieve the free endpoint derivative initial solution
-  std::vector<double> initial_solution_free(
-          initial_solution.begin() + n_segments, initial_solution.end());
   // Setup for getting bounds on the free endpoint derivatives
   std::vector<double> lower_bounds_free, upper_bounds_free;
   const size_t n_optmization_variables_free =
@@ -202,9 +199,8 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTimeAndFreeConstraints() {
   // Get the lower and upper bounds constraints on the free endpoint derivatives
   Vertex::Vector vertices;
   poly_opt_.getVertices(&vertices);
-  setFreeEndpointDerivativeHardConstraints(
-          vertices, initial_solution_free, &lower_bounds_free,
-          &upper_bounds_free);
+  setFreeEndpointDerivativeHardConstraints(vertices, &lower_bounds_free,
+                                           &upper_bounds_free);
 
   // Set segment time constraints
   for (int l = 0; l < n_segments; ++l) {
@@ -497,7 +493,6 @@ template <int _N>
 void
 PolynomialOptimizationNonLinear<_N>::setFreeEndpointDerivativeHardConstraints(
         const Vertex::Vector& vertices,
-        const std::vector<double>& initial_solution,
         std::vector<double>* lower_bounds, std::vector<double>* upper_bounds) {
   CHECK_NOTNULL(lower_bounds);
   CHECK_NOTNULL(upper_bounds);
@@ -511,10 +506,10 @@ PolynomialOptimizationNonLinear<_N>::setFreeEndpointDerivativeHardConstraints(
   LOG(INFO) << "USE HARD CONSTRAINTS FOR ENDPOINT DERIVATIVE BOUNDARIES";
 
   // Set all values to -inf/inf and reset only bounded opti param with values
-  for (const double x : initial_solution) {
-    lower_bounds->push_back(-std::numeric_limits<double>::infinity());
-    upper_bounds->push_back(std::numeric_limits<double>::infinity());
-  }
+  lower_bounds->resize(dim * n_free_constraints,
+                       -std::numeric_limits<double>::infinity());
+  upper_bounds->resize(dim * n_free_constraints,
+                       std::numeric_limits<double>::infinity());
 
   // Add higher order derivative constraints (v_max and a_max)
   // Check at each vertex which of the derivatives is a free derivative.
