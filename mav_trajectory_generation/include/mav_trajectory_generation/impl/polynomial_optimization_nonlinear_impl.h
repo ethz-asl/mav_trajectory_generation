@@ -188,7 +188,7 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTimeAndFreeConstraints() {
 
   // Retrieve the free endpoint derivative initial solution
   std::vector<double> initial_solution_free(
-          initial_solution.begin()+n_segments, initial_solution.end());
+          initial_solution.begin() + n_segments, initial_solution.end());
   // Setup for getting bounds on the free endpoint derivatives
   std::vector<double> lower_bounds_free, upper_bounds_free;
   const size_t n_optmization_variables_free =
