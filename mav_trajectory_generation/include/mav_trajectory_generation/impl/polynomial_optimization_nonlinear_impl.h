@@ -159,6 +159,9 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTimeAndFreeConstraints() {
 
   poly_opt_.getSegmentTimes(&segment_times);
   const size_t n_segments = segment_times.size();
+  // Set a lower bound on the segment time per segment to avoid numerical
+  // issues.
+  constexpr double kOptimizationTimeLowerBound = 0.1;
 
   // compute initial solution
   poly_opt_.solveLinear();
@@ -206,7 +209,7 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTimeAndFreeConstraints() {
   // Set segment time constraints
   for (int l = 0; l < n_segments; ++l) {
     const double abs_x = std::abs(initial_solution[l]);
-    lower_bounds.push_back(0.1);
+    lower_bounds.push_back(kOptimizationTimeLowerBound);
     upper_bounds.push_back(std::numeric_limits<double>::infinity());
   }
   // Append free endpoint derivative constraints
