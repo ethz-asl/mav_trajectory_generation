@@ -130,7 +130,7 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTime() {
     // issues.
     constexpr double kOptimizationTimeLowerBound = 0.1;
     nlopt_->set_initial_step(initial_step);
-    nlopt_->set_upper_bounds(HUGE_VAL);
+    nlopt_->set_upper_bounds(std::numeric_limits<double>::infinity());
     nlopt_->set_lower_bounds(kOptimizationTimeLowerBound);
     nlopt_->set_min_objective(
         &PolynomialOptimizationNonLinear<N>::objectiveFunctionTime, this);
@@ -207,7 +207,7 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTimeAndFreeConstraints() {
   for (int l = 0; l < n_segments; ++l) {
     const double abs_x = std::abs(initial_solution[l]);
     lower_bounds.push_back(0.1);
-    upper_bounds.push_back(HUGE_VAL);
+    upper_bounds.push_back(std::numeric_limits<double>::infinity());
   }
   // Append free endpoint derivative constraints
   lower_bounds.insert(std::end(lower_bounds), std::begin(lower_bounds_free),
@@ -509,8 +509,8 @@ PolynomialOptimizationNonLinear<_N>::setFreeEndpointDerivativeHardConstraints(
 
   // Set all values to -inf/inf and reset only bounded opti param with values
   for (const double x : initial_solution) {
-    lower_bounds->push_back(-HUGE_VAL);
-    upper_bounds->push_back(HUGE_VAL);
+    lower_bounds->push_back(-std::numeric_limits<double>::infinity());
+    upper_bounds->push_back(std::numeric_limits<double>::infinity());
   }
 
   // Add higher order derivative constraints (v_max and a_max)
