@@ -30,7 +30,6 @@ cs_add_library(${PROJECT_NAME}
   src/input_constraints.cpp
   src/ros_conversions.cpp
   src/ros_visualization.cpp
-  src/trajectory_sampling.cpp
   src/yaml_io.cpp
 )
 # Link against yaml-cpp.

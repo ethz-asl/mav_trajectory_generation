@@ -21,5 +21,6 @@
   <depend>eigen_catkin</depend>
   <depend>eigen_checks</depend>
   <depend>glog_catkin</depend>
+  <depend>mav_msgs</depend>
   <depend>nlopt</depend>
 </package>

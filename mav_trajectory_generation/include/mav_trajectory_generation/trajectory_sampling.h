@@ -22,7 +22,7 @@
 #define MAV_TRAJECTORY_GENERATION_ROS_TRAJECTORY_SAMPLING_H_
 
 #include <mav_msgs/eigen_mav_msgs.h>
-#include <mav_trajectory_generation/trajectory.h>
+#include "mav_trajectory_generation/trajectory.h"
 
 namespace mav_trajectory_generation {
 
