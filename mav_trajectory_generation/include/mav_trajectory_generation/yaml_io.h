@@ -49,6 +49,9 @@ inline bool trajectoryFromFile(
   return success;
 }
 
+bool printMatlabSampledTrajectory(const Trajectory& trajectory,
+                                  const std::string& file);
+
 }  // namespace mav_trajectory_generation
 
 #endif  // MAV_TRAJECTORY_GENERATION_YAML_IO_H_
