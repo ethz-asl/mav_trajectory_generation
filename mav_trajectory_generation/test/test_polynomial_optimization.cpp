@@ -637,9 +637,9 @@ TEST(MavTrajectoryGeneration,
   // Otherwise infinite compile time or "error: nlopt invalid argument".
   //  parameters.algorithm = nlopt::GN_ORIG_DIRECT;
   //  parameters.algorithm = nlopt::GN_ORIG_DIRECT_L;
-    parameters.algorithm = nlopt::GN_ISRES;
+  //  parameters.algorithm = nlopt::GN_ISRES;
   //  parameters.algorithm = nlopt::LN_COBYLA;
-  //  parameters.algorithm = nlopt::LN_SBPLX;
+  parameters.algorithm = nlopt::LN_SBPLX;
 
   parameters.random_seed = 12345678;
 
