@@ -125,8 +125,8 @@ bool segmentsFromFile(const std::string& filename,
   return true;
 }
 
-bool printMatlabSampledTrajectory(const Trajectory& trajectory,
-                                  const std::string& file) {
+bool sampledTrajectoryStatesToFile(const std::string& file,
+                                   const Trajectory& trajectory) {
 
   // Print to file for matlab
   double sampling_time = 0.01;
