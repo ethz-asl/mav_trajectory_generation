@@ -18,7 +18,7 @@
  * limitations under the License.
  */
 
-#include "mav_trajectory_generation_ros/yaml_io.h"
+#include "mav_trajectory_generation/yaml_io.h"
 
 #include <yaml-cpp/yaml.h>
 #include <fstream>
