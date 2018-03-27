@@ -168,7 +168,7 @@ bool sampledTrajectoryStatesToFile(const std::string& filename,
   }
 
   std::fstream fs;
-  fs.open(file, std::fstream::out);
+  fs.open(filename, std::fstream::out);
   fs << output;
   fs.close();
 }
