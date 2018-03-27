@@ -363,6 +363,11 @@ double PolynomialOptimizationNonLinear<_N>::getCostAndGradient(
 //        }
 //      }
 
+      // Check and make sure if segment times are all > 0.1
+      for (double& t : segment_times_bigger) {
+        t = t <= kOptimizationTimeLowerBound ? kOptimizationTimeLowerBound : t;
+      }
+
       // Update the segment times. This changes the polynomial coefficients.
       poly_opt_.updateSegmentTimes(segment_times_bigger);
       poly_opt_.solveLinear();
