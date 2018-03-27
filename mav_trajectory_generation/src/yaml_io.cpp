@@ -125,7 +125,7 @@ bool segmentsFromFile(const std::string& filename,
   return true;
 }
 
-bool sampledTrajectoryStatesToFile(const std::string& file,
+bool sampledTrajectoryStatesToFile(const std::string& filename,
                                    const Trajectory& trajectory) {
 
   // Print to file for matlab
