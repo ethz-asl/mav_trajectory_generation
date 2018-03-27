@@ -296,7 +296,7 @@ class PolynomialOptimizationNonLinear {
 
   // Set lower and upper bounds on the optimization parameters
   void setFreeEndpointDerivativeHardConstraints(
-          const std::vector<double>& initial_solution,
+          const Vertex::Vector& vertices,
           std::vector<double>* lower_bounds, std::vector<double>* upper_bounds);
 
   // Computes the total trajectory time.

@@ -166,6 +166,11 @@ class PolynomialOptimization {
   template <int Derivative>
   Extremum computeMaximumOfMagnitude(std::vector<Extremum>* candidates) const;
 
+  void getVertices(Vertex::Vector* vertices) const {
+    CHECK_NOTNULL(vertices);
+    *vertices = vertices_;
+  }
+
   // Only for internal use -- always use getTrajectory() instead if you can!
   void getSegments(Segment::Vector* segments) const {
     CHECK_NOTNULL(segments);
