@@ -89,6 +89,7 @@ class TimeEvaluationNode {
                            bool use_gradient_descent,
                            Trajectory* trajectory) const;
   void runMellingerOuterLoop(const Vertex::Vector& vertices,
+                             bool use_trapezoidal_time,
                              bool use_gradient_descent,
                              Trajectory* trajectory) const;
   void runSegmentViolationScalingTime(const Vertex::Vector& vertices,
@@ -262,7 +263,7 @@ void TimeEvaluationNode::runBenchmark(int trial_number, int num_segments) {
   method_name = "mellinger_outer_loop";
   Trajectory trajectory_mellinger_outer_loop;
   timing::Timer timer_mellinger(method_name);
-  runMellingerOuterLoop(vertices, false, &trajectory_mellinger_outer_loop);
+  runMellingerOuterLoop(vertices, false, false, &trajectory_mellinger_outer_loop);
   timer_mellinger.Stop();
   evaluateTrajectory(method_name, trajectory_mellinger_outer_loop, &result);
   results_.push_back(result);
@@ -273,12 +274,26 @@ void TimeEvaluationNode::runBenchmark(int trial_number, int num_segments) {
   method_name = "mellinger_outer_loop_gd";
   Trajectory trajectory_mellinger_outer_loop_gd;
   timing::Timer timer_mellinger_gd(method_name);
-  runMellingerOuterLoop(vertices, true, &trajectory_mellinger_outer_loop_gd);
+  runMellingerOuterLoop(vertices, false, true, &trajectory_mellinger_outer_loop_gd);
   timer_mellinger_gd.Stop();
   evaluateTrajectory(method_name, trajectory_mellinger_outer_loop_gd, &result);
   results_.push_back(result);
   if (visualize_) {
     visualizeTrajectory(method_name, trajectory_mellinger_outer_loop_gd, &markers);
+  }
+
+  method_name = "mellinger_outer_loop_trapezoidal_init";
+  Trajectory trajectory_mellinger_outer_loop_trapezoidal_init;
+  timing::Timer timer_mellinger_trapezoidal(method_name);
+  runMellingerOuterLoop(vertices, true, false, &trajectory_mellinger_outer_loop_trapezoidal_init);
+  timer_mellinger_trapezoidal.Stop();
+  evaluateTrajectory(method_name,
+                     trajectory_mellinger_outer_loop_trapezoidal_init, &result);
+  results_.push_back(result);
+  if (visualize_) {
+    visualizeTrajectory(method_name,
+                        trajectory_mellinger_outer_loop_trapezoidal_init,
+                        &markers);
   }
 
   method_name = "segment_violation_scaling";
@@ -367,11 +382,16 @@ void TimeEvaluationNode::runNonlinearRichter(
 }
 
 void TimeEvaluationNode::runMellingerOuterLoop(
-        const Vertex::Vector& vertices, bool use_gradient_descent,
-        Trajectory* trajectory) const {
+        const Vertex::Vector& vertices, bool use_trapezoidal_time,
+        bool use_gradient_descent, Trajectory* trajectory) const {
   std::vector<double> segment_times;
-  segment_times =
-      mav_trajectory_generation::estimateSegmentTimes(vertices, v_max_, a_max_);
+  if (use_trapezoidal_time) {
+    const double kTimeFactor = 1.0;
+    CHECK(estimateSegmentTimesVelocityRamp(
+            vertices, v_max_, a_max_, kTimeFactor, &segment_times));
+  } else {
+    segment_times = estimateSegmentTimes(vertices, v_max_, a_max_);
+  }
 
   mav_trajectory_generation::NonlinearOptimizationParameters nlopt_parameters;
   if (use_gradient_descent) {
@@ -494,6 +514,8 @@ void TimeEvaluationNode::visualizeTrajectory(
     trajectory_color = mav_visualization::Color::Pink();
   } else if (method_name == "mellinger_outer_loop") {
     trajectory_color = mav_visualization::Color::Orange();
+  } else if (method_name == "mellinger_outer_loop_trapezoidal_init") {
+    trajectory_color = mav_visualization::Color::Gray();
   } else if (method_name == "mellinger_outer_loop_gd") {
     trajectory_color = mav_visualization::Color::Purple();
   } else if (method_name == "segment_violation_scaling") {
