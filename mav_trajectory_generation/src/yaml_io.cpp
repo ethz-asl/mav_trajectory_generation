@@ -129,7 +129,7 @@ bool sampledTrajectoryStatesToFile(const std::string& filename,
                                    const Trajectory& trajectory) {
 
   // Print to file for matlab
-  double sampling_time = 0.01;
+  const double sampling_time = 0.01;
   mav_msgs::EigenTrajectoryPoint::Vector flat_states;
   bool success = sampleWholeTrajectory(trajectory, sampling_time,
                                        &flat_states);
