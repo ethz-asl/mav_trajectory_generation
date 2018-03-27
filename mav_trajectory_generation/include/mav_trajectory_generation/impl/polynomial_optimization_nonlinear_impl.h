@@ -151,7 +151,6 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTime() {
   try {
     // Set a lower bound on the segment time per segment to avoid numerical
     // issues.
-    constexpr double kOptimizationTimeLowerBound = 0.1;
     nlopt_->set_initial_step(initial_step);
     nlopt_->set_upper_bounds(upper_bounds);
     nlopt_->set_lower_bounds(kOptimizationTimeLowerBound);
@@ -187,7 +186,6 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTimeMellingerOuterLoop() {
   try {
     // Set a lower bound on the segment time per segment to avoid numerical
     // issues.
-    constexpr double kOptimizationTimeLowerBound = 0.1;
     nlopt_->set_upper_bounds(HUGE_VAL);
     nlopt_->set_lower_bounds(kOptimizationTimeLowerBound);
     nlopt_->set_min_objective(
