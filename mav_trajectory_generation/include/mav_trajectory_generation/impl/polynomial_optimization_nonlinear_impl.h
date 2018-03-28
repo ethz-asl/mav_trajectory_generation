@@ -440,10 +440,16 @@ void PolynomialOptimizationNonLinear<_N>::scaleSegmentTimesWithViolation(
                                     rel_violation_a : rel_violation_v;
     *segment_times /= (1.0-smallest_rel_violation);
 
-    // Set and update new segement times
+    // Convert new segment times
     std::vector<double> segment_times_new(segment_times->data(),
                                           segment_times->data() +
                                                   segment_times->size());
+    // Check and make sure that segment times are all > 0.1
+    for (double& t : segment_times_new) {
+      t = t <= kOptimizationTimeLowerBound ? kOptimizationTimeLowerBound : t;
+    }
+
+    // Update new segment times
     poly_opt_.updateSegmentTimes(segment_times_new);
     poly_opt_.solveLinear();
 
