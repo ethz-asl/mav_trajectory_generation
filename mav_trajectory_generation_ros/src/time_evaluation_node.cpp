@@ -460,6 +460,11 @@ void TimeEvaluationNode::runSegmentViolationScalingTime(
     segment_times[i] /= (1.0-smallest_rel_violation);
   }
 
+  // Check and make sure if segment times are all > 0.1
+  for (double& t : segment_times) {
+    t = t <= kOptimizationTimeLowerBound ? kOptimizationTimeLowerBound : t;
+  }
+
   // Solve again with new segment times scaled according to relative violations
   linopt.updateSegmentTimes(segment_times);
   linopt.solveLinear();
