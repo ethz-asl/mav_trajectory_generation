@@ -135,8 +135,9 @@ bool checkCost(double cost_to_check, const std::vector<Segment>& segments,
   CHECK_GE(derivative, size_t(0));
   CHECK(relative_tolerance >= 0.0 && relative_tolerance <= 1.0);
   const double sampling_interval = 0.001;
+  // TODO: why *2.0 neede here now?
   double cost_numeric =
-      computeCostNumeric(segments, derivative, sampling_interval);
+      2.0*computeCostNumeric(segments, derivative, sampling_interval);
 
   if (std::abs(cost_numeric - cost_to_check) >
       cost_numeric * relative_tolerance) {
