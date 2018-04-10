@@ -17,6 +17,7 @@ cs_add_library(${PROJECT_NAME}
   src/segment.cpp
   src/timing.cpp
   src/trajectory.cpp
+  src/trajectory_sampling.cpp
   src/vertex.cpp
 )
 
