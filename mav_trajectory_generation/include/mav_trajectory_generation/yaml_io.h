@@ -18,11 +18,11 @@
  * limitations under the License.
  */
 
-#ifndef MAV_TRAJECTORY_GENERATION_ROS_YAML_IO_H_
-#define MAV_TRAJECTORY_GENERATION_ROS_YAML_IO_H_
+#ifndef MAV_TRAJECTORY_GENERATION_YAML_IO_H_
+#define MAV_TRAJECTORY_GENERATION_YAML_IO_H_
 
-#include <mav_trajectory_generation/segment.h>
-#include <mav_trajectory_generation/trajectory.h>
+#include "mav_trajectory_generation/segment.h"
+#include "mav_trajectory_generation/trajectory.h"
 
 namespace mav_trajectory_generation {
 
@@ -51,4 +51,4 @@ inline bool trajectoryFromFile(
 
 }  // namespace mav_trajectory_generation
 
-#endif  // MAV_TRAJECTORY_GENERATION_ROS_YAML_IO_H_
+#endif  // MAV_TRAJECTORY_GENERATION_YAML_IO_H_
