@@ -517,10 +517,6 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTimeAndFreeConstraints() {
     }
   }
 
-  for (size_t i = 0; i < n_segments; ++i) {
-    lower_bounds[i] = 0.1;
-  }
-
   try {
     nlopt_->set_initial_step(initial_step);
     nlopt_->set_lower_bounds(lower_bounds);
