@@ -18,7 +18,8 @@
  * limitations under the License.
  */
 
-#include "mav_trajectory_generation/yaml_io.h"
+#include "mav_trajectory_generation/io.h"
+#include "mav_trajectory_generation/trajectory_sampling.h"
 
 #include <yaml-cpp/yaml.h>
 #include <fstream>
@@ -122,6 +123,54 @@ bool segmentsFromFile(const std::string& filename,
   }
 
   return true;
+}
+
+bool sampledTrajectoryStatesToFile(const std::string& filename,
+                                   const Trajectory& trajectory) {
+
+  // Print to file for matlab
+  const double sampling_time = 0.01;
+  mav_msgs::EigenTrajectoryPoint::Vector flat_states;
+  bool success = sampleWholeTrajectory(trajectory, sampling_time,
+                                       &flat_states);
+
+  // Layout: [t, x, y, z, vx, vy, vz, jx, jy, jz, sx, sy, sz, tm]
+  const unsigned int dim = trajectory.D();
+  Eigen::MatrixXd output(flat_states.size(), 5*dim + 2);
+  output.setZero();
+  for (int i = 0; i < flat_states.size(); ++i) {
+    const mav_msgs::EigenTrajectoryPoint state = flat_states[i];
+
+    if (trajectory.D() > 3) {
+      double yaw = state.getYaw();
+      double yaw_rate = state.getYawRate();
+      double yaw_acc = state.getYawAcc();
+    }
+
+    if (i < output.rows()) {
+      output(i, 0) = state.time_from_start_ns;
+      output.row(i).segment(1, dim) = state.position_W;
+      output.row(i).segment(1+dim, dim) = state.velocity_W;
+      output.row(i).segment(1+2*dim, dim) = state.acceleration_W;
+      output.row(i).segment(1+3*dim, dim) = state.jerk_W;
+      output.row(i).segment(1+4*dim, dim) = state.snap_W;
+    }
+  }
+
+  // Set the segment times
+  mav_trajectory_generation::Segment::Vector segments;
+  trajectory.getSegments(&segments);
+  double current_segment_time = 0.0;
+  for (int j = 0; j < segments.size(); ++j) {
+    double segment_time = segments[j].getTime();
+    current_segment_time += segment_time;
+    output(j, 1+5*dim) = current_segment_time;
+  }
+
+  std::fstream fs;
+  fs.open(filename, std::fstream::out);
+  fs << output;
+  fs.close();
 }
 
 }  // namespace mav_trajectory_generation

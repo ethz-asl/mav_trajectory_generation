@@ -49,6 +49,9 @@ inline bool trajectoryFromFile(
   return success;
 }
 
+bool sampledTrajectoryStatesToFile(const std::string& filename,
+                                   const Trajectory& trajectory);
+
 }  // namespace mav_trajectory_generation
 
 #endif  // MAV_TRAJECTORY_GENERATION_YAML_IO_H_
