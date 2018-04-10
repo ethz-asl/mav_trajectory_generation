@@ -453,8 +453,6 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTimeAndFreeConstraints() {
 
   poly_opt_.getSegmentTimes(&segment_times);
   const size_t n_segments = segment_times.size();
-  // Set a lower bound on segment time per segment to avoid numerical issues
-  constexpr double kOptimizationTimeLowerBound = 0.1;
 
   // compute initial solution
   poly_opt_.solveLinear();
