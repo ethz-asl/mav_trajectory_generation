@@ -274,7 +274,7 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTimeMellingerOuterLoopGD() {
     // Set and update new segement times
     std::vector<double> segment_times_new(x.data(), x.data() + x.size());
     poly_opt_.updateSegmentTimes(segment_times_new);
-    poly_opt_.solveLinear(); // TODO: needed?
+    poly_opt_.solveLinear();
   }
 
   x_rel_change = x;
@@ -453,8 +453,6 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTimeAndFreeConstraints() {
 
   poly_opt_.getSegmentTimes(&segment_times);
   const size_t n_segments = segment_times.size();
-  // Set a lower bound on segment time per segment to avoid numerical issues
-  constexpr double kOptimizationTimeLowerBound = 0.1;
 
   // compute initial solution
   poly_opt_.solveLinear();
