@@ -264,18 +264,8 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTimeMellingerOuterLoopGD() {
     double step_size = 1.0 / (lambda + i);
     increment = -step_size * grad;
 
-//    std::cout << "[GD MEL] i: " << i << " step size: " << step_size
-//              << " cost: " << cost << " gradient norm: " << grad.norm()
-//              << std::endl;
-//    std::cout << "[GD] i: " << i << " grad: " << grad.transpose()
-//              << std::endl;
-//    std::cout << "[GD] i: " << i << " increment: " << increment.transpose()
-//              << std::endl;
-
     // Update the parameters.
     x += increment;
-//    std::cout << "[GD] i: " << i << " x: " << x.transpose()
-//              << std::endl;
 
     for (int n = 0; n < x.size(); ++n) {
       x[n] = x[n] <= 0.1 ? 0.1 : x[n];
@@ -341,23 +331,15 @@ double PolynomialOptimizationNonLinear<_N>::getCostAndGradient(
         }
       }
 
-//      std::cout << "sum: " << std::accumulate(
-//              segment_times_bigger.begin(), segment_times_bigger.end(), 0.0)
-//                << " seg times: " << std::endl;
-//      for (int j = 0; j < segment_times_bigger.size(); ++j) {
-//        std::cout << segment_times_bigger[j] << " ";
-//      }
-//      std::cout << std::endl;
-
       // TODO: add case if segment_time is at threshold 0.1s
       // 1) How many segments > 0.1s
       // 2) trajectory time correction only on those
-//      for (int j = 0; j < segment_times_bigger.size(); ++j) {
-//        double thresh_corr = 0.0;
-//        if (segment_times_bigger[j] < 0.1) {
-//          thresh_corr = 0.1-segment_times_bigger[j];
-//        }
-//      }
+      // for (int j = 0; j < segment_times_bigger.size(); ++j) {
+      //   double thresh_corr = 0.0;
+      //   if (segment_times_bigger[j] < 0.1) {
+      //     thresh_corr = 0.1-segment_times_bigger[j];
+      //   }
+      // }
 
       // Check and make sure if segment times are all > 0.1
       for (double& t : segment_times_bigger) {
@@ -371,13 +353,6 @@ double PolynomialOptimizationNonLinear<_N>::getCostAndGradient(
       // Calculate cost and gradient with new segment time
       const double J_d_bigger = poly_opt_.computeCost();
       const double dJd_dt = (J_d_bigger - J_d) / increment_time;
-
-//      std::cout << "J_d: " << J_d
-//                << " | J_d_bigger: " << J_d_bigger
-//                << " | dJd_dt: " << dJd_dt
-//                << " | h*dJd_dt: " << increment_time*dJd_dt
-//                << " | J_d_bigger=J_d+h*dJd_dt: " << J_d+(increment_time*dJd_dt)
-//                << std::endl;
 
       // Calculate the gradient
       gradients->at(n) = w_d*dJd_dt;
