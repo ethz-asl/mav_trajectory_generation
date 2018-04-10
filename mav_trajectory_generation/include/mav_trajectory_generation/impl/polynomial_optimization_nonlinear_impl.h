@@ -529,7 +529,9 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTimeAndFreeConstraints() {
   }
 
   try {
-    nlopt_->set_initial_step(initial_step);
+    if (optimization_parameters_.use_initial_step_size) {
+      nlopt_->set_initial_step(initial_step);
+    }
     nlopt_->set_lower_bounds(lower_bounds);
     nlopt_->set_upper_bounds(upper_bounds);
     nlopt_->set_min_objective(&PolynomialOptimizationNonLinear<

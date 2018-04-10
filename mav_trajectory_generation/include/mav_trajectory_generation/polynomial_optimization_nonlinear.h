@@ -47,6 +47,7 @@ struct NonlinearOptimizationParameters {
         algorithm(nlopt::LN_SBPLX),
         random_seed(0),
         use_soft_constraints(true),
+        use_initial_step_size(true),
         soft_constraint_weight(100.0),
         time_alloc_method(kSquaredTimeAndConstraints),
         print_debug_info(false) {}
@@ -95,6 +96,9 @@ struct NonlinearOptimizationParameters {
 
   // Decide whether to use soft constraints.
   bool use_soft_constraints;
+
+  // Decide whether to use custom initial step size or default from nlopt.
+  bool use_initial_step_size;
 
   // Weights the relative violation of a soft constraint.
   double soft_constraint_weight;

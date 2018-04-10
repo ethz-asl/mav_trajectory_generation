@@ -84,6 +84,7 @@ class TimeEvaluationNode {
   void runTrapezoidalTime(const Vertex::Vector& vertices,
                           Trajectory* trajectory) const;
   void runNonlinear(const Vertex::Vector& vertices,
+                    bool use_init_step_size,
                     Trajectory* trajectory) const;
   void runNonlinearRichter(const Vertex::Vector& vertices,
                            bool use_gradient_descent,
@@ -230,7 +231,7 @@ void TimeEvaluationNode::runBenchmark(int trial_number, int num_segments) {
   method_name = "nonlinear";
   Trajectory trajectory_nonlinear;
   timing::Timer timer_nonlinear(method_name);
-  runNonlinear(vertices, &trajectory_nonlinear);
+  runNonlinear(vertices, true, &trajectory_nonlinear);
   timer_nonlinear.Stop();
   evaluateTrajectory(method_name, trajectory_nonlinear, &result);
   results_.push_back(result);
@@ -340,6 +341,7 @@ void TimeEvaluationNode::runTrapezoidalTime(const Vertex::Vector& vertices,
 }
 
 void TimeEvaluationNode::runNonlinear(const Vertex::Vector& vertices,
+                                      bool use_init_step_size,
                                       Trajectory* trajectory) const {
   std::vector<double> segment_times;
   segment_times =
@@ -348,6 +350,7 @@ void TimeEvaluationNode::runNonlinear(const Vertex::Vector& vertices,
   mav_trajectory_generation::NonlinearOptimizationParameters nlopt_parameters;
   nlopt_parameters.time_alloc_method ==
           NonlinearOptimizationParameters::kSquaredTimeAndConstraints;
+  nlopt_parameters.use_initial_step_size = use_init_step_size;
   mav_trajectory_generation::PolynomialOptimizationNonLinear<kN> nlopt(
       kDim, nlopt_parameters);
   nlopt.setupFromVertices(vertices, segment_times, max_derivative_order_);
