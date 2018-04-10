@@ -5,10 +5,10 @@
 #include <mav_trajectory_generation/polynomial_optimization_linear.h>
 #include <mav_trajectory_generation/polynomial_optimization_nonlinear.h>
 #include <mav_trajectory_generation/timing.h>
+#include "mav_trajectory_generation/trajectory_sampling.h"
 
 #include "mav_trajectory_generation_ros/ros_conversions.h"
 #include "mav_trajectory_generation_ros/ros_visualization.h"
-#include "mav_trajectory_generation_ros/trajectory_sampling.h"
 
 namespace mav_trajectory_generation {
 
