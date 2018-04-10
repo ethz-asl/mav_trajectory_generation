@@ -5,10 +5,10 @@
 #include <mav_trajectory_generation/polynomial_optimization_linear.h>
 #include <mav_trajectory_generation/polynomial_optimization_nonlinear.h>
 #include <mav_trajectory_generation/timing.h>
+#include "mav_trajectory_generation/trajectory_sampling.h"
 
 #include "mav_trajectory_generation_ros/ros_conversions.h"
 #include "mav_trajectory_generation_ros/ros_visualization.h"
-#include "mav_trajectory_generation_ros/trajectory_sampling.h"
 
 namespace mav_trajectory_generation {
 
@@ -33,7 +33,8 @@ struct TimeAllocationBenchmarkResult {
         abs_violation_v(0.0),
         abs_violation_a(0.0),
         rel_violation_v(0.0),
-        rel_violation_a(0.0) {}
+        rel_violation_a(0.0),
+        max_dist_from_straigh_line(0.0) {}
 
   // Evaluation settings
   int trial_number;
@@ -57,6 +58,7 @@ struct TimeAllocationBenchmarkResult {
   double abs_violation_a;
   double rel_violation_v;
   double rel_violation_a;
+  double max_dist_from_straigh_line;
 
   // More to come: convex hull/bounding box, etc.
 };
@@ -81,6 +83,9 @@ class TimeEvaluationNode {
                           Trajectory* trajectory) const;
   void runNonlinear(const Vertex::Vector& vertices,
                     Trajectory* trajectory) const;
+  void runNonlinearRichter(const Vertex::Vector& vertices,
+                           bool use_gradient_descent,
+                           Trajectory* trajectory) const;
 
   void evaluateTrajectory(const std::string& method_name,
                           const Trajectory& traj,
@@ -100,7 +105,9 @@ class TimeEvaluationNode {
       double scale = 0.05) const;
 
   double computePathLength(mav_msgs::EigenTrajectoryPointVector& path) const;
-
+  double computePointLineDistance(const Eigen::Vector3d& A,
+                                  const Eigen::Vector3d& B,
+                                  const Eigen::Vector3d& C) const;
   std::string printResults() const;
   void outputResults(
           const std::string& filename,
@@ -214,6 +221,32 @@ void TimeEvaluationNode::runBenchmark(int trial_number, int num_segments) {
   if (visualize_) {
     path_marker_pub_.publish(markers);
   }
+
+  method_name = "nonlinear_richter";
+  Trajectory trajectory_nonlinear_richter;
+  runNonlinearRichter(vertices, false, &trajectory_nonlinear_richter);
+  evaluateTrajectory(method_name, trajectory_nonlinear_richter, &result);
+  results_.push_back(result);
+  if (visualize_) {
+    visualizeTrajectory(method_name, trajectory_nonlinear_richter, &markers);
+  }
+
+  if (visualize_) {
+    path_marker_pub_.publish(markers);
+  }
+
+  method_name = "nonlinear_richter_gd";
+  Trajectory trajectory_nonlinear_richter_gd;
+  runNonlinearRichter(vertices, true, &trajectory_nonlinear_richter_gd);
+  evaluateTrajectory(method_name, trajectory_nonlinear_richter_gd, &result);
+  results_.push_back(result);
+  if (visualize_) {
+    visualizeTrajectory(method_name, trajectory_nonlinear_richter_gd, &markers);
+  }
+
+  if (visualize_) {
+    path_marker_pub_.publish(markers);
+  }
 }
 
 void TimeEvaluationNode::runNfabian(const Vertex::Vector& vertices,
@@ -257,6 +290,25 @@ void TimeEvaluationNode::runNonlinear(const Vertex::Vector& vertices,
   nlopt.getTrajectory(trajectory);
 }
 
+void TimeEvaluationNode::runNonlinearRichter(
+        const Vertex::Vector& vertices, bool use_gradient_descent,
+        Trajectory* trajectory) const {
+  std::vector<double> segment_times;
+  segment_times =
+      mav_trajectory_generation::estimateSegmentTimes(vertices, v_max_, a_max_);
+
+  mav_trajectory_generation::NonlinearOptimizationParameters nlopt_parameters;
+  nlopt_parameters.cost_time_method = NonlinearOptimizationParameters::kRichter;
+  nlopt_parameters.use_gradient_descent = use_gradient_descent;
+  mav_trajectory_generation::PolynomialOptimizationNonLinear<kN> nlopt(
+      kDim, nlopt_parameters, false);
+  nlopt.setupFromVertices(vertices, segment_times, max_derivative_order_);
+  nlopt.addMaximumMagnitudeConstraint(derivative_order::VELOCITY, v_max_);
+  nlopt.addMaximumMagnitudeConstraint(derivative_order::ACCELERATION, a_max_);
+  nlopt.optimize();
+  nlopt.getTrajectory(trajectory);
+}
+
 void TimeEvaluationNode::visualizeTrajectory(
     const std::string& method_name, const Trajectory& traj,
     visualization_msgs::MarkerArray* markers) {
@@ -270,6 +322,10 @@ void TimeEvaluationNode::visualizeTrajectory(
     trajectory_color = mav_visualization::Color::Green();
   } else if (method_name == "nonlinear") {
     trajectory_color = mav_visualization::Color::Red();
+  } else if (method_name == "nonlinear_richter") {
+    trajectory_color = mav_visualization::Color::Blue();
+  } else if (method_name == "nonlinear_richter_gd") {
+    trajectory_color = mav_visualization::Color::Pink();
   } else {
     trajectory_color = mav_visualization::Color::White();
   }
@@ -316,6 +372,32 @@ void TimeEvaluationNode::evaluateTrajectory(
   } else {
     result->bounds_violated = false;
   }
+
+  // Todo: Add success variable to check for allowed relative violation, ...
+  // const double allowed_rel_violation = 0.1;
+
+  // Evaluate maximum trajectory distance per segment from straight line path
+  // 1) Sample trajectory
+  // 2) Check for biggest distance in each segment
+  std::vector<Segment> segments;
+  traj.getSegments(&segments);
+
+  double max_dist = 0.0;
+  for (const auto& segment : segments) {
+    for (double t = 0.0; t < segment.getTime(); t+=kDefaultSamplingTime) {
+      Eigen::Vector3d point = segment.evaluate(t, derivative_order::POSITION);
+      Eigen::Vector3d start = segment.evaluate(0.0, derivative_order::POSITION);
+      Eigen::Vector3d end = segment.evaluate(segment.getTime(),
+                                             derivative_order::POSITION);
+
+      // Absolute distance of point AP from line BC
+      double dist = computePointLineDistance(point, start, end);
+      if (dist > max_dist) { max_dist = dist; }
+    }
+  }
+  // TODO: Distinguish max_dist for each segment?
+  // TODO: Compare area between straight line and trajectory?
+  result->max_dist_from_straigh_line = max_dist;
 }
 
 visualization_msgs::Marker TimeEvaluationNode::createMarkerForPath(
@@ -357,6 +439,18 @@ visualization_msgs::Marker TimeEvaluationNode::createMarkerForPath(
   return path_marker;
 }
 
+
+double TimeEvaluationNode::computePointLineDistance(
+        const Eigen::Vector3d& A, const Eigen::Vector3d& B,
+        const Eigen::Vector3d& C) const {
+  // Distance of point A from line CB
+  Eigen::Vector3d d = (C - B) / (C-B).norm();
+  Eigen::Vector3d v = A - B;
+  double t = v.dot(d);
+  Eigen::Vector3d P = B + t * d;
+  return (P-A).norm();
+}
+
 double TimeEvaluationNode::computePathLength(
     mav_msgs::EigenTrajectoryPointVector& path) const {
   Eigen::Vector3d last_point;
@@ -374,12 +468,14 @@ double TimeEvaluationNode::computePathLength(
 }
 
 std::string TimeEvaluationNode::printResults() const {
+  // TODO: compuation_time and optimization_success
   std::stringstream s;
   // Header.
   s << "trial_number, method_name, num_segments, nominal_length, "
        "optimization_success, bounds_violated, trajectory_time, "
        "trajectory_length, computation_time, a_max_actual, v_max_actual, "
-       "abs_violation_a, abs_violation_v, rel_violation_a, rel_violation_v"
+       "abs_violation_a, abs_violation_v, rel_violation_a, rel_violation_v, "
+       "max_dist_sl_traj"
     << std::endl;
   for (size_t i = 0; i < results_.size(); ++i) {
     s << results_[i].trial_number << ", " << results_[i].method_name << ", "
@@ -391,6 +487,7 @@ std::string TimeEvaluationNode::printResults() const {
       << results_[i].v_max_actual.value << ", " << results_[i].abs_violation_a
       << ", " << results_[i].abs_violation_v << ", "
       << results_[i].rel_violation_a << ", " << results_[i].rel_violation_v
+      << ", " << results_[i].max_dist_from_straigh_line
       << std::endl;
   }
 
@@ -419,9 +516,9 @@ void TimeEvaluationNode::outputResults(
                   "optimization_success, bounds_violated, trajectory_time, "
                   "trajectory_length, computation_time, a_max_actual,"
                   " v_max_actual, abs_violation_a, abs_violation_v, "
-                  "rel_violation_a, rel_violation_v\n");
+                  "rel_violation_a, rel_violation_v, max_dist_sl_traj\n");
   for (const TimeAllocationBenchmarkResult& result : results) {
-    fprintf(fp, "%d,%s,%d,%f,%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f\n",
+    fprintf(fp, "%d,%s,%d,%f,%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f\n",
             result.trial_number, result.method_name.c_str(),
             result.num_segments, result.nominal_length,
             result.optimization_success, result.bounds_violated,
@@ -429,7 +526,7 @@ void TimeEvaluationNode::outputResults(
             result.computation_time, result.a_max_actual.value,
             result.v_max_actual.value, result.abs_violation_a,
             result.abs_violation_v, result.rel_violation_a,
-            result.rel_violation_v);
+            result.rel_violation_v, result.max_dist_from_straigh_line);
   }
 
   fclose(fp);

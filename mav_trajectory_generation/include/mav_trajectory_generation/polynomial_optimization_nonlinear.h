@@ -46,6 +46,8 @@ struct NonlinearOptimizationParameters {
         random_seed(0),
         use_soft_constraints(true),
         soft_constraint_weight(100.0),
+        cost_time_method(kSquared),
+        use_gradient_descent(false),
         print_debug_info(false) {}
 
   // Stopping criteria, if objective function changes less than absolute value.
@@ -95,6 +97,14 @@ struct NonlinearOptimizationParameters {
 
   // Weights the relative violation of a soft constraint.
   double soft_constraint_weight;
+
+  enum CostTimeMethod {
+    kSquared,
+    kRichter,
+    kUnknown,
+  } cost_time_method;
+
+  bool use_gradient_descent;
 
   bool print_debug_info;
 };
@@ -247,6 +257,11 @@ class PolynomialOptimizationNonLinear {
 
   // Does the actual optimization work for the full optimization version.
   int optimizeTimeAndFreeConstraints();
+  int optimizeTimeAndFreeConstraintsGradientDescent();
+  double getCostAndGradientTimeForward(std::vector<double>* gradients);
+  double getCostAndGradientDerivative(std::vector<Eigen::VectorXd>* gradients);
+  double getCostAndGradientSoftConstraintsForward(
+          std::vector<Eigen::VectorXd>* gradients);
 
   // Evaluates the maximum magnitude constraints as soft constraints and
   // returns a cost, depending on the violation of the constraints.
@@ -262,6 +277,11 @@ class PolynomialOptimizationNonLinear {
       const std::vector<std::shared_ptr<ConstraintData> >&
           inequality_constraints,
       double weight, double maximum_cost = 1.0e12) const;
+
+  // Set lower and upper bounds on the optimization parameters
+  void setFreeEndpointDerivativeHardConstraints(
+          const Vertex::Vector& vertices,
+          std::vector<double>* lower_bounds, std::vector<double>* upper_bounds);
 
   // Computes the total trajectory time.
   static double computeTotalTrajectoryTime(

@@ -32,7 +32,7 @@
 
 #include <mav_trajectory_generation/polynomial.h>
 #include <mav_trajectory_generation_ros/ros_conversions.h>
-#include <mav_trajectory_generation_ros/trajectory_sampling.h>
+#include <mav_trajectory_generation/trajectory_sampling.h>
 
 class TrajectorySamplerNode {
  public:
