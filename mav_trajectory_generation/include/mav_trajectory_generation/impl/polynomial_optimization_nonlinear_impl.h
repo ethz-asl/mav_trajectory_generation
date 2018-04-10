@@ -147,7 +147,6 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTime() {
   try {
     // Set a lower bound on the segment time per segment to avoid numerical
     // issues.
-    constexpr double kOptimizationTimeLowerBound = 0.1;
     nlopt_->set_initial_step(initial_step);
     nlopt_->set_upper_bounds(std::numeric_limits<double>::infinity());
     nlopt_->set_lower_bounds(kOptimizationTimeLowerBound);
@@ -183,7 +182,6 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTimeMellingerOuterLoop() {
   try {
     // Set a lower bound on the segment time per segment to avoid numerical
     // issues.
-    constexpr double kOptimizationTimeLowerBound = 0.1;
     nlopt_->set_upper_bounds(HUGE_VAL);
     nlopt_->set_lower_bounds(kOptimizationTimeLowerBound);
     nlopt_->set_min_objective(
@@ -266,18 +264,8 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTimeMellingerOuterLoopGD() {
     double step_size = 1.0 / (lambda + i);
     increment = -step_size * grad;
 
-//    std::cout << "[GD MEL] i: " << i << " step size: " << step_size
-//              << " cost: " << cost << " gradient norm: " << grad.norm()
-//              << std::endl;
-//    std::cout << "[GD] i: " << i << " grad: " << grad.transpose()
-//              << std::endl;
-//    std::cout << "[GD] i: " << i << " increment: " << increment.transpose()
-//              << std::endl;
-
     // Update the parameters.
     x += increment;
-//    std::cout << "[GD] i: " << i << " x: " << x.transpose()
-//              << std::endl;
 
     for (int n = 0; n < x.size(); ++n) {
       x[n] = x[n] <= 0.1 ? 0.1 : x[n];
@@ -317,7 +305,7 @@ double PolynomialOptimizationNonLinear<_N>::getCostAndGradient(
   // Retrieve the current segment times
   std::vector<double> segment_times;
   poly_opt_.getSegmentTimes(&segment_times);
-  const double J_d = 2*poly_opt_.computeCost();// TODO: *2 necessary?
+  const double J_d = poly_opt_.computeCost();
 
   if (gradients != NULL) {
     const size_t n_segments = poly_opt_.getNumberSegments();
@@ -343,38 +331,28 @@ double PolynomialOptimizationNonLinear<_N>::getCostAndGradient(
         }
       }
 
-//      std::cout << "sum: " << std::accumulate(
-//              segment_times_bigger.begin(), segment_times_bigger.end(), 0.0)
-//                << " seg times: " << std::endl;
-//      for (int j = 0; j < segment_times_bigger.size(); ++j) {
-//        std::cout << segment_times_bigger[j] << " ";
-//      }
-//      std::cout << std::endl;
-
       // TODO: add case if segment_time is at threshold 0.1s
       // 1) How many segments > 0.1s
       // 2) trajectory time correction only on those
-//      for (int j = 0; j < segment_times_bigger.size(); ++j) {
-//        double thresh_corr = 0.0;
-//        if (segment_times_bigger[j] < 0.1) {
-//          thresh_corr = 0.1-segment_times_bigger[j];
-//        }
-//      }
+      // for (int j = 0; j < segment_times_bigger.size(); ++j) {
+      //   double thresh_corr = 0.0;
+      //   if (segment_times_bigger[j] < 0.1) {
+      //     thresh_corr = 0.1-segment_times_bigger[j];
+      //   }
+      // }
+
+      // Check and make sure if segment times are all > 0.1
+      for (double& t : segment_times_bigger) {
+        t = t <= kOptimizationTimeLowerBound ? kOptimizationTimeLowerBound : t;
+      }
 
       // Update the segment times. This changes the polynomial coefficients.
       poly_opt_.updateSegmentTimes(segment_times_bigger);
       poly_opt_.solveLinear();
 
       // Calculate cost and gradient with new segment time
-      const double J_d_bigger = 2*poly_opt_.computeCost();// TODO: *2 necessary?
+      const double J_d_bigger = poly_opt_.computeCost();
       const double dJd_dt = (J_d_bigger - J_d) / increment_time;
-
-//      std::cout << "J_d: " << J_d
-//                << " | J_d_bigger: " << J_d_bigger
-//                << " | dJd_dt: " << dJd_dt
-//                << " | h*dJd_dt: " << increment_time*dJd_dt
-//                << " | J_d_bigger=J_d+h*dJd_dt: " << J_d+(increment_time*dJd_dt)
-//                << std::endl;
 
       // Calculate the gradient
       gradients->at(n) = w_d*dJd_dt;
@@ -433,10 +411,16 @@ void PolynomialOptimizationNonLinear<_N>::scaleSegmentTimesWithViolation(
                                     rel_violation_a : rel_violation_v;
     *segment_times /= (1.0-smallest_rel_violation);
 
-    // Set and update new segement times
+    // Convert new segment times
     std::vector<double> segment_times_new(segment_times->data(),
                                           segment_times->data() +
                                                   segment_times->size());
+    // Check and make sure that segment times are all > 0.1
+    for (double& t : segment_times_new) {
+      t = t <= kOptimizationTimeLowerBound ? kOptimizationTimeLowerBound : t;
+    }
+
+    // Update new segment times
     poly_opt_.updateSegmentTimes(segment_times_new);
     poly_opt_.solveLinear();
 
@@ -659,7 +643,7 @@ optimizeTimeAndFreeConstraintsRichterGD() {
     // Update segement times and free constraints
     poly_opt_.updateSegmentTimes(segment_times_new);
     poly_opt_.setFreeConstraints(d_p_vec_new);
-    poly_opt_.solveLinear(); // TODO: needed?
+    poly_opt_.solveLinear(); 
   }
 
   // Print only segment times
@@ -691,7 +675,8 @@ double PolynomialOptimizationNonLinear<_N>::getCostAndGradientTimeForward(
 
   // Calculate current cost
   // TODO: parse from outside?
-  const double J_d = 2*poly_opt_.computeCost();// TODO: *2 necessary?
+  // According to paper the endpoint derivative cost is cost = c^T * Q * c
+  const double J_d = poly_opt_.computeCost();
   const double J_sc = getCostAndGradientSoftConstraintsForward(NULL);
 
   if (gradients != NULL) {
@@ -718,7 +703,7 @@ double PolynomialOptimizationNonLinear<_N>::getCostAndGradientTimeForward(
       poly_opt_.solveLinear();
 
       // Calculate cost and gradient with new segment time
-      const double J_d_bigger = 2*poly_opt_.computeCost();
+      const double J_d_bigger = poly_opt_.computeCost();
       double J_sc_bigger = 0.0;
       if (optimization_parameters_.use_soft_constraints) {
         J_sc_bigger = getCostAndGradientSoftConstraintsForward(NULL);

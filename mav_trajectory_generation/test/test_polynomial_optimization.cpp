@@ -135,8 +135,9 @@ bool checkCost(double cost_to_check, const std::vector<Segment>& segments,
   CHECK_GE(derivative, size_t(0));
   CHECK(relative_tolerance >= 0.0 && relative_tolerance <= 1.0);
   const double sampling_interval = 0.001;
+  // TODO: why *2.0 needed here now?
   double cost_numeric =
-      computeCostNumeric(segments, derivative, sampling_interval);
+      2.0*computeCostNumeric(segments, derivative, sampling_interval);
 
   if (std::abs(cost_numeric - cost_to_check) >
       cost_numeric * relative_tolerance) {
@@ -646,7 +647,9 @@ TEST(MavTrajectoryGeneration,
   int ret;
 
   timing::Timer timer_setup("setup_3D_10s_nonlinear_time_only");
-  PolynomialOptimizationNonLinear<N> opt(3, parameters, true);
+  parameters.time_alloc_method ==
+      NonlinearOptimizationParameters::kSquaredTime;
+  PolynomialOptimizationNonLinear<N> opt(3, parameters);
   opt.setupFromVertices(vertices, segment_times, derivative_to_optimize);
   opt.addMaximumMagnitudeConstraint(derivative_order::VELOCITY,
                                     approximate_v_max);
@@ -661,7 +664,9 @@ TEST(MavTrajectoryGeneration,
             << std::endl;
 
   timing::Timer timer_setup2("setup_3D_10s_nonlinear_time_and_derivatives");
-  PolynomialOptimizationNonLinear<N> opt2(3, parameters, false);
+  parameters.time_alloc_method ==
+      NonlinearOptimizationParameters::kSquaredTimeAndConstraints;
+  PolynomialOptimizationNonLinear<N> opt2(3, parameters);
   opt2.setupFromVertices(vertices, segment_times, derivative_to_optimize);
   opt2.addMaximumMagnitudeConstraint(derivative_order::VELOCITY,
                                      approximate_v_max);

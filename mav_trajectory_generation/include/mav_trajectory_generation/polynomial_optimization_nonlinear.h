@@ -28,6 +28,8 @@
 
 namespace mav_trajectory_generation {
 
+constexpr double kOptimizationTimeLowerBound = 0.1;
+
 // Class holding all important parameters for nonlinear optimization.
 struct NonlinearOptimizationParameters {
   NonlinearOptimizationParameters()
