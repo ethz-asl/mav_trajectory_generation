@@ -239,6 +239,19 @@ void TimeEvaluationNode::runBenchmark(int trial_number, int num_segments) {
     visualizeTrajectory(method_name, trajectory_nonlinear, &markers);
   }
 
+  method_name = "nonlinear_without_init_step_size";
+  Trajectory trajectory_nonlinear_without_init_step_size;
+  timing::Timer timer_nonlinear_without_init_step_size(method_name);
+  runNonlinear(vertices, false, &trajectory_nonlinear_without_init_step_size);
+  timer_nonlinear_without_init_step_size.Stop();
+  evaluateTrajectory(method_name, trajectory_nonlinear_without_init_step_size,
+                     &result);
+  results_.push_back(result);
+  if (visualize_) {
+    visualizeTrajectory(method_name,
+                        trajectory_nonlinear_without_init_step_size, &markers);
+  }
+
   method_name = "nonlinear_richter";
   Trajectory trajectory_nonlinear_richter;
   timing::Timer timer_nonlinear_richter(method_name);
@@ -516,6 +529,8 @@ void TimeEvaluationNode::visualizeTrajectory(
     trajectory_color = mav_visualization::Color::Green();
   } else if (method_name == "nonlinear") {
     trajectory_color = mav_visualization::Color::Red();
+  } else if (method_name == "nonlinear_without_init_step_size") {
+    trajectory_color = mav_visualization::Color::Teal();
   } else if (method_name == "nonlinear_richter") {
     trajectory_color = mav_visualization::Color::Blue();
   } else if (method_name == "nonlinear_richter_gd") {
