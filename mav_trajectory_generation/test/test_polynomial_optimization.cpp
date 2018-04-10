@@ -632,10 +632,14 @@ TEST(MavTrajectoryGeneration,
   parameters.time_penalty = 500.0;
   parameters.initial_stepsize_rel = 0.1;
   parameters.inequality_constraint_tolerance = 0.1;
+  // For global methods (GN_): Non-inf boundary conditions for all
+  // optimization parameters needed. Change bounds to non-inf values.
+  // Otherwise infinite compile time or "error: nlopt invalid argument".
   //  parameters.algorithm = nlopt::GN_ORIG_DIRECT;
   //  parameters.algorithm = nlopt::GN_ORIG_DIRECT_L;
-  parameters.algorithm = nlopt::GN_ISRES;
+  //  parameters.algorithm = nlopt::GN_ISRES;
   //  parameters.algorithm = nlopt::LN_COBYLA;
+  parameters.algorithm = nlopt::LN_SBPLX;
 
   parameters.random_seed = 12345678;
 

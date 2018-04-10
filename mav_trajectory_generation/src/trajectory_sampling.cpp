@@ -18,7 +18,7 @@
  * limitations under the License.
  */
 
-#include "mav_trajectory_generation_ros/trajectory_sampling.h"
+#include "mav_trajectory_generation/trajectory_sampling.h"
 
 namespace mav_trajectory_generation {
 
