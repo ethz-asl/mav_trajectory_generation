@@ -31,7 +31,7 @@ cs_add_library(${PROJECT_NAME}
   src/trajectory.cpp
   src/trajectory_sampling.cpp
   src/vertex.cpp
-  src/yaml_io.cpp
+  src/io.cpp
 )
 # Link against yaml-cpp.
 target_link_libraries(${PROJECT_NAME} ${YamlCpp_LIBRARIES})
