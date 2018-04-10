@@ -263,16 +263,16 @@ void TimeEvaluationNode::runBenchmark(int trial_number, int num_segments) {
     visualizeTrajectory(method_name, trajectory_nonlinear_richter, &markers);
   }
 
-  method_name = "nonlinear_richter_gd";
-  Trajectory trajectory_nonlinear_richter_gd;
-  timing::Timer timer_nonlinear_richter_gd(method_name);
-  runNonlinearRichter(vertices, true, &trajectory_nonlinear_richter_gd);
-  timer_nonlinear_richter_gd.Stop();
-  evaluateTrajectory(method_name, trajectory_nonlinear_richter_gd, &result);
-  results_.push_back(result);
-  if (visualize_) {
-    visualizeTrajectory(method_name, trajectory_nonlinear_richter_gd, &markers);
-  }
+//  method_name = "nonlinear_richter_gd";
+//  Trajectory trajectory_nonlinear_richter_gd;
+//  timing::Timer timer_nonlinear_richter_gd(method_name);
+//  runNonlinearRichter(vertices, true, &trajectory_nonlinear_richter_gd);
+//  timer_nonlinear_richter_gd.Stop();
+//  evaluateTrajectory(method_name, trajectory_nonlinear_richter_gd, &result);
+//  results_.push_back(result);
+//  if (visualize_) {
+//    visualizeTrajectory(method_name, trajectory_nonlinear_richter_gd, &markers);
+//  }
 
   method_name = "mellinger_outer_loop";
   Trajectory trajectory_mellinger_outer_loop;
@@ -285,16 +285,20 @@ void TimeEvaluationNode::runBenchmark(int trial_number, int num_segments) {
     visualizeTrajectory(method_name, trajectory_mellinger_outer_loop, &markers);
   }
 
-  method_name = "mellinger_outer_loop_gd";
-  Trajectory trajectory_mellinger_outer_loop_gd;
-  timing::Timer timer_mellinger_gd(method_name);
-  runMellingerOuterLoop(vertices, false, true, &trajectory_mellinger_outer_loop_gd);
-  timer_mellinger_gd.Stop();
-  evaluateTrajectory(method_name, trajectory_mellinger_outer_loop_gd, &result);
   results_.push_back(result);
   if (visualize_) {
-    visualizeTrajectory(method_name, trajectory_mellinger_outer_loop_gd, &markers);
   }
+
+//  method_name = "mellinger_outer_loop_gd";
+//  Trajectory trajectory_mellinger_outer_loop_gd;
+//  timing::Timer timer_mellinger_gd(method_name);
+//  runMellingerOuterLoop(vertices, false, true, &trajectory_mellinger_outer_loop_gd);
+//  timer_mellinger_gd.Stop();
+//  evaluateTrajectory(method_name, trajectory_mellinger_outer_loop_gd, &result);
+//  results_.push_back(result);
+//  if (visualize_) {
+//    visualizeTrajectory(method_name, trajectory_mellinger_outer_loop_gd, &markers);
+//  }
 
   method_name = "mellinger_outer_loop_trapezoidal_init";
   Trajectory trajectory_mellinger_outer_loop_trapezoidal_init;
