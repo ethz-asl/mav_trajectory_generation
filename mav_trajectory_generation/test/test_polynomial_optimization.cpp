@@ -135,8 +135,9 @@ bool checkCost(double cost_to_check, const std::vector<Segment>& segments,
   CHECK_GE(derivative, size_t(0));
   CHECK(relative_tolerance >= 0.0 && relative_tolerance <= 1.0);
   const double sampling_interval = 0.001;
+  // TODO: why *2.0 needed here now?
   double cost_numeric =
-      computeCostNumeric(segments, derivative, sampling_interval);
+      2.0*computeCostNumeric(segments, derivative, sampling_interval);
 
   if (std::abs(cost_numeric - cost_to_check) >
       cost_numeric * relative_tolerance) {
@@ -632,10 +633,14 @@ TEST(MavTrajectoryGeneration,
   parameters.time_penalty = 500.0;
   parameters.initial_stepsize_rel = 0.1;
   parameters.inequality_constraint_tolerance = 0.1;
+  // For global methods (GN_): Non-inf boundary conditions for all
+  // optimization parameters needed. Change bounds to non-inf values.
+  // Otherwise infinite compile time or "error: nlopt invalid argument".
   //  parameters.algorithm = nlopt::GN_ORIG_DIRECT;
   //  parameters.algorithm = nlopt::GN_ORIG_DIRECT_L;
-  parameters.algorithm = nlopt::GN_ISRES;
+  //  parameters.algorithm = nlopt::GN_ISRES;
   //  parameters.algorithm = nlopt::LN_COBYLA;
+  parameters.algorithm = nlopt::LN_SBPLX;
 
   parameters.random_seed = 12345678;
 

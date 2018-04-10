@@ -134,7 +134,7 @@ int PolynomialOptimizationNonLinear<_N>::optimize() {
 
 template <int _N>
 int PolynomialOptimizationNonLinear<_N>::optimizeTime() {
-  std::vector<double> initial_step, segment_times, upper_bounds;
+  std::vector<double> initial_step, segment_times;
 
   poly_opt_.getSegmentTimes(&segment_times);
   const size_t n_segments = segment_times.size();
@@ -144,15 +144,11 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTime() {
     initial_step.push_back(optimization_parameters_.initial_stepsize_rel * t);
   }
 
-  for (double t : segment_times) {
-    upper_bounds.push_back(t * 2.0);
-  }
-
   try {
     // Set a lower bound on the segment time per segment to avoid numerical
     // issues.
     nlopt_->set_initial_step(initial_step);
-    nlopt_->set_upper_bounds(upper_bounds);
+    nlopt_->set_upper_bounds(std::numeric_limits<double>::infinity());
     nlopt_->set_lower_bounds(kOptimizationTimeLowerBound);
     nlopt_->set_min_objective(
         &PolynomialOptimizationNonLinear<N>::objectiveFunctionTime, this);
@@ -482,6 +478,8 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTimeAndFreeConstraints() {
 
   poly_opt_.getSegmentTimes(&segment_times);
   const size_t n_segments = segment_times.size();
+  // Set a lower bound on segment time per segment to avoid numerical issues
+  constexpr double kOptimizationTimeLowerBound = 0.1;
 
   // compute initial solution
   poly_opt_.solveLinear();
@@ -509,6 +507,30 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTimeAndFreeConstraints() {
     }
   }
 
+  // Setup for getting bounds on the free endpoint derivatives
+  std::vector<double> lower_bounds_free, upper_bounds_free;
+  const size_t n_optmization_variables_free =
+          free_constraints.size() * free_constraints.front().size();
+  lower_bounds_free.reserve(n_optmization_variables_free);
+  upper_bounds_free.reserve(n_optmization_variables_free);
+
+  // Get the lower and upper bounds constraints on the free endpoint derivatives
+  Vertex::Vector vertices;
+  poly_opt_.getVertices(&vertices);
+  setFreeEndpointDerivativeHardConstraints(vertices, &lower_bounds_free,
+                                           &upper_bounds_free);
+
+  // Set segment time constraints
+  for (int l = 0; l < n_segments; ++l) {
+    lower_bounds.push_back(kOptimizationTimeLowerBound);
+    upper_bounds.push_back(std::numeric_limits<double>::infinity());
+  }
+  // Append free endpoint derivative constraints
+  lower_bounds.insert(std::end(lower_bounds), std::begin(lower_bounds_free),
+                      std::end(lower_bounds_free));
+  upper_bounds.insert(std::end(upper_bounds), std::begin(upper_bounds_free),
+                      std::end(upper_bounds_free));
+
   initial_step.reserve(n_optmization_variables);
   for (double x : initial_solution) {
     const double abs_x = std::abs(x);
@@ -520,8 +542,6 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTimeAndFreeConstraints() {
       initial_step.push_back(optimization_parameters_.initial_stepsize_rel *
                              abs_x);
     }
-    lower_bounds.push_back(-abs_x * 2);
-    upper_bounds.push_back(abs_x * 2);
   }
 
   for (size_t i = 0; i < n_segments; ++i) {
@@ -652,7 +672,7 @@ optimizeTimeAndFreeConstraintsRichterGD() {
     // Update segement times and free constraints
     poly_opt_.updateSegmentTimes(segment_times_new);
     poly_opt_.setFreeConstraints(d_p_vec_new);
-    poly_opt_.solveLinear(); // TODO: needed?
+    poly_opt_.solveLinear(); 
   }
 
   // Print only segment times
@@ -684,7 +704,8 @@ double PolynomialOptimizationNonLinear<_N>::getCostAndGradientTimeForward(
 
   // Calculate current cost
   // TODO: parse from outside?
-  const double J_d = 2*poly_opt_.computeCost();// TODO: *2 necessary?
+  // According to paper the endpoint derivative cost is cost = c^T * Q * c
+  const double J_d = poly_opt_.computeCost();
   const double J_sc = getCostAndGradientSoftConstraintsForward(NULL);
 
   if (gradients != NULL) {
@@ -711,7 +732,7 @@ double PolynomialOptimizationNonLinear<_N>::getCostAndGradientTimeForward(
       poly_opt_.solveLinear();
 
       // Calculate cost and gradient with new segment time
-      const double J_d_bigger = 2*poly_opt_.computeCost();
+      const double J_d_bigger = poly_opt_.computeCost();
       double J_sc_bigger = 0.0;
       if (optimization_parameters_.use_soft_constraints) {
         J_sc_bigger = getCostAndGradientSoftConstraintsForward(NULL);
@@ -1160,6 +1181,57 @@ PolynomialOptimizationNonLinear<_N>::evaluateMaximumMagnitudeAsSoftConstraint(
     }
   }
   return cost;
+}
+
+template <int _N>
+void
+PolynomialOptimizationNonLinear<_N>::setFreeEndpointDerivativeHardConstraints(
+        const Vertex::Vector& vertices,
+        std::vector<double>* lower_bounds, std::vector<double>* upper_bounds) {
+  CHECK_NOTNULL(lower_bounds);
+  CHECK_NOTNULL(upper_bounds);
+  CHECK(lower_bounds->empty()) << "Lower bounds not empty!";
+  CHECK(upper_bounds->empty()) << "Upper bounds not empty!";
+
+  const size_t n_free_constraints = poly_opt_.getNumberFreeConstraints();
+  const size_t dim = poly_opt_.getDimension();
+  const int derivative_to_optimize = poly_opt_.getDerivativeToOptimize();
+
+  LOG(INFO) << "USE HARD CONSTRAINTS FOR ENDPOINT DERIVATIVE BOUNDARIES";
+
+  // Set all values to -inf/inf and reset only bounded opti param with values
+  lower_bounds->resize(dim * n_free_constraints,
+                       -std::numeric_limits<double>::infinity());
+  upper_bounds->resize(dim * n_free_constraints,
+                       std::numeric_limits<double>::infinity());
+
+  // Add higher order derivative constraints (v_max and a_max)
+  // Check at each vertex which of the derivatives is a free derivative.
+  // If it is a free derivative check if we have a constraint in
+  // inequality_constraints_ and set the constraint as hard constraint in
+  // lower_bounds and upper_bounds
+  for (const auto& constraint_data : inequality_constraints_) {
+    unsigned int free_deriv_counter = 0;
+    const int derivative_hc = constraint_data->derivative;
+    const double value_hc = constraint_data->value;
+
+    for (int v = 0; v < vertices.size(); ++v) {
+      for (int deriv = 0; deriv <= derivative_to_optimize; ++deriv) {
+        if (!vertices[v].hasConstraint(deriv)) {
+          if (deriv == derivative_hc) {
+            for (int k = 0; k < dim; ++k) {
+              unsigned int start_idx = k*n_free_constraints;
+              lower_bounds->at(start_idx+free_deriv_counter) =
+                      -std::abs(value_hc);
+              upper_bounds->at(start_idx+free_deriv_counter) =
+                      std::abs(value_hc);
+            }
+          }
+          free_deriv_counter++;
+        }
+      }
+    }
+  }
 }
 
 template <int _N>

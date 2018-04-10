@@ -5,10 +5,10 @@
 #include <mav_trajectory_generation/polynomial_optimization_linear.h>
 #include <mav_trajectory_generation/polynomial_optimization_nonlinear.h>
 #include <mav_trajectory_generation/timing.h>
+#include "mav_trajectory_generation/trajectory_sampling.h"
 
 #include "mav_trajectory_generation_ros/ros_conversions.h"
 #include "mav_trajectory_generation_ros/ros_visualization.h"
-#include "mav_trajectory_generation_ros/trajectory_sampling.h"
 
 namespace mav_trajectory_generation {
 
@@ -572,8 +572,8 @@ void TimeEvaluationNode::evaluateTrajectory(
     result->bounds_violated = false;
   }
 
-  // TODO: Add success variable to check for allowed relative violation, ...
-//  const double allowed_rel_violation = 0.1;
+  // Todo: Add success variable to check for allowed relative violation, ...
+  // const double allowed_rel_violation = 0.1;
 
   // Evaluate maximum trajectory distance per segment from straight line path
   // 1) Sample trajectory
