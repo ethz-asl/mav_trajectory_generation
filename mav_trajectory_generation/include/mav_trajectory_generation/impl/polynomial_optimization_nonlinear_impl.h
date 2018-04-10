@@ -315,7 +315,7 @@ double PolynomialOptimizationNonLinear<_N>::getCostAndGradient(
   // Retrieve the current segment times
   std::vector<double> segment_times;
   poly_opt_.getSegmentTimes(&segment_times);
-  const double J_d = 2*poly_opt_.computeCost();// TODO: *2 necessary?
+  const double J_d = poly_opt_.computeCost();
 
   if (gradients != NULL) {
     const size_t n_segments = poly_opt_.getNumberSegments();
@@ -369,7 +369,7 @@ double PolynomialOptimizationNonLinear<_N>::getCostAndGradient(
       poly_opt_.solveLinear();
 
       // Calculate cost and gradient with new segment time
-      const double J_d_bigger = 2*poly_opt_.computeCost();// TODO: *2 necessary?
+      const double J_d_bigger = poly_opt_.computeCost();
       const double dJd_dt = (J_d_bigger - J_d) / increment_time;
 
 //      std::cout << "J_d: " << J_d
