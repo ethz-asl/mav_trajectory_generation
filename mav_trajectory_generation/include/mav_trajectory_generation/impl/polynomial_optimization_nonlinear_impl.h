@@ -210,15 +210,17 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTimeMellingerOuterLoop() {
   scaleSegmentTimesWithViolation(&x);
 
   // Print all parameter after scaling
-  std::cout << "[MEL          Original]: " << x_orig.transpose()
-            << std::endl;
-  std::cout << "[MEL RELATIVE Solution]: " << x_rel_change.transpose()
-            << std::endl;
-  std::cout << "[MEL          Solution]: " << x.transpose() << std::endl;
-  std::cout << "[MEL   Trajectory Time] Before: " << x_orig.sum()
-            << " | After Rel Change: " << x_rel_change.sum()
-            << " | After Scaling: " << x.sum()
-            << std::endl;
+  if (optimization_parameters_.print_debug_info_time_allocation) {
+    std::cout << "[MEL          Original]: " << x_orig.transpose()
+              << std::endl;
+    std::cout << "[MEL RELATIVE Solution]: " << x_rel_change.transpose()
+              << std::endl;
+    std::cout << "[MEL          Solution]: " << x.transpose() << std::endl;
+    std::cout << "[MEL   Trajectory Time] Before: " << x_orig.sum()
+              << " | After Rel Change: " << x_rel_change.sum()
+              << " | After Scaling: " << x.sum()
+              << std::endl;
+  }
 
   return result;
 }
@@ -284,14 +286,16 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTimeMellingerOuterLoopGD() {
   scaleSegmentTimesWithViolation(&x);
 
   // Print all parameter after scaling
-  std::cout << "[GD MEL          Original]: " << x_orig.transpose()
-            << std::endl;
-  std::cout << "[GD MEL RELATIVE Solution]: " << x_rel_change.transpose()
-            << std::endl;
-  std::cout << "[GD MEL          Solution]: " << x.transpose() << std::endl;
-  std::cout << "[GD MEL   Trajectory Time] Before: " << x_orig.sum()
-            << " | After Rel Change: " << x_rel_change.sum()
-            << " | After Scaling: " << x.sum() << std::endl;
+  if (optimization_parameters_.print_debug_info_time_allocation) {
+    std::cout << "[GD MEL          Original]: " << x_orig.transpose()
+              << std::endl;
+    std::cout << "[GD MEL RELATIVE Solution]: " << x_rel_change.transpose()
+              << std::endl;
+    std::cout << "[GD MEL          Solution]: " << x.transpose() << std::endl;
+    std::cout << "[GD MEL   Trajectory Time] Before: " << x_orig.sum()
+              << " | After Rel Change: " << x_rel_change.sum()
+              << " | After Scaling: " << x.sum() << std::endl;
+  }
 
   return nlopt::SUCCESS;
 }
@@ -645,15 +649,18 @@ optimizeTimeAndFreeConstraintsRichterGD() {
   }
 
   // Print only segment times
-  std::cout << "[GD RICHTER Original]: "
-            << x_orig.block(0,0,n_segments,1).transpose()
-            << std::endl;
-  std::cout << "[GD RICHTER Solution]: "
-            << x.block(0,0,n_segments,1).transpose()
-            << std::endl;
-  std::cout << "[GD RICHTER Trajectory Time] Before: "
-            << x_orig.block(0,0,n_segments,1).sum()
-            << " | After: " << x.block(0,0,n_segments,1).sum() << std::endl;
+  if (optimization_parameters_.print_debug_info_time_allocation) {
+    std::cout << "[GD RICHTER Original]: "
+              << x_orig.block(0, 0, n_segments, 1).transpose()
+              << std::endl;
+    std::cout << "[GD RICHTER Solution]: "
+              << x.block(0, 0, n_segments, 1).transpose()
+              << std::endl;
+    std::cout << "[GD RICHTER Trajectory Time] Before: "
+              << x_orig.block(0, 0, n_segments, 1).sum()
+              << " | After: " << x.block(0, 0, n_segments, 1).sum()
+              << std::endl;
+  }
 
   return nlopt::SUCCESS;
 }

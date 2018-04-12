@@ -49,7 +49,8 @@ struct NonlinearOptimizationParameters {
         use_soft_constraints(true),
         soft_constraint_weight(100.0),
         time_alloc_method(kSquaredTimeAndConstraints),
-        print_debug_info(false) {}
+        print_debug_info(false),
+        print_debug_info_time_allocation(false) {}
 
   // Stopping criteria, if objective function changes less than absolute value.
   // Disabled if negative.
@@ -111,6 +112,7 @@ struct NonlinearOptimizationParameters {
   } time_alloc_method;
 
   bool print_debug_info;
+  bool print_debug_info_time_allocation;
 };
 
 class OptimizationInfo {

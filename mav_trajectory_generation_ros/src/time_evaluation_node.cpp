@@ -132,6 +132,7 @@ class TimeEvaluationNode {
   // General settings.
   std::string frame_id_;
   bool visualize_;
+  bool print_debug_info_;
 
   // Dynamic constraints.
   double v_max_;
@@ -153,6 +154,7 @@ TimeEvaluationNode::TimeEvaluationNode(const ros::NodeHandle& nh,
       nh_private_(nh_private),
       frame_id_("world"),
       visualize_(true),
+      print_debug_info_(false),
       v_max_(1.0),
       a_max_(2.0),
       max_derivative_order_(derivative_order::JERK) {
@@ -348,6 +350,7 @@ void TimeEvaluationNode::runNonlinear(const Vertex::Vector& vertices,
   mav_trajectory_generation::NonlinearOptimizationParameters nlopt_parameters;
   nlopt_parameters.time_alloc_method ==
           NonlinearOptimizationParameters::kSquaredTimeAndConstraints;
+  nlopt_parameters.print_debug_info_time_allocation = print_debug_info_;
   mav_trajectory_generation::PolynomialOptimizationNonLinear<kN> nlopt(
       kDim, nlopt_parameters);
   nlopt.setupFromVertices(vertices, segment_times, max_derivative_order_);
@@ -372,6 +375,7 @@ void TimeEvaluationNode::runNonlinearRichter(
     nlopt_parameters.time_alloc_method =
             NonlinearOptimizationParameters::kRichterTimeAndConstraints;
   }
+  nlopt_parameters.print_debug_info_time_allocation = print_debug_info_;
   mav_trajectory_generation::PolynomialOptimizationNonLinear<kN> nlopt(
       kDim, nlopt_parameters);
   nlopt.setupFromVertices(vertices, segment_times, max_derivative_order_);
@@ -402,6 +406,7 @@ void TimeEvaluationNode::runMellingerOuterLoop(
     nlopt_parameters.time_alloc_method =
             NonlinearOptimizationParameters::kMellingerOuterLoop;
   }
+  nlopt_parameters.print_debug_info_time_allocation = print_debug_info_;
   mav_trajectory_generation::PolynomialOptimizationNonLinear<kN> nlopt(
       kDim, nlopt_parameters);
   nlopt.setupFromVertices(vertices, segment_times, max_derivative_order_);
@@ -436,10 +441,11 @@ void TimeEvaluationNode::runSegmentViolationScalingTime(
                                     dimensions, &maxima_acc);
 
   // Print segment times before scaling
-  std::cout << "[Violation Scaling Original]: "
-            << std::accumulate(segment_times.begin(), segment_times.end(),
-                               0.0) << std::endl;
-
+  if (print_debug_info_) {
+    std::cout << "[Violation Scaling Original]: "
+              << std::accumulate(segment_times.begin(), segment_times.end(),
+                                 0.0) << std::endl;
+  }
   // Scale segment times according to violation
   for (int i = 0; i < segment_times.size(); ++i) {
 
@@ -452,9 +458,11 @@ void TimeEvaluationNode::runSegmentViolationScalingTime(
 
     double smallest_rel_violation = std::max(rel_violation_a, rel_violation_v);
 
-    std::cout << i << " segment time: " << segment_times[i]
-              << " | rel_vio_v: " << rel_violation_v
-              << " | rel_vio_a: " << rel_violation_a << std::endl;
+    if (print_debug_info_) {
+      std::cout << i << " segment time: " << segment_times[i]
+                << " | rel_vio_v: " << rel_violation_v
+                << " | rel_vio_a: " << rel_violation_a << std::endl;
+    }
 
     segment_times[i] /= (1.0-smallest_rel_violation);
   }
@@ -483,9 +491,12 @@ void TimeEvaluationNode::runSegmentViolationScalingTime(
                                     dimensions, &maxima_acc_after);
 
   // Print segment times after scaling
-  std::cout << "[Violation Scaling Solution]: "
-            << std::accumulate(segment_times.begin(), segment_times.end(),
-                               0.0) << std::endl;
+  if (print_debug_info_) {
+    std::cout << "[Violation Scaling Solution]: "
+              << std::accumulate(segment_times.begin(), segment_times.end(),
+                                 0.0) << std::endl;
+  }
+
   for (int m = 0; m < segments_after.size(); ++m) {
     double abs_violation_v, abs_violation_a, rel_violation_v, rel_violation_a;
     abs_violation_v = maxima_vel_after[m].value - v_max_;
@@ -493,9 +504,11 @@ void TimeEvaluationNode::runSegmentViolationScalingTime(
     rel_violation_v = abs_violation_v / v_max_;
     rel_violation_a = abs_violation_a / a_max_;
 
-    std::cout << m << " segment time: " << segment_times[m]
-              << " | rel_vio_v: " << rel_violation_v
-              << " | rel_vio_a: " << rel_violation_a << std::endl;
+    if (print_debug_info_) {
+      std::cout << m << " segment time: " << segment_times[m]
+                << " | rel_vio_v: " << rel_violation_v
+                << " | rel_vio_a: " << rel_violation_a << std::endl;
+    }
   }
 }
 
