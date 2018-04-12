@@ -267,8 +267,9 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTimeMellingerOuterLoopGD() {
     // Update the parameters.
     x += increment;
 
+    // Check and make sure that segment times are > kOptimizationTimeLowerBound
     for (int n = 0; n < x.size(); ++n) {
-      x[n] = x[n] <= 0.1 ? 0.1 : x[n];
+      x[n] = std::max(kOptimizationTimeLowerBound, x[n]);
     }
 
     // Set and update new segement times
@@ -341,9 +342,9 @@ double PolynomialOptimizationNonLinear<_N>::getCostAndGradient(
       //   }
       // }
 
-      // Check and make sure if segment times are all > 0.1
+      // Check and make sure that segment times are > kOptimizationTimeLowerBound
       for (double& t : segment_times_bigger) {
-        t = t <= kOptimizationTimeLowerBound ? kOptimizationTimeLowerBound : t;
+        t = std::max(kOptimizationTimeLowerBound, t);
       }
 
       // Update the segment times. This changes the polynomial coefficients.
@@ -415,9 +416,9 @@ void PolynomialOptimizationNonLinear<_N>::scaleSegmentTimesWithViolation(
     std::vector<double> segment_times_new(segment_times->data(),
                                           segment_times->data() +
                                                   segment_times->size());
-    // Check and make sure that segment times are all > 0.1
+    // Check and make sure that segment times are > kOptimizationTimeLowerBound
     for (double& t : segment_times_new) {
-      t = t <= kOptimizationTimeLowerBound ? kOptimizationTimeLowerBound : t;
+      t = std::max(kOptimizationTimeLowerBound, t);
     }
 
     // Update new segment times
@@ -620,9 +621,9 @@ optimizeTimeAndFreeConstraintsRichterGD() {
 
     // Update the parameters.
     x += increment;
-    // Check that segment times are > 0.1s
+    // Check and make sure that segment times are > kOptimizationTimeLowerBound
     for (int n = 0; n < n_segments; ++n) {
-      x[n] = x[n] <= 0.1 ? 0.1 : x[n];
+      x[n] = std::max(kOptimizationTimeLowerBound, x[n]);
     }
 
     // Set new segment times and new free constraints
@@ -686,15 +687,14 @@ double PolynomialOptimizationNonLinear<_N>::getCostAndGradientTimeForward(
     // Initialize changed segment times for numerical derivative
     std::vector<double> segment_times_bigger(n_segments);
     const double increment_time = 0.1;
-    const double min_segment_time = 0.1; // Minimum segment duration
     for (int n = 0; n < n_segments; ++n) {
       // Now the same with an increased segment time
       // Calculate cost with higher segment time
       segment_times_bigger = segment_times;
-      // Check if segment times are bigger than 0.1
-      segment_times_bigger[n] =
-              segment_times_bigger[n] <= min_segment_time ?
-              min_segment_time : segment_times_bigger[n] + increment_time;
+      // Check and make sure that segment times are >
+      // kOptimizationTimeLowerBound, otherwise add increment_time to seg time
+      segment_times_bigger[n] = std::max(kOptimizationTimeLowerBound,
+                      segment_times_bigger[n] + increment_time);
 
       // Update the segment times. This changes the polynomial coefficients.
       poly_opt_.updateSegmentTimes(segment_times_bigger);
