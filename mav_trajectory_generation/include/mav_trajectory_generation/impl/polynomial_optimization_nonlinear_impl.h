@@ -408,8 +408,7 @@ void PolynomialOptimizationNonLinear<_N>::scaleSegmentTimesWithViolation(
 
   while (!within_range && (counter < max_counter)) {
     // Scale segment times
-    double smallest_rel_violation = rel_violation_a > rel_violation_v ?
-                                    rel_violation_a : rel_violation_v;
+    double smallest_rel_violation = std::max(rel_violation_a, rel_violation_v);
     *segment_times /= (1.0-smallest_rel_violation);
 
     // Convert new segment times

@@ -450,8 +450,7 @@ void TimeEvaluationNode::runSegmentViolationScalingTime(
     rel_violation_v = abs_violation_v / v_max_;
     rel_violation_a = abs_violation_a / a_max_;
 
-    double smallest_rel_violation = rel_violation_a > rel_violation_v ?
-                                    rel_violation_a : rel_violation_v;
+    double smallest_rel_violation = std::max(rel_violation_a, rel_violation_v);
 
     std::cout << i << " segment time: " << segment_times[i]
               << " | rel_vio_v: " << rel_violation_v
