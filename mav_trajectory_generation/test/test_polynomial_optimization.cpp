@@ -647,7 +647,9 @@ TEST(MavTrajectoryGeneration,
   int ret;
 
   timing::Timer timer_setup("setup_3D_10s_nonlinear_time_only");
-  PolynomialOptimizationNonLinear<N> opt(3, parameters, true);
+  parameters.time_alloc_method ==
+      NonlinearOptimizationParameters::kSquaredTime;
+  PolynomialOptimizationNonLinear<N> opt(3, parameters);
   opt.setupFromVertices(vertices, segment_times, derivative_to_optimize);
   opt.addMaximumMagnitudeConstraint(derivative_order::VELOCITY,
                                     approximate_v_max);
@@ -662,7 +664,9 @@ TEST(MavTrajectoryGeneration,
             << std::endl;
 
   timing::Timer timer_setup2("setup_3D_10s_nonlinear_time_and_derivatives");
-  PolynomialOptimizationNonLinear<N> opt2(3, parameters, false);
+  parameters.time_alloc_method ==
+      NonlinearOptimizationParameters::kSquaredTimeAndConstraints;
+  PolynomialOptimizationNonLinear<N> opt2(3, parameters);
   opt2.setupFromVertices(vertices, segment_times, derivative_to_optimize);
   opt2.addMaximumMagnitudeConstraint(derivative_order::VELOCITY,
                                      approximate_v_max);

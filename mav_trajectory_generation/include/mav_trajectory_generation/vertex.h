@@ -152,6 +152,10 @@ Vertex::Vector createRandomVertices(int maximum_derivative, size_t n_segments,
                                     const Eigen::VectorXd& maximum_position,
                                     size_t seed = 0);
 
+Vertex::Vector createSquareVertices(int maximum_derivative,
+                                    const Eigen::Vector3d& center,
+                                    double side_length, int rounds);
+
 // Conveninence function to create 1D vertices.
 // createRandomVertices
 Vertex::Vector createRandomVertices1D(int maximum_derivative, size_t n_segments,
