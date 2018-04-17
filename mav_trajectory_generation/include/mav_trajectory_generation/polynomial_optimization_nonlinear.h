@@ -104,10 +104,8 @@ struct NonlinearOptimizationParameters {
     kSquaredTime,
     kRichterTime,
     kMellingerOuterLoop,
-    kMellingerOuterLoopGD,
     kSquaredTimeAndConstraints,
     kRichterTimeAndConstraints,
-    kRichterTimeAndConstraintsGD,
     kUnknown
   } time_alloc_method;
 
@@ -271,17 +269,11 @@ class PolynomialOptimizationNonLinear {
   // Does the actual optimization work for the time-only version.
   int optimizeTime();
   int optimizeTimeMellingerOuterLoop();
-  int optimizeTimeMellingerOuterLoopGD();
   double getCostAndGradient(std::vector<double>* gradients);
   void scaleSegmentTimesWithViolation(Eigen::VectorXd* segment_times);
 
   // Does the actual optimization work for the full optimization version.
   int optimizeTimeAndFreeConstraints();
-  int optimizeTimeAndFreeConstraintsRichterGD();
-  double getCostAndGradientTimeForward(std::vector<double>* gradients);
-  double getCostAndGradientDerivative(std::vector<Eigen::VectorXd>* gradients);
-  double getCostAndGradientSoftConstraintsForward(
-          std::vector<Eigen::VectorXd>* gradients);
 
   // Evaluates the maximum magnitude constraints as soft constraints and
   // returns a cost, depending on the violation of the constraints.

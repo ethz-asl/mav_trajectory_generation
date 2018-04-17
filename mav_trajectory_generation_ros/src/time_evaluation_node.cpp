@@ -86,11 +86,9 @@ class TimeEvaluationNode {
   void runNonlinear(const Vertex::Vector& vertices,
                     Trajectory* trajectory) const;
   void runNonlinearRichter(const Vertex::Vector& vertices,
-                           bool use_gradient_descent,
                            Trajectory* trajectory) const;
   void runMellingerOuterLoop(const Vertex::Vector& vertices,
                              bool use_trapezoidal_time,
-                             bool use_gradient_descent,
                              Trajectory* trajectory) const;
   void runSegmentViolationScalingTime(const Vertex::Vector& vertices,
                                       Trajectory* trajectory) const;
@@ -243,7 +241,7 @@ void TimeEvaluationNode::runBenchmark(int trial_number, int num_segments) {
   method_name = "nonlinear_richter";
   Trajectory trajectory_nonlinear_richter;
   timing::Timer timer_nonlinear_richter(method_name);
-  runNonlinearRichter(vertices, false, &trajectory_nonlinear_richter);
+  runNonlinearRichter(vertices, &trajectory_nonlinear_richter);
   timer_nonlinear_richter.Stop();
   evaluateTrajectory(method_name, trajectory_nonlinear_richter, &result);
   results_.push_back(result);
@@ -251,21 +249,10 @@ void TimeEvaluationNode::runBenchmark(int trial_number, int num_segments) {
     visualizeTrajectory(method_name, trajectory_nonlinear_richter, &markers);
   }
 
-  method_name = "nonlinear_richter_gd";
-  Trajectory trajectory_nonlinear_richter_gd;
-  timing::Timer timer_nonlinear_richter_gd(method_name);
-  runNonlinearRichter(vertices, true, &trajectory_nonlinear_richter_gd);
-  timer_nonlinear_richter_gd.Stop();
-  evaluateTrajectory(method_name, trajectory_nonlinear_richter_gd, &result);
-  results_.push_back(result);
-  if (visualize_) {
-    visualizeTrajectory(method_name, trajectory_nonlinear_richter_gd, &markers);
-  }
-
   method_name = "mellinger_outer_loop";
   Trajectory trajectory_mellinger_outer_loop;
   timing::Timer timer_mellinger(method_name);
-  runMellingerOuterLoop(vertices, false, false, &trajectory_mellinger_outer_loop);
+  runMellingerOuterLoop(vertices, false, &trajectory_mellinger_outer_loop);
   timer_mellinger.Stop();
   evaluateTrajectory(method_name, trajectory_mellinger_outer_loop, &result);
   results_.push_back(result);
@@ -273,21 +260,10 @@ void TimeEvaluationNode::runBenchmark(int trial_number, int num_segments) {
     visualizeTrajectory(method_name, trajectory_mellinger_outer_loop, &markers);
   }
 
-  method_name = "mellinger_outer_loop_gd";
-  Trajectory trajectory_mellinger_outer_loop_gd;
-  timing::Timer timer_mellinger_gd(method_name);
-  runMellingerOuterLoop(vertices, false, true, &trajectory_mellinger_outer_loop_gd);
-  timer_mellinger_gd.Stop();
-  evaluateTrajectory(method_name, trajectory_mellinger_outer_loop_gd, &result);
-  results_.push_back(result);
-  if (visualize_) {
-    visualizeTrajectory(method_name, trajectory_mellinger_outer_loop_gd, &markers);
-  }
-
   method_name = "mellinger_outer_loop_trapezoidal_init";
   Trajectory trajectory_mellinger_outer_loop_trapezoidal_init;
   timing::Timer timer_mellinger_trapezoidal(method_name);
-  runMellingerOuterLoop(vertices, true, false, &trajectory_mellinger_outer_loop_trapezoidal_init);
+  runMellingerOuterLoop(vertices, true, &trajectory_mellinger_outer_loop_trapezoidal_init);
   timer_mellinger_trapezoidal.Stop();
   evaluateTrajectory(method_name,
                      trajectory_mellinger_outer_loop_trapezoidal_init, &result);
@@ -361,20 +337,15 @@ void TimeEvaluationNode::runNonlinear(const Vertex::Vector& vertices,
 }
 
 void TimeEvaluationNode::runNonlinearRichter(
-        const Vertex::Vector& vertices, bool use_gradient_descent,
+        const Vertex::Vector& vertices,
         Trajectory* trajectory) const {
   std::vector<double> segment_times;
   segment_times =
       mav_trajectory_generation::estimateSegmentTimes(vertices, v_max_, a_max_);
 
   mav_trajectory_generation::NonlinearOptimizationParameters nlopt_parameters;
-  if (use_gradient_descent) {
-    nlopt_parameters.time_alloc_method =
-            NonlinearOptimizationParameters::kRichterTimeAndConstraintsGD;
-  } else {
-    nlopt_parameters.time_alloc_method =
-            NonlinearOptimizationParameters::kRichterTimeAndConstraints;
-  }
+  nlopt_parameters.time_alloc_method =
+          NonlinearOptimizationParameters::kRichterTimeAndConstraints;
   nlopt_parameters.print_debug_info_time_allocation = print_debug_info_;
   mav_trajectory_generation::PolynomialOptimizationNonLinear<kN> nlopt(
       kDim, nlopt_parameters);
@@ -387,7 +358,7 @@ void TimeEvaluationNode::runNonlinearRichter(
 
 void TimeEvaluationNode::runMellingerOuterLoop(
         const Vertex::Vector& vertices, bool use_trapezoidal_time,
-        bool use_gradient_descent, Trajectory* trajectory) const {
+        Trajectory* trajectory) const {
   std::vector<double> segment_times;
   if (use_trapezoidal_time) {
     const double kTimeFactor = 1.0;
@@ -398,14 +369,9 @@ void TimeEvaluationNode::runMellingerOuterLoop(
   }
 
   mav_trajectory_generation::NonlinearOptimizationParameters nlopt_parameters;
-  if (use_gradient_descent) {
-    nlopt_parameters.time_alloc_method =
-            NonlinearOptimizationParameters::kMellingerOuterLoopGD;
-  } else {
-    nlopt_parameters.algorithm = nlopt::LD_LBFGS;
-    nlopt_parameters.time_alloc_method =
-            NonlinearOptimizationParameters::kMellingerOuterLoop;
-  }
+  nlopt_parameters.algorithm = nlopt::LD_LBFGS;
+  nlopt_parameters.time_alloc_method =
+          NonlinearOptimizationParameters::kMellingerOuterLoop;
   nlopt_parameters.print_debug_info_time_allocation = print_debug_info_;
   mav_trajectory_generation::PolynomialOptimizationNonLinear<kN> nlopt(
       kDim, nlopt_parameters);
@@ -527,14 +493,10 @@ void TimeEvaluationNode::visualizeTrajectory(
     trajectory_color = mav_visualization::Color::Red();
   } else if (method_name == "nonlinear_richter") {
     trajectory_color = mav_visualization::Color::Blue();
-  } else if (method_name == "nonlinear_richter_gd") {
-    trajectory_color = mav_visualization::Color::Pink();
   } else if (method_name == "mellinger_outer_loop") {
     trajectory_color = mav_visualization::Color::Orange();
   } else if (method_name == "mellinger_outer_loop_trapezoidal_init") {
     trajectory_color = mav_visualization::Color::Gray();
-  } else if (method_name == "mellinger_outer_loop_gd") {
-    trajectory_color = mav_visualization::Color::Purple();
   } else if (method_name == "segment_violation_scaling") {
     trajectory_color = mav_visualization::Color::Chartreuse();
   } else {
