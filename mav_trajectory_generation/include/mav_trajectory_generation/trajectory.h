@@ -53,8 +53,8 @@ class Trajectory {
   void setSegments(const Segment::Vector& segments) {
     CHECK(!segments.empty());
     // Reset states.
-    D_ = segments_.front().D();
-    N_ = segments_.front().N();
+    D_ = segments.front().D();
+    N_ = segments.front().N();
     max_time_ = 0.0;
     segments_.clear();
 
