@@ -268,7 +268,8 @@ bool estimateSegmentTimesVelocityRamp(const Vertex::Vector& vertices,
     }
     i = end_idx - 1;  // Skip all vertices that are not position constrained.
   }
-  return segment_times;
+
+  return true;
 }
 
 double computeTimeVelocityRamp(const Eigen::Vector3d& start,
