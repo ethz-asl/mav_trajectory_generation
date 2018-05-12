@@ -224,6 +224,7 @@ std::vector<double> Trajectory::getSegmentTimes() const {
   for (size_t i = 0; i < segment_times.size(); ++i) {
     segment_times[i] = segments_[i].getTime();
   }
+  return segment_times;
 }
 
 bool Trajectory::addTrajectories(const std::vector<Trajectory>& trajectories,
