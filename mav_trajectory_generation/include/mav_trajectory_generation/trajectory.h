@@ -88,8 +88,8 @@ class Trajectory {
   bool getTrajectoryWithAppendedDimension(
       const Trajectory& trajectory_to_append, Trajectory* new_trajectory) const;
 
-  // Merge trajectories with same dimensions and coefficients.
-  bool mergeTrajectories(const std::vector<Trajectory>& trajectories,
+  // Add trajectories with same dimensions and coefficients to this trajectory.
+  bool addTrajectories(const std::vector<Trajectory>& trajectories,
                          Trajectory* merged) const;
 
   // Evaluation functions.
