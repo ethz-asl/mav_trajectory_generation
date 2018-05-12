@@ -219,4 +219,11 @@ bool Trajectory::computeMinMaxMagnitude(int derivative,
   return true;
 }
 
+std::vector<double> Trajectory::getSegmentTimes() const {
+  std::vector<double> segment_times(segments_.size());
+  for (size_t i = 0; i < segment_times.size(); ++i) {
+    segment_times[i] = segments_[i].getTime();
+  }
+}
+
 }  // namespace mav_trajectory_generation

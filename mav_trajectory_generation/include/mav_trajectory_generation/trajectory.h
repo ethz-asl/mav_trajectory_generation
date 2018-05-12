@@ -73,6 +73,7 @@ class Trajectory {
 
   double getMinTime() const { return 0.0; }
   double getMaxTime() const { return max_time_; }
+  std::vector<double> getSegmentTimes() const;
 
   // Functions to create new trajectories by splitting (getting a NEW trajectory
   // with a single dimension) or compositing (create a new trajectory with
