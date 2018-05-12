@@ -226,4 +226,29 @@ std::vector<double> Trajectory::getSegmentTimes() const {
   }
 }
 
+bool Trajectory::mergeTrajectories(const std::vector<Trajectory>& trajectories,
+                                   Trajectory* merged) const {
+  CHECK_NOTNULL(merged);
+  merged->clear();
+
+  for (const Trajectory& t : trajectories) {
+    // Check dimensions and coefficients.
+    // TODO(rikba): Allow different number of coefficients.
+    if (t.D() != trajectories.front().D() ||
+        t.N() != trajectories.front().N()) {
+      return false;
+    }
+  }
+
+  // Add segments.
+  *merged = trajectories.front();
+  for (size_t i = 2; i < trajectories.size(); ++i) {
+    Segment::Vector segments;
+    trajectories[i].getSegments(&segments);
+    merged->addSegments(segments);
+  }
+
+  return true;
+}
+
 }  // namespace mav_trajectory_generation

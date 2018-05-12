@@ -52,16 +52,22 @@ class Trajectory {
 
   void setSegments(const Segment::Vector& segments) {
     CHECK(!segments.empty());
-    segments_ = segments;
+    // Reset states.
     D_ = segments_.front().D();
     N_ = segments_.front().N();
-
-    // Cache the max time.
     max_time_ = 0.0;
+    segments_.clear();
+
+    addSegments(segments);
+  }
+
+  void addSegments(const Segment::Vector& segments) {
     for (const Segment& segment : segments) {
       CHECK_EQ(segment.D(), D_);
+      CHECK_EQ(segment.N(), N_);
       max_time_ += segment.getTime();
     }
+    segments_.insert(segments_.end(), segments.begin(), segments.end());
   }
 
   void getSegments(Segment::Vector* segments) const {
@@ -81,6 +87,10 @@ class Trajectory {
   Trajectory getTrajectoryWithSingleDimension(int dimension) const;
   bool getTrajectoryWithAppendedDimension(
       const Trajectory& trajectory_to_append, Trajectory* new_trajectory) const;
+
+  // Merge trajectories with same dimensions and coefficients.
+  bool mergeTrajectories(const std::vector<Trajectory>& trajectories,
+                         Trajectory* merged) const;
 
   // Evaluation functions.
   // Evaluate at a single time, and a single derivative. Return type of
