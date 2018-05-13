@@ -23,6 +23,7 @@
 
 #include "mav_trajectory_generation/extremum.h"
 #include "mav_trajectory_generation/segment.h"
+#include "mav_trajectory_generation/vertex.h"
 
 namespace mav_trajectory_generation {
 
@@ -91,6 +92,13 @@ class Trajectory {
   // Add trajectories with same dimensions and coefficients to this trajectory.
   bool addTrajectories(const std::vector<Trajectory>& trajectories,
                          Trajectory* merged) const;
+
+  // Evaluate the vertex constraint at time t.
+  Vertex getVertexAtTime(double t, int max_derivative_order) const;
+  // Evaluate the vertex constraint at start time.
+  Vertex getStartVertex(int max_derivative_order) const;
+  // Evaluate the vertex constraint at goal time.
+  Vertex getGoalVertex(int max_derivative_order) const;
 
   // Evaluation functions.
   // Evaluate at a single time, and a single derivative. Return type of

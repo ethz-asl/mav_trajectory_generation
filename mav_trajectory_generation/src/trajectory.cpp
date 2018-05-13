@@ -248,4 +248,20 @@ bool Trajectory::addTrajectories(const std::vector<Trajectory>& trajectories,
   return true;
 }
 
+Vertex Trajectory::getVertexAtTime(double t, int max_derivative_order) const {
+  Vertex v(D_);
+  for (size_t i = 0; i <= max_derivative_order; i++) {
+    v.addConstraint(i, evaluate(t, i));
+  }
+  return v;
+}
+
+Vertex Trajectory::getStartVertex(int max_derivative_order) const {
+  return getVertexAtTime(0.0, max_derivative_order);
+}
+
+Vertex Trajectory::getGoalVertex(int max_derivative_order) const {
+  return getVertexAtTime(max_time_, max_derivative_order);
+}
+
 }  // namespace mav_trajectory_generation
