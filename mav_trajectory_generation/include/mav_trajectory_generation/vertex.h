@@ -101,6 +101,10 @@ class Vertex {
   // Checks if both lhs and rhs are equal up to tol in case of double values.
   bool isEqualTol(const Vertex& rhs, double tol) const;
 
+  // Get subdimension vertex.
+  bool getSubdimension(const std::vector<size_t>& subdimensions,
+                       Vertex* subvertex) const;
+
  private:
   int D_;
   Constraints constraints_;

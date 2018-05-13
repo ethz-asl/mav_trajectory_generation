@@ -178,6 +178,29 @@ bool Vertex::isEqualTol(const Vertex& rhs, double tol) const {
   return true;
 }
 
+bool Vertex::getSubdimension(const std::vector<size_t>& subdimensions,
+                             Vertex* subvertex) const {
+  CHECK_NOTNULL(subvertex);
+  *subvertex = Vertex(subdimensions.size());
+
+  // Check if all subdimensions exist.
+  for (int subdimension : subdimensions)
+    if (subdimension >= D_) return false;
+
+  // Copy constraints.
+  for (Constraints::const_iterator it = constraints_.begin();
+       it != constraints_.end(); ++it) {
+    int derivative_order = it->first;
+    const ConstraintValue& original_constraint = it->second;
+    ConstraintValue subsconstraint(subvertex->D());
+    for (size_t i = 0; i < subdimensions.size(); i++) {
+      subsconstraint[i] = original_constraint[subdimensions[i]];
+    }
+    subvertex->addConstraint(derivative_order, subsconstraint);
+  }
+  return true;
+}
+
 std::ostream& operator<<(std::ostream& stream, const Vertex& v) {
   stream << "constraints: " << std::endl;
   Eigen::IOFormat format(4, 0, ", ", "\n", "[", "]");
