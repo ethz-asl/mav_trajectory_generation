@@ -103,7 +103,7 @@ class Vertex {
 
   // Get subdimension vertex.
   bool getSubdimension(const std::vector<size_t>& subdimensions,
-                       Vertex* subvertex) const;
+                       int max_derivative_order, Vertex* subvertex) const;
 
  private:
   int D_;

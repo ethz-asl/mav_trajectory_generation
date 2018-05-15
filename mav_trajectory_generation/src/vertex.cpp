@@ -179,6 +179,7 @@ bool Vertex::isEqualTol(const Vertex& rhs, double tol) const {
 }
 
 bool Vertex::getSubdimension(const std::vector<size_t>& subdimensions,
+                             int max_derivative_order,
                              Vertex* subvertex) const {
   CHECK_NOTNULL(subvertex);
   *subvertex = Vertex(subdimensions.size());
@@ -187,10 +188,11 @@ bool Vertex::getSubdimension(const std::vector<size_t>& subdimensions,
   for (int subdimension : subdimensions)
     if (subdimension >= D_) return false;
 
-  // Copy constraints.
+  // Copy constraints up to maximum derivative order.
   for (Constraints::const_iterator it = constraints_.begin();
        it != constraints_.end(); ++it) {
     int derivative_order = it->first;
+    if (derivative_order > max_derivative_order) continue;
     const ConstraintValue& original_constraint = it->second;
     ConstraintValue subsconstraint(subvertex->D());
     for (size_t i = 0; i < subdimensions.size(); i++) {
