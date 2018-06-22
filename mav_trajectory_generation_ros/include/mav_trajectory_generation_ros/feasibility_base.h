@@ -80,7 +80,7 @@ class FeasibilityBase {
   FeasibilityBase(const InputConstraints& input_constraints);
 
   // Checks a trajectory for input feasibility.
-  InputFeasibilityResult checkInputFeasibility(
+  InputFeasibilityResult checkInputFeasibilityTrajectory(
       const Trajectory& trajectory) const;
   // Checks a segment for input feasibility.
   inline virtual InputFeasibilityResult checkInputFeasibility(

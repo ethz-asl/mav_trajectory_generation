@@ -94,7 +94,7 @@ FeasibilityBase::FeasibilityBase(const InputConstraints& input_constraints)
       gravity_((Eigen::Vector3d() << 0.0, 0.0, mav_msgs::kGravity).finished()) {
 }
 
-InputFeasibilityResult FeasibilityBase::checkInputFeasibility(
+InputFeasibilityResult FeasibilityBase::checkInputFeasibilityTrajectory(
     const Trajectory& trajectory) const {
   InputFeasibilityResult result = InputFeasibilityResult::kInputIndeterminable;
   for (const Segment segment : trajectory.segments()) {
