@@ -55,7 +55,7 @@ bool sampleTrajectoryInRange(const Trajectory& trajectory, double min_time,
   }
 
   if (trajectory.D() < 3) {
-    LOG(ERROR) << "Dimension has to be 3 or 4, but is " << trajectory.D();
+    LOG(ERROR) << "Dimension has to be at least 3, but is " << trajectory.D();
     return false;
   }
 
@@ -86,10 +86,15 @@ bool sampleTrajectoryInRange(const Trajectory& trajectory, double min_time,
     state.snap_W = snap[i].head<3>();
     state.time_from_start_ns = static_cast<int64_t>(
         (min_time + sampling_interval * i) * kNumNanosecondsPerSecond);
-    if (trajectory.D() > 3) {
+    if (trajectory.D() == 4) {
       state.setFromYaw(position[i](3));
       state.setFromYawRate(velocity[i](3));
       state.setFromYawAcc(acceleration[i](3));
+    }
+    if (trajectory.D() == 7) {
+      // overactuated, write interpolated quaternion
+      state.orientation_W_B = Eigen::Quaterniond(position[i](3),position[i](4),
+                                                 position[i](5),position[i](6));
     }
   }
   return true;
