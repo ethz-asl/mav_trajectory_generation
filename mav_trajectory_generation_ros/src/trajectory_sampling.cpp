@@ -91,10 +91,16 @@ bool sampleTrajectoryInRange(const Trajectory& trajectory, double min_time,
       state.setFromYawRate(velocity[i](3));
       state.setFromYawAcc(acceleration[i](3));
     }
-    if (trajectory.D() == 7) {
-      // overactuated, write interpolated quaternion
-      state.orientation_W_B = Eigen::Quaterniond(position[i](3),position[i](4),
-                                                 position[i](5),position[i](6));
+    if (trajectory.D() == 6) {
+      // overactuated, write quaternion from interpolated rotation vector
+      Eigen::Vector3d rot_vec;
+      rot_vec << position[i](3), position[i](4), position[i](5);
+      double angle = rot_vec.norm();
+      Eigen::Vector3d rot_vec_normalized = rot_vec.normalized();
+      state.orientation_W_B = Eigen::Quaterniond(Eigen::AngleAxisd(angle, rot_vec_normalized));
+      if (angle == 0.0f) {
+        state.orientation_W_B = Eigen::Quaterniond(1.0f,0.0f,0.0f,0.0f);
+      }
     }
   }
   return true;
