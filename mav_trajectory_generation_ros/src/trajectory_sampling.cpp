@@ -93,11 +93,13 @@ bool sampleTrajectoryInRange(const Trajectory& trajectory, double min_time,
     }
     if (trajectory.D() == 6) {
       // overactuated, write quaternion from interpolated rotation vector
-      Eigen::Vector3d rot_vec;
+      Eigen::Vector3d rot_vec, rot_vec_vel;
       rot_vec << position[i](3), position[i](4), position[i](5);
+      rot_vec_vel << velocity[i](3), velocity[i](4), velocity[i](5);
       double angle = rot_vec.norm();
       Eigen::Vector3d rot_vec_normalized = rot_vec.normalized();
       state.orientation_W_B = Eigen::Quaterniond(Eigen::AngleAxisd(angle, rot_vec_normalized));
+      state.angular_velocity_W = mav_msgs::omegaFromRotationVector(rot_vec, rot_vec_vel);
       if (angle == 0.0f) {
         state.orientation_W_B = Eigen::Quaterniond(1.0f,0.0f,0.0f,0.0f);
       }
