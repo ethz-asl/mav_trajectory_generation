@@ -28,6 +28,8 @@
 
 namespace mav_trajectory_generation {
 
+constexpr double kOptimizationTimeLowerBound = 0.1;
+
 // Class holding all important parameters for nonlinear optimization.
 struct NonlinearOptimizationParameters {
   NonlinearOptimizationParameters()
@@ -46,7 +48,9 @@ struct NonlinearOptimizationParameters {
         random_seed(0),
         use_soft_constraints(true),
         soft_constraint_weight(100.0),
-        print_debug_info(false) {}
+        time_alloc_method(kSquaredTimeAndConstraints),
+        print_debug_info(false),
+        print_debug_info_time_allocation(false) {}
 
   // Stopping criteria, if objective function changes less than absolute value.
   // Disabled if negative.
@@ -96,7 +100,17 @@ struct NonlinearOptimizationParameters {
   // Weights the relative violation of a soft constraint.
   double soft_constraint_weight;
 
+  enum TimeAllocMethod {
+    kSquaredTime,
+    kRichterTime,
+    kMellingerOuterLoop,
+    kSquaredTimeAndConstraints,
+    kRichterTimeAndConstraints,
+    kUnknown
+  } time_alloc_method;
+
   bool print_debug_info;
+  bool print_debug_info_time_allocation;
 };
 
 class OptimizationInfo {
@@ -143,8 +157,7 @@ class PolynomialOptimizationNonLinear {
   // variables. The latter case is theoretically correct, but may result in
   // more iterations.
   PolynomialOptimizationNonLinear(
-      size_t dimension, const NonlinearOptimizationParameters& parameters,
-      bool optimize_time_only);
+      size_t dimension, const NonlinearOptimizationParameters& parameters);
 
   // Sets up the optimization problem from a vector of Vertex objects and
   // a vector of times between the vertices.
@@ -219,6 +232,17 @@ class PolynomialOptimizationNonLinear {
                                       std::vector<double>& gradient,
                                       void* data);
 
+  // Objective function for the time-only Mellinger Outer Loop.
+  // Input: segment_times = Segment times in the current iteration.
+  // Input: gradient = Gradient of the objective function w.r.t. changes of
+  // parameters. We can't compute the gradient analytically here.
+  // Thus, only gradient-free optimization methods are possible.
+  // Input: Custom data pointer = In our case, it's an ConstraintData object.
+  // Output: Cost = based on the parameters passed in.
+  static double objectiveFunctionTimeMellingerOuterLoop(
+          const std::vector<double>& segment_times,
+          std::vector<double>& gradient, void* data);
+
   // Objective function for the version optimizing segment times and free
   // derivatives.
   // Input: optimization_variables = Optimization variables times in the
@@ -244,6 +268,9 @@ class PolynomialOptimizationNonLinear {
 
   // Does the actual optimization work for the time-only version.
   int optimizeTime();
+  int optimizeTimeMellingerOuterLoop();
+  double getCostAndGradient(std::vector<double>* gradients);
+  void scaleSegmentTimesWithViolation(Eigen::VectorXd* segment_times);
 
   // Does the actual optimization work for the full optimization version.
   int optimizeTimeAndFreeConstraints();
@@ -283,9 +310,6 @@ class PolynomialOptimizationNonLinear {
 
   // Holds the data for evaluating inequality constraints.
   std::vector<std::shared_ptr<ConstraintData> > inequality_constraints_;
-
-  // Specifies whether to run the time only, or the full optimization.
-  bool optimize_time_only_;
 
   OptimizationInfo optimization_info_;
 };

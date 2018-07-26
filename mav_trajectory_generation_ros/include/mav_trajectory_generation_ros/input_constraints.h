@@ -18,6 +18,9 @@
  * limitations under the License.
  */
 
+#ifndef MAV_TRAJECTORY_GENERATION_ROS_INPUT_CONSTRAINTS_H_
+#define MAV_TRAJECTORY_GENERATION_ROS_INPUT_CONSTRAINTS_H_
+
 #include <map>
 
 namespace mav_trajectory_generation {
@@ -56,3 +59,5 @@ class InputConstraints {
   std::map<int, double> constraints_;
 };
 }  // namespace mav_trajectory_generation
+
+#endif // MAV_TRAJECTORY_GENERATION_ROS_INPUT_CONSTRAINTS_H_

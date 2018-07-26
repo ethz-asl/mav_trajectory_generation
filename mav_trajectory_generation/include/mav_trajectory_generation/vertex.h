@@ -101,6 +101,10 @@ class Vertex {
   // Checks if both lhs and rhs are equal up to tol in case of double values.
   bool isEqualTol(const Vertex& rhs, double tol) const;
 
+  // Get subdimension vertex.
+  bool getSubdimension(const std::vector<size_t>& subdimensions,
+                       int max_derivative_order, Vertex* subvertex) const;
+
  private:
   int D_;
   Constraints constraints_;
@@ -120,6 +124,20 @@ std::vector<double> estimateSegmentTimes(const Vertex::Vector& vertices,
                                          double v_max, double a_max,
                                          double magic_fabian_constant = 6.5);
 
+// Calculate the velocity assuming instantaneous constant acceleration a_max
+// and straight line rest-to-rest trajectories.
+// The time_factor \in [1..Inf] increases the allocated time making the segments
+// slower and thus feasibility more likely. This method does not take into
+// account the start and goal velocity and acceleration.
+bool estimateSegmentTimesVelocityRamp(const Vertex::Vector& vertices,
+                                      double v_max, double a_max,
+                                      double time_factor,
+                                      std::vector<double>* segment_times);
+
+double computeTimeVelocityRamp(const Eigen::Vector3d& start,
+                               const Eigen::Vector3d& goal, double v_max,
+                               double a_max);
+
 // Creates random vertices for position within minimum_position and
 // maximum_position.
 // Vertices at the beginning and end have only fixed constraints with their
@@ -137,6 +155,10 @@ Vertex::Vector createRandomVertices(int maximum_derivative, size_t n_segments,
                                     const Eigen::VectorXd& minimum_position,
                                     const Eigen::VectorXd& maximum_position,
                                     size_t seed = 0);
+
+Vertex::Vector createSquareVertices(int maximum_derivative,
+                                    const Eigen::Vector3d& center,
+                                    double side_length, int rounds);
 
 // Conveninence function to create 1D vertices.
 // createRandomVertices
