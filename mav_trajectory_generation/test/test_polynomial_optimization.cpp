@@ -137,7 +137,7 @@ bool checkCost(double cost_to_check, const std::vector<Segment>& segments,
   const double sampling_interval = 0.001;
   // TODO: why *2.0 needed here now?
   double cost_numeric =
-      2.0*computeCostNumeric(segments, derivative, sampling_interval);
+      2.0 * computeCostNumeric(segments, derivative, sampling_interval);
 
   if (std::abs(cost_numeric - cost_to_check) >
       cost_numeric * relative_tolerance) {
@@ -150,6 +150,23 @@ bool checkCost(double cost_to_check, const std::vector<Segment>& segments,
   }
 
   return true;
+}
+
+void getMaxVelocityAndAcceleration(const Trajectory& trajectory, double* v_max,
+                                   double* a_max) {
+  std::vector<int> dimensions = {0, 1, 2};  // Evaluate dimensions in x, y and z
+  mav_trajectory_generation::Extremum v_min_traj, v_max_traj, a_min_traj,
+      a_max_traj;
+
+  trajectory.computeMinMaxMagnitude(
+      mav_trajectory_generation::derivative_order::VELOCITY, dimensions,
+      &v_min_traj, &v_max_traj);
+  trajectory.computeMinMaxMagnitude(
+      mav_trajectory_generation::derivative_order::ACCELERATION, dimensions,
+      &a_min_traj, &a_max_traj);
+
+  *v_max = v_max_traj.value;
+  *a_max = a_max_traj.value;
 }
 
 TEST(MavTrajectoryGeneration, PathPlanning_TestVertexGeneration1D) {
@@ -647,8 +664,7 @@ TEST(MavTrajectoryGeneration,
   int ret;
 
   timing::Timer timer_setup("setup_3D_10s_nonlinear_time_only");
-  parameters.time_alloc_method ==
-      NonlinearOptimizationParameters::kSquaredTime;
+  parameters.time_alloc_method = NonlinearOptimizationParameters::kSquaredTime;
   PolynomialOptimizationNonLinear<N> opt(3, parameters);
   opt.setupFromVertices(vertices, segment_times, derivative_to_optimize);
   opt.addMaximumMagnitudeConstraint(derivative_order::VELOCITY,
@@ -664,7 +680,7 @@ TEST(MavTrajectoryGeneration,
             << std::endl;
 
   timing::Timer timer_setup2("setup_3D_10s_nonlinear_time_and_derivatives");
-  parameters.time_alloc_method ==
+  parameters.time_alloc_method =
       NonlinearOptimizationParameters::kSquaredTimeAndConstraints;
   PolynomialOptimizationNonLinear<N> opt2(3, parameters);
   opt2.setupFromVertices(vertices, segment_times, derivative_to_optimize);
@@ -842,6 +858,82 @@ TEST(MavTrajectoryGeneration, ConstraintPacking) {
       }
     }
   }
+}
+
+TEST(MavTrajectoryGeneration, TimeScaling) {
+  constexpr int K = 3;
+  Eigen::VectorXd pos_min(K), pos_max(K);
+  pos_min << -25, -25, -25;
+  pos_max << 25, 25, 25;
+  Vertex::Vector vertices;
+  const int num_segments = 10;
+  const size_t random_seed = 123;
+  vertices = createRandomVertices(max_derivative, num_segments, pos_min,
+                                  pos_max, random_seed);
+
+  const double v_max = 3.0;
+  const double a_max = 5.0;
+
+  int derivative_to_optimize =
+      mav_trajectory_generation::derivative_order::JERK;
+
+  std::vector<double> segment_times;
+  double time_factor = 1.0;
+
+  // Allocate using the ramp.
+  ASSERT_TRUE(estimateSegmentTimesVelocityRamp(vertices, v_max, a_max,
+                                               time_factor, &segment_times));
+
+  // Generate the linear trajectory.
+  PolynomialOptimization<N> opt(K);
+  opt.setupFromVertices(vertices, segment_times);
+  opt.solveLinear();
+  Trajectory trajectory;
+  opt.getTrajectory(&trajectory);
+
+  double v_max_traj, a_max_traj;
+  getMaxVelocityAndAcceleration(trajectory, &v_max_traj, &a_max_traj);
+
+  EXPECT_LT(v_max_traj, v_max);
+  EXPECT_LT(a_max_traj, a_max);
+
+  // Now re-scale the times, using various non-linear optimization techniques.
+  mav_trajectory_generation::NonlinearOptimizationParameters nlopt_parameters;
+  nlopt_parameters.algorithm = nlopt::LD_LBFGS;
+  nlopt_parameters.time_alloc_method = mav_trajectory_generation::
+        NonlinearOptimizationParameters::kMellingerOuterLoop;
+  nlopt_parameters.print_debug_info_time_allocation = true;
+  nlopt_parameters.random_seed = 12345678;
+  mav_trajectory_generation::PolynomialOptimizationNonLinear<N> nlopt(
+        K, nlopt_parameters);
+
+  nlopt.setupFromVertices(vertices, segment_times, derivative_to_optimize);
+  nlopt.addMaximumMagnitudeConstraint(
+      mav_trajectory_generation::derivative_order::VELOCITY,
+      v_max);
+  nlopt.addMaximumMagnitudeConstraint(
+      mav_trajectory_generation::derivative_order::ACCELERATION,
+      a_max);
+  nlopt.solveLinear();
+
+  double initial_cost = nlopt.getCostAndGradient(NULL);
+
+
+  Eigen::Map<Eigen::VectorXd> x_rel_change(segment_times.data(),
+                                           segment_times.size());
+
+  // Scaling of segment times
+  Eigen::VectorXd x = x_rel_change;
+  nlopt.scaleSegmentTimesWithViolation(&x);
+
+  getMaxVelocityAndAcceleration(trajectory, &v_max_traj, &a_max_traj);
+
+  EXPECT_LE(v_max_traj, v_max);
+  EXPECT_LE(a_max_traj, a_max);
+  double final_cost = nlopt.getCostAndGradient(NULL);
+
+  EXPECT_LE(final_cost, initial_cost);
+
 }
 
 void createTestPolynomials() {

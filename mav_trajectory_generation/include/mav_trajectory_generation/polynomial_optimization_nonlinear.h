@@ -60,7 +60,7 @@ struct NonlinearOptimizationParameters {
   // Disabled if negative.
   double f_rel;
 
-  // Stopping criteria, if state changes less than relative value. 
+  // Stopping criteria, if state changes less than relative value.
   // Disabled if negative.
   double x_rel;
 
@@ -212,6 +212,10 @@ class PolynomialOptimizationNonLinear {
 
   OptimizationInfo getOptimizationInfo() const { return optimization_info_; }
 
+  // Functions for optimization, but may be useful for diagnostics outside.
+  double getCostAndGradient(std::vector<double>* gradients);
+  void scaleSegmentTimesWithViolation(Eigen::VectorXd* segment_times);
+
  private:
   // Holds the data for constraint evaluation, since these methods are
   // static.
@@ -269,8 +273,6 @@ class PolynomialOptimizationNonLinear {
   // Does the actual optimization work for the time-only version.
   int optimizeTime();
   int optimizeTimeMellingerOuterLoop();
-  double getCostAndGradient(std::vector<double>* gradients);
-  void scaleSegmentTimesWithViolation(Eigen::VectorXd* segment_times);
 
   // Does the actual optimization work for the full optimization version.
   int optimizeTimeAndFreeConstraints();
