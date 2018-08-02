@@ -169,8 +169,7 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTimeMellingerOuterLoop() {
   poly_opt_.getSegmentTimes(&segment_times);
 
   // Save original segment times
-  Eigen::Map<Eigen::VectorXd> x_orig(segment_times.data(),
-                                     segment_times.size());
+  std::vector<double> original_segment_times = segment_times;
 
   if (optimization_parameters_.print_debug_info_time_allocation) {
     std::cout << "Segment times: ";
@@ -217,22 +216,39 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTimeMellingerOuterLoop() {
     }
   }
 
-  Eigen::Map<Eigen::VectorXd> x_rel_change(segment_times.data(),
-                                           segment_times.size());
-
   // Scaling of segment times
-  Eigen::VectorXd x = x_rel_change;
-  scaleSegmentTimesWithViolation(&x);
+  std::vector<double> relative_segment_times;
+  poly_opt_.getSegmentTimes(&relative_segment_times);
+  scaleSegmentTimesWithViolation();
+  std::vector<double> scaled_segment_times;
+  poly_opt_.getSegmentTimes(&scaled_segment_times);
 
   // Print all parameter after scaling
   if (optimization_parameters_.print_debug_info_time_allocation) {
-    std::cout << "[MEL          Original]: " << x_orig.transpose() << std::endl;
-    std::cout << "[MEL RELATIVE Solution]: " << x_rel_change.transpose()
+    std::cout << "[MEL          Original]: ";
+    std::for_each(original_segment_times.cbegin(),
+                  original_segment_times.cend(),
+                  [](double c) { std::cout << c << " "; });
+    std::cout << std::endl;
+    std::cout << "[MEL RELATIVE Solution]: ";
+    std::for_each(relative_segment_times.cbegin(),
+                  relative_segment_times.cend(),
+                  [](double c) { std::cout << c << " "; });
+    std::cout << std::endl;
+    std::cout << "[MEL          Solution]: ";
+    std::for_each(scaled_segment_times.cbegin(), scaled_segment_times.cend(),
+                  [](double c) { std::cout << c << " "; });
+    std::cout << std::endl;
+    std::cout << "[MEL   Trajectory Time] Before: "
+              << std::accumulate(original_segment_times.begin(),
+                                 original_segment_times.end(), 0)
+              << " | After Rel Change: "
+              << std::accumulate(relative_segment_times.begin(),
+                                 relative_segment_times.end(), 0)
+              << " | After Scaling: "
+              << std::accumulate(scaled_segment_times.begin(),
+                                 scaled_segment_times.end(), 0)
               << std::endl;
-    std::cout << "[MEL          Solution]: " << x.transpose() << std::endl;
-    std::cout << "[MEL   Trajectory Time] Before: " << x_orig.sum()
-              << " | After Rel Change: " << x_rel_change.sum()
-              << " | After Scaling: " << x.sum() << std::endl;
   }
 
   return result;
@@ -313,11 +329,12 @@ double PolynomialOptimizationNonLinear<_N>::getCostAndGradient(
 }
 
 template <int _N>
-void PolynomialOptimizationNonLinear<_N>::scaleSegmentTimesWithViolation(
-    Eigen::VectorXd* segment_times) {
+void PolynomialOptimizationNonLinear<_N>::scaleSegmentTimesWithViolation() {
   // Get trajectory
   Trajectory traj;
   poly_opt_.getTrajectory(&traj);
+  std::vector<double> segment_times;
+  poly_opt_.getSegmentTimes(&segment_times);
 
   // Evaluate min/max extrema
   Extremum v_min_actual, v_max_actual, a_min_actual, a_max_actual;
@@ -338,36 +355,33 @@ void PolynomialOptimizationNonLinear<_N>::scaleSegmentTimesWithViolation(
     }
   }
 
-  // Evaluate constraint/bound violation
-  double abs_violation_v = v_max_actual.value - v_max;
-  double abs_violation_a = a_max_actual.value - a_max;
-  double rel_violation_v = abs_violation_v / v_max;
-  double rel_violation_a = abs_violation_a / a_max;
+  double velocity_violation = v_max_actual.value / v_max;
+  double acceleration_violation = a_max_actual.value / a_max;
 
   int counter = 0;
   const double violation_range = 0.01;
   const int max_counter = 20;
   bool within_range = false;
 
-  std::cout << "Beginning " << counter << " a: max: " << a_max_actual.value
-            << " viol: " << abs_violation_a << "/" << a_max
-            << " (rel: " << rel_violation_a
-            << "%) v: max: " << v_max_actual.value
-            << " viol: " << abs_violation_v << "/" << v_max
-            << " (rel: " << rel_violation_v << "%)\n";
+  std::cout << "Beginning  v: max: " << v_max_actual.value << " / " << v_max
+            << " viol: " << velocity_violation
+            << " a: max: " << a_max_actual.value << " / " << a_max
+            << " viol: " << acceleration_violation << std::endl;
 
   while (!within_range && (counter < max_counter)) {
-    // Scale segment times
-    double smallest_rel_violation = std::max(rel_violation_a, rel_violation_v);
-    *segment_times /= (1.0 - smallest_rel_violation);
+    // From Liu, Sikang, et al. "Planning Dynamically Feasible Trajectories for
+    // Quadrotors Using Safe Flight Corridors in 3-D Complex Environments." IEEE
+    // Robotics and Automation Letters 2.3 (2017).
+
+    double violation_scaling = std::max(
+        1.0, std::max(velocity_violation, sqrt(acceleration_violation)));
 
     // Convert new segment times
-    std::vector<double> segment_times_new(
-        segment_times->data(), segment_times->data() + segment_times->size());
+    std::vector<double> segment_times_new = segment_times;
     // Check and make sure that segment times are >
     // kOptimizationTimeLowerBound
     for (double& t : segment_times_new) {
-      t = std::max(kOptimizationTimeLowerBound, t);
+      t = std::max(kOptimizationTimeLowerBound, t * violation_scaling);
     }
 
     // Update new segment times
@@ -385,20 +399,16 @@ void PolynomialOptimizationNonLinear<_N>::scaleSegmentTimesWithViolation(
                                 &a_min_actual, &a_max_actual);
 
     // Reevaluate constraint/bound violation
-    abs_violation_v = v_max_actual.value - v_max;
-    abs_violation_a = a_max_actual.value - a_max;
-    rel_violation_v = abs_violation_v / v_max;
-    rel_violation_a = abs_violation_a / a_max;
+    velocity_violation = v_max_actual.value / v_max;
+    acceleration_violation = a_max_actual.value / a_max;
 
-    std::cout << "Iteration " << counter << " a: max: " << a_max_actual.value
-              << " viol: " << abs_violation_a << "/" << a_max
-              << " (rel: " << rel_violation_a
-              << "%) v: max: " << v_max_actual.value
-              << " viol: " << abs_violation_v << "/" << v_max
-              << " (rel: " << rel_violation_v << "%)\n";
+    std::cout << "Iteration " << counter << " v: max: " << v_max_actual.value
+              << " / " << v_max << " viol: " << velocity_violation
+              << " a: max: " << a_max_actual.value << " / " << a_max
+              << " viol: " << acceleration_violation << std::endl;
 
-    within_range = (std::abs(rel_violation_v) <= violation_range &&
-                    rel_violation_a <= violation_range);
+    within_range = velocity_violation <= 1.0 + violation_range &&
+                    acceleration_violation <= 1.0 + violation_range;
     counter++;
   }
 }

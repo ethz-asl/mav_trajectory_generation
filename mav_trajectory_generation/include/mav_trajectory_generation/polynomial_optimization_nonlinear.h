@@ -214,7 +214,7 @@ class PolynomialOptimizationNonLinear {
 
   // Functions for optimization, but may be useful for diagnostics outside.
   double getCostAndGradient(std::vector<double>* gradients);
-  void scaleSegmentTimesWithViolation(Eigen::VectorXd* segment_times);
+  void scaleSegmentTimesWithViolation();
 
  private:
   // Holds the data for constraint evaluation, since these methods are

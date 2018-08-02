@@ -884,56 +884,45 @@ TEST(MavTrajectoryGeneration, TimeScaling) {
   ASSERT_TRUE(estimateSegmentTimesVelocityRamp(vertices, v_max, a_max,
                                                time_factor, &segment_times));
 
-  // Generate the linear trajectory.
-  PolynomialOptimization<N> opt(K);
-  opt.setupFromVertices(vertices, segment_times);
-  opt.solveLinear();
-  Trajectory trajectory;
-  opt.getTrajectory(&trajectory);
-
-  double v_max_traj, a_max_traj;
-  getMaxVelocityAndAcceleration(trajectory, &v_max_traj, &a_max_traj);
-
-  EXPECT_LT(v_max_traj, v_max);
-  EXPECT_LT(a_max_traj, a_max);
-
   // Now re-scale the times, using various non-linear optimization techniques.
   mav_trajectory_generation::NonlinearOptimizationParameters nlopt_parameters;
   nlopt_parameters.algorithm = nlopt::LD_LBFGS;
   nlopt_parameters.time_alloc_method = mav_trajectory_generation::
-        NonlinearOptimizationParameters::kMellingerOuterLoop;
+      NonlinearOptimizationParameters::kMellingerOuterLoop;
   nlopt_parameters.print_debug_info_time_allocation = true;
   nlopt_parameters.random_seed = 12345678;
   mav_trajectory_generation::PolynomialOptimizationNonLinear<N> nlopt(
-        K, nlopt_parameters);
+      K, nlopt_parameters);
 
   nlopt.setupFromVertices(vertices, segment_times, derivative_to_optimize);
   nlopt.addMaximumMagnitudeConstraint(
-      mav_trajectory_generation::derivative_order::VELOCITY,
-      v_max);
+      mav_trajectory_generation::derivative_order::VELOCITY, v_max);
   nlopt.addMaximumMagnitudeConstraint(
-      mav_trajectory_generation::derivative_order::ACCELERATION,
-      a_max);
+      mav_trajectory_generation::derivative_order::ACCELERATION, a_max);
   nlopt.solveLinear();
 
+  Trajectory trajectory;
+  double v_max_traj, a_max_traj;
+  nlopt.getTrajectory(&trajectory);
+
   double initial_cost = nlopt.getCostAndGradient(NULL);
-
-
-  Eigen::Map<Eigen::VectorXd> x_rel_change(segment_times.data(),
-                                           segment_times.size());
+  getMaxVelocityAndAcceleration(trajectory, &v_max_traj, &a_max_traj);
+  std::cout << "Starting v max: " << v_max_traj << " a max: " << a_max_traj
+            << std::endl;
 
   // Scaling of segment times
-  Eigen::VectorXd x = x_rel_change;
-  nlopt.scaleSegmentTimesWithViolation(&x);
+  nlopt.scaleSegmentTimesWithViolation();
+  nlopt.getTrajectory(&trajectory);
 
   getMaxVelocityAndAcceleration(trajectory, &v_max_traj, &a_max_traj);
+  std::cout << "Ending v max: " << v_max_traj << " a max: " << a_max_traj
+            << std::endl;
 
   EXPECT_LE(v_max_traj, v_max);
   EXPECT_LE(a_max_traj, a_max);
   double final_cost = nlopt.getCostAndGradient(NULL);
 
   EXPECT_LE(final_cost, initial_cost);
-
 }
 
 void createTestPolynomials() {
