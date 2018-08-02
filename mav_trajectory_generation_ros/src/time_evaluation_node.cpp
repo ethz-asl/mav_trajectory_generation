@@ -569,23 +569,6 @@ void TimeEvaluationNode::evaluateTrajectory(
   traj.computeMinMaxMagnitude(derivative_order::ACCELERATION, dimensions,
                               &result->a_min_actual, &result->a_max_actual);
 
-  // OVERWRITE EXTREMA WITH ACTUAL EXTREMA.
-
-  double v_max = 0.0;
-  double a_max = 0.0;
-
-  for (const mav_msgs::EigenTrajectoryPoint& point : path) {
-    if (point.velocity_W.norm() > v_max) {
-      v_max = point.velocity_W.norm();
-    }
-    if (point.acceleration_W.norm() > a_max) {
-      a_max = point.acceleration_W.norm();
-    }
-  }
-
-  result->v_max_actual.value = v_max;
-  result->a_max_actual.value = a_max;
-
   // Evaluate constraint/bound violation
   result->abs_violation_v = result->v_max_actual.value - v_max_;
   result->abs_violation_a = result->a_max_actual.value - a_max_;

@@ -415,93 +415,6 @@ void PolynomialOptimizationNonLinear<_N>::scaleSegmentTimesWithViolation() {
 }
 
 template <int _N>
-void PolynomialOptimizationNonLinear<_N>::scaleSegmentTimesWithViolationOld() {
-  // Get trajectory
-  Trajectory traj;
-  poly_opt_.getTrajectory(&traj);
-  std::vector<double> segment_times;
-  poly_opt_.getSegmentTimes(&segment_times);
-
-  // Evaluate min/max extrema
-  Extremum v_min_actual, v_max_actual, a_min_actual, a_max_actual;
-  std::vector<int> dimensions = {0, 1, 2};  // Evaluate dimensions in x, y and z
-  traj.computeMinMaxMagnitude(derivative_order::VELOCITY, dimensions,
-                              &v_min_actual, &v_max_actual);
-  traj.computeMinMaxMagnitude(derivative_order::ACCELERATION, dimensions,
-                              &a_min_actual, &a_max_actual);
-
-  // Get constraints
-  double v_max = 0.0;
-  double a_max = 0.0;
-  for (const auto& constraint : inequality_constraints_) {
-    if (constraint->derivative == derivative_order::VELOCITY) {
-      v_max = constraint->value;
-    } else if (constraint->derivative == derivative_order::ACCELERATION) {
-      a_max = constraint->value;
-    }
-  }
-
-  // Evaluate constraint/bound violation
-  double abs_violation_v = v_max_actual.value - v_max;
-  double abs_violation_a = a_max_actual.value - a_max;
-  double rel_violation_v = abs_violation_v / v_max;
-  double rel_violation_a = abs_violation_a / a_max;
-
-  int counter = 0;
-  const double violation_range = 0.01;
-  const int max_counter = 20;
-  bool within_range = false;
-
-  std::cout << "Beginning  v: max: " << v_max_actual.value << " / " << v_max
-            << " rel viol: " << rel_violation_v
-            << " a: max: " << a_max_actual.value << " / " << a_max
-            << " rel viol: " << rel_violation_a << std::endl;
-
-  while (!within_range && (counter < max_counter)) {
-    double smallest_rel_violation =
-        std::min(std::max(rel_violation_a, rel_violation_v), 1.0);
-
-    // Convert new segment times
-    std::vector<double> segment_times_new = segment_times;
-    // Check and make sure that segment times are >
-    // kOptimizationTimeLowerBound
-    for (double& t : segment_times_new) {
-      t = std::max(kOptimizationTimeLowerBound,
-                   t / (1.0 - smallest_rel_violation));
-    }
-
-    // Update new segment times
-    poly_opt_.updateSegmentTimes(segment_times_new);
-    poly_opt_.solveLinear();
-
-    // Get new trajectory
-    traj.clear();
-    poly_opt_.getTrajectory(&traj);
-
-    // Reevaluate min/max extrema
-    traj.computeMinMaxMagnitude(derivative_order::VELOCITY, dimensions,
-                                &v_min_actual, &v_max_actual);
-    traj.computeMinMaxMagnitude(derivative_order::ACCELERATION, dimensions,
-                                &a_min_actual, &a_max_actual);
-
-    // Reevaluate constraint/bound violation
-    abs_violation_v = v_max_actual.value - v_max;
-    abs_violation_a = a_max_actual.value - a_max;
-    rel_violation_v = abs_violation_v / v_max;
-    rel_violation_a = abs_violation_a / a_max;
-
-    std::cout << "Iteration " << counter << " v: max: " << v_max_actual.value
-              << " / " << v_max << " rel viol: " << rel_violation_v
-              << " a: max: " << a_max_actual.value << " / " << a_max
-              << " rel viol: " << rel_violation_a << std::endl;
-
-    within_range = (std::abs(rel_violation_v) <= violation_range &&
-                    rel_violation_a <= violation_range);
-    counter++;
-  }
-}
-
-template <int _N>
 int PolynomialOptimizationNonLinear<_N>::optimizeTimeAndFreeConstraints() {
   std::vector<double> initial_step, initial_solution, segment_times,
       lower_bounds, upper_bounds;
@@ -513,6 +426,11 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTimeAndFreeConstraints() {
   poly_opt_.solveLinear();
   std::vector<Eigen::VectorXd> free_constraints;
   poly_opt_.getFreeConstraints(&free_constraints);
+  if (free_constraints.size() == 0 || free_constraints.front().size() == 0) {
+    LOG(ERROR) << "No free variables, returning current solution.";
+    return 1;
+  }
+
   CHECK(free_constraints.size() > 0);
   CHECK(free_constraints.front().size() > 0);
 

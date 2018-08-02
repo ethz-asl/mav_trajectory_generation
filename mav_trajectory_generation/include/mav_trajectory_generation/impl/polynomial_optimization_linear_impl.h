@@ -419,9 +419,6 @@ void PolynomialOptimization<_N>::
       Eigen::VectorXd value_deriv = segment.evaluate(t - dt, Derivative + 1);
       if (value_deriv.norm() < 1e-2) {
         candidates->push_back(t - dt);  // extremum was at last dt
-        std::cout << "Adding extrema at time " << t - dt
-                  << "! Last dir: " << direction
-                  << " new dir: " << direction_new << std::endl;
       }
     }
 

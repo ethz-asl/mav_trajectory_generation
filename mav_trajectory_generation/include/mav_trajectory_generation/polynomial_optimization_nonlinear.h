@@ -216,9 +216,6 @@ class PolynomialOptimizationNonLinear {
   double getCostAndGradient(std::vector<double>* gradients);
   void scaleSegmentTimesWithViolation();
 
-  // TODO(helenol): remove.
-  void scaleSegmentTimesWithViolationOld();
-
  private:
   // Holds the data for constraint evaluation, since these methods are
   // static.
