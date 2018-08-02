@@ -382,48 +382,14 @@ bool PolynomialOptimization<_N>::computeSegmentMaximumMagnitudeCandidates(
   CHECK(candidates);
   static_assert(N - Derivative - 1 > 0, "N-Derivative-1 has to be greater 0");
 
-  const int n_d = N - Derivative;
-  const int n_dd = N - Derivative - 1;
-  const int convolved_coefficients_length =
-      ConvolutionDimension<n_d, n_dd>::length;
-
-  Eigen::VectorXcd roots;
-
-  if (segment.D() > 1) {
-    Eigen::Matrix<double, convolved_coefficients_length, 1>
-        convolved_coefficients;  // Column vector.
-    convolved_coefficients.setZero();
-    for (const Polynomial& p : segment.getPolynomialsRef()) {
-      // Our coefficients are INCREASING, so when you take the derivative,
-      // only the lower powers of t have non-zero coefficients.
-      // So we take the head.
-      Eigen::Matrix<double, n_d, 1> d = p.getCoefficients(Derivative).head(n_d);
-      Eigen::Matrix<double, n_dd, 1> dd =
-          p.getCoefficients(Derivative + 1).head(n_dd);
-      convolved_coefficients += convolve(d, dd);
-    }
-
-    Polynomial polynomial_convolved(convolved_coefficients_length);
-    polynomial_convolved.setCoefficients(convolved_coefficients);
-    roots = polynomial_convolved.computeRoots();
-  } else {
-    // For dimension == 1, it doesn't make a difference, thus we can simply
-    // compute the roots of the derivative.
-    const Polynomial d(n_dd,
-                       segment[0].getCoefficients(Derivative + 1).head(n_dd));
-    roots = d.computeRoots();
+  // Use the implementation of this in the segment (template-free) as it's
+  // actually faster.
+  std::vector<int> dimensions;
+  for (int i = 0; i < segment.D(); i++) {
+    dimensions.push_back(i);
   }
-
-  if (roots.size() == 0) {
-    // Then Jenkins-Traub failed! :( Should fall back to something else.
-    return false;
-  }
-
-  // Use the same methods as elsewhere!
-  bool success = Polynomial::selectMinMaxCandidatesFromRoots(t_start, t_stop,
-                                                             roots, candidates);
-
-  return success;
+  return segment.computeMinMaxMagnitudeCandidateTimes(
+      Derivative, t_start, t_stop, dimensions, candidates);
 }
 
 template <int _N>
@@ -439,7 +405,7 @@ void PolynomialOptimization<_N>::
 
   // Determine initial direction from t_start -dt to t_start.
   // t_start may be an extremum, especially for start and end vertices!
-  double direction = value_old.squaredNorm() - value_start.squaredNorm();
+  double direction = value_old.norm() - value_start.norm();
 
   // Continue with direction from t_start to t_start + dt until t_stop + dt.
   // Again, there may be an extremum at t_stop (e.g. end vertex).
@@ -447,10 +413,16 @@ void PolynomialOptimization<_N>::
     Eigen::VectorXd value_new;
     value_new = segment.evaluate(t, Derivative);
 
-    double direction_new = value_new.squaredNorm() - value_old.squaredNorm();
+    double direction_new = value_new.norm() - value_old.norm();
 
-    if (sgn(direction) != sgn(direction_new)) {
-      candidates->push_back(t - dt);  // extremum was at last dt
+    if (std::signbit(direction) != std::signbit(direction_new)) {
+      Eigen::VectorXd value_deriv = segment.evaluate(t - dt, Derivative + 1);
+      if (value_deriv.norm() < 1e-2) {
+        candidates->push_back(t - dt);  // extremum was at last dt
+        std::cout << "Adding extrema at time " << t - dt
+                  << "! Last dir: " << direction
+                  << " new dir: " << direction_new << std::endl;
+      }
     }
 
     value_old = value_new;

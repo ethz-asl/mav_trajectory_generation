@@ -251,8 +251,8 @@ TEST_P(PolynomialOptimizationTests, VertexGeneration) {
   pos_min.setConstant(-params_.pos_bounds);
   pos_max.setConstant(params_.pos_bounds);
 
-  EXPECT_EQ(vertices_.front().getNumberOfConstraints(), N / 2);
-  EXPECT_EQ(vertices_.back().getNumberOfConstraints(), N / 2);
+  EXPECT_EQ(vertices_.front().getNumberOfConstraints(), max_derivative + 1);
+  EXPECT_EQ(vertices_.back().getNumberOfConstraints(), max_derivative + 1);
 
   for (const Vertex& v : vertices_) {
     EXPECT_TRUE(v.hasConstraint(derivative_order::POSITION));
@@ -305,6 +305,7 @@ TEST_P(PolynomialOptimizationTests, UnconstrainedLinearEstimateSegmentTimes) {
 TEST_P(PolynomialOptimizationTests, ExtremaOfMagnitude) {
   std::vector<double> segment_times =
       estimateSegmentTimes(vertices_, v_max, a_max);
+  constexpr int kDerivative = derivative_order::VELOCITY;
 
   PolynomialOptimization<N> opt(K);
   opt.setupFromVertices(vertices_, segment_times, max_derivative);
@@ -328,20 +329,28 @@ TEST_P(PolynomialOptimizationTests, ExtremaOfMagnitude) {
   for (const Segment& s : segments) {
     std::vector<double> res;
     time_analytic.Start();
-    opt.computeSegmentMaximumMagnitudeCandidates<1>(s, 0, s.getTime(), &res);
+    opt.computeSegmentMaximumMagnitudeCandidates<kDerivative>(s, 0, s.getTime(),
+                                                              &res);
     time_analytic.Stop();
 
     std::vector<double> res_template_free;
     time_analytic_template_free.Start();
-    s.computeMinMaxMagnitudeCandidateTimes(1, 0.0, s.getTime(), dimensions,
-                                           &res_template_free);
+    s.computeMinMaxMagnitudeCandidateTimes(kDerivative, 0.0, s.getTime(),
+                                           dimensions, &res_template_free);
     time_analytic_template_free.Stop();
 
     std::vector<double> res_sampling;
     time_sampling.Start();
-    opt.computeSegmentMaximumMagnitudeCandidatesBySampling<1>(
-        s, 0, s.getTime(), 0.001, &res_sampling);
+    opt.computeSegmentMaximumMagnitudeCandidatesBySampling<kDerivative>(
+        s, 0, s.getTime(), 0.01, &res_sampling);
     time_sampling.Stop();
+
+    // First check that the candidates are ACTUAL extrema.
+    // Do this by evaluating the derivative+1 of the segment.
+    for (double candidate : res_sampling) {
+      Eigen::VectorXd sampled = s.evaluate(candidate, kDerivative + 1);
+      EXPECT_NEAR(0.0, sampled.norm(), 1e-2) << "Time: " << candidate;
+    }
 
     constexpr double check_tolerance = 0.01;
     bool success = checkExtrema(res_sampling, res, check_tolerance);
@@ -366,11 +375,10 @@ TEST_P(PolynomialOptimizationTests, ExtremaOfMagnitude) {
       }
       std::cout << std::endl;
 
-      std::cout << "vx = "
-                << s[0].getCoefficients(derivative_order::VELOCITY)
-                       .reverse()
-                       .format(matlab_format)
-                << ";\n";
+      std::cout
+          << "vx = "
+          << s[0].getCoefficients(kDerivative).reverse().format(matlab_format)
+          << ";\n";
       std::cout << "t = 0:0.001:" << s.getTime() << "; \n";
     }
     EXPECT_TRUE(success);
@@ -895,13 +903,37 @@ OptimizationParams segment_50_dim_3 = {3 /* K */,
                                        3.0 /* v_max */,
                                        5.0 /* a_mav */};
 
-INSTANTIATE_TEST_CASE_P(OneDimension, PolynomialOptimizationTests,
+OptimizationParams extrema1 = {1 /* K */,
+                               derivative_order::SNAP,
+                               1 /* num_segments*/,
+                               106 /* seed */,
+                               10.0 /* pos_max */,
+                               3.0 /* v_max */,
+                               5.0 /* a_mav */};
+OptimizationParams extrema2 = {1 /* K */,
+                               derivative_order::SNAP,
+                               2 /* num_segments*/,
+                               106 /* seed */,
+                               10.0 /* pos_max */,
+                               3.0 /* v_max */,
+                               5.0 /* a_mav */};
+OptimizationParams extrema3 = {1 /* K */,
+                               derivative_order::JERK,
+                               3 /* num_segments*/,
+                               106 /* seed */,
+                               10.0 /* pos_max */,
+                               3.0 /* v_max */,
+                               5.0 /* a_mav */};
+/*INSTANTIATE_TEST_CASE_P(OneDimension, PolynomialOptimizationTests,
                         ::testing::Values(segment_1_dim_1, segment_10_dim_1,
                                           segment_50_dim_1));
 
 INSTANTIATE_TEST_CASE_P(ThreeDimensions, PolynomialOptimizationTests,
                         ::testing::Values(segment_1_dim_3, segment_10_dim_3,
-                                          segment_50_dim_3));
+                                          segment_50_dim_3)); */
+
+INSTANTIATE_TEST_CASE_P(Extrema, PolynomialOptimizationTests,
+                        ::testing::Values(extrema1, extrema2, extrema3));
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
