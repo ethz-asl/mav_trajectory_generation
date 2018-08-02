@@ -28,6 +28,7 @@
 
 #include "mav_trajectory_generation/polynomial_optimization_linear.h"
 #include "mav_trajectory_generation/polynomial_optimization_nonlinear.h"
+#include "mav_trajectory_generation/test_utils.h"
 #include "mav_trajectory_generation/timing.h"
 
 using namespace mav_trajectory_generation;
@@ -38,37 +39,6 @@ const size_t derivative_to_optimize = derivative_order::SNAP;
 
 Eigen::IOFormat matlab_format(Eigen::FullPrecision, 0, ", ", ";\n", "", "", "[",
                               "]");
-
-template <class T1, class T2>
-bool checkMatrices(const Eigen::MatrixBase<T1>& m1,
-                   const Eigen::MatrixBase<T2>& m2, double tol) {
-  return (m1 - m2).cwiseAbs().maxCoeff() < tol;
-}
-
-double getMaximumMagnitude(const std::vector<Segment>& segments,
-                           size_t derivative, double dt = 0.01) {
-  double maximum = -1e9;
-
-  for (const Segment& s : segments) {
-    for (double ts = 0; ts < s.getTime(); ts += dt) {
-      double current_value = s.evaluate(ts, derivative).norm();
-      if (current_value > maximum) maximum = current_value;
-    }
-  }
-  return maximum;
-}
-
-double computeCostNumeric(const std::vector<Segment>& segments,
-                          size_t derivative, double dt = 0.001) {
-  double cost = 0;
-
-  for (const Segment& s : segments) {
-    for (double ts = 0; ts < s.getTime(); ts += dt) {
-      cost += s.evaluate(ts, derivative).squaredNorm() * dt;
-    }
-  }
-  return cost;
-}
 
 void checkPath(const Vertex::Vector& vertices,
                const std::vector<Segment>& segments) {
@@ -130,14 +100,13 @@ void checkPath(const Vertex::Vector& vertices,
   }
 }
 
-bool checkCost(double cost_to_check, const std::vector<Segment>& segments,
+bool checkCost(double cost_to_check, const Trajectory& trajectory,
                size_t derivative, double relative_tolerance) {
   CHECK_GE(derivative, size_t(0));
   CHECK(relative_tolerance >= 0.0 && relative_tolerance <= 1.0);
   const double sampling_interval = 0.001;
-  // TODO: why *2.0 needed here now?
   double cost_numeric =
-      2.0 * computeCostNumeric(segments, derivative, sampling_interval);
+      computeCostNumeric(trajectory, derivative, sampling_interval);
 
   if (std::abs(cost_numeric - cost_to_check) >
       cost_numeric * relative_tolerance) {
@@ -152,8 +121,8 @@ bool checkCost(double cost_to_check, const std::vector<Segment>& segments,
   return true;
 }
 
-void getMaxVelocityAndAcceleration(const Trajectory& trajectory, double* v_max,
-                                   double* a_max) {
+void getMaxVelocityAndAccelerationAnalytical(const Trajectory& trajectory,
+                                             double* v_max, double* a_max) {
   std::vector<int> dimensions = {0, 1, 2};  // Evaluate dimensions in x, y and z
   mav_trajectory_generation::Extremum v_min_traj, v_max_traj, a_min_traj,
       a_max_traj;
@@ -167,6 +136,18 @@ void getMaxVelocityAndAcceleration(const Trajectory& trajectory, double* v_max,
 
   *v_max = v_max_traj.value;
   *a_max = a_max_traj.value;
+}
+
+void getMaxVelocityAndAccelerationNumerical(const Trajectory& trajectory,
+                                            double* v_max, double* a_max) {
+  std::vector<int> dimensions = {0, 1, 2};  // Evaluate dimensions in x, y and z
+  mav_trajectory_generation::Extremum v_min_traj, v_max_traj, a_min_traj,
+      a_max_traj;
+
+  *v_max = getMaximumMagnitude(
+      trajectory, mav_trajectory_generation::derivative_order::VELOCITY);
+  *a_max = getMaximumMagnitude(
+      trajectory, mav_trajectory_generation::derivative_order::ACCELERATION);
 }
 
 TEST(MavTrajectoryGeneration, PathPlanning_TestVertexGeneration1D) {
@@ -240,13 +221,16 @@ TEST(MavTrajectoryGeneration, PathPlanningUnconstrained_1D_10_segments) {
 
   Segment::Vector segments;
   opt.getSegments(&segments);
+  Trajectory trajectory;
+  opt.getTrajectory(&trajectory);
 
   std::cout << "Base coefficients: "
             << Polynomial::base_coefficients_.block(3, 0, 1, N) << std::endl;
 
   checkPath(vertices, segments);
-  double v_max = getMaximumMagnitude(segments, derivative_order::VELOCITY);
-  double a_max = getMaximumMagnitude(segments, derivative_order::ACCELERATION);
+  double v_max = getMaximumMagnitude(trajectory, derivative_order::VELOCITY);
+  double a_max =
+      getMaximumMagnitude(trajectory, derivative_order::ACCELERATION);
   std::cout << "v_max: " << v_max << " a_max: " << a_max << std::endl;
 
   timing::Timer timer_cost("cost_1D_10s");
@@ -257,7 +241,7 @@ TEST(MavTrajectoryGeneration, PathPlanningUnconstrained_1D_10_segments) {
   EXPECT_LT(v_max, approximate_v_max * 2.0);
   EXPECT_LT(a_max, approximate_a_max * 2.0);
   EXPECT_TRUE(
-      checkCost(opt.computeCost(), segments, derivative_to_optimize, 0.1));
+      checkCost(opt.computeCost(), trajectory, derivative_to_optimize, 0.1));
 }
 
 TEST(MavTrajectoryGeneration, PathPlanningUnconstrained_1D_50_segments) {
@@ -280,9 +264,13 @@ TEST(MavTrajectoryGeneration, PathPlanningUnconstrained_1D_50_segments) {
   Segment::Vector segments;
   opt.getSegments(&segments);
 
+  Trajectory trajectory;
+  opt.getTrajectory(&trajectory);
+
   checkPath(vertices, segments);
-  double v_max = getMaximumMagnitude(segments, derivative_order::VELOCITY);
-  double a_max = getMaximumMagnitude(segments, derivative_order::ACCELERATION);
+  double v_max = getMaximumMagnitude(trajectory, derivative_order::VELOCITY);
+  double a_max =
+      getMaximumMagnitude(trajectory, derivative_order::ACCELERATION);
   std::cout << "v_max: " << v_max << " a_max: " << a_max << std::endl;
 
   timing::Timer timer_cost("cost_1D_50s");
@@ -293,7 +281,7 @@ TEST(MavTrajectoryGeneration, PathPlanningUnconstrained_1D_50_segments) {
   EXPECT_LT(v_max, approximate_v_max * 2.0);
   EXPECT_LT(a_max, approximate_a_max);
   EXPECT_TRUE(
-      checkCost(opt.computeCost(), segments, derivative_to_optimize, 0.1));
+      checkCost(opt.computeCost(), trajectory, derivative_to_optimize, 0.1));
 }
 
 TEST(MavTrajectoryGeneration, PathPlanningUnconstrained_1D_100_segments) {
@@ -316,9 +304,13 @@ TEST(MavTrajectoryGeneration, PathPlanningUnconstrained_1D_100_segments) {
   Segment::Vector segments;
   opt.getSegments(&segments);
 
+  Trajectory trajectory;
+  opt.getTrajectory(&trajectory);
+
   checkPath(vertices, segments);
-  double v_max = getMaximumMagnitude(segments, derivative_order::VELOCITY);
-  double a_max = getMaximumMagnitude(segments, derivative_order::ACCELERATION);
+  double v_max = getMaximumMagnitude(trajectory, derivative_order::VELOCITY);
+  double a_max =
+      getMaximumMagnitude(trajectory, derivative_order::ACCELERATION);
   std::cout << "v_max: " << v_max << " a_max: " << a_max << std::endl;
 
   timing::Timer timer_cost("cost_1D_100s");
@@ -329,7 +321,7 @@ TEST(MavTrajectoryGeneration, PathPlanningUnconstrained_1D_100_segments) {
   EXPECT_LT(v_max, approximate_v_max * 5.0);
   EXPECT_LT(a_max, approximate_a_max * 2.0);
   EXPECT_TRUE(
-      checkCost(opt.computeCost(), segments, derivative_to_optimize, 0.1));
+      checkCost(opt.computeCost(), trajectory, derivative_to_optimize, 0.1));
 }
 
 TEST(MavTrajectoryGeneration,
@@ -353,9 +345,13 @@ TEST(MavTrajectoryGeneration,
   Segment::Vector segments;
   opt.getSegments(&segments);
 
+  Trajectory trajectory;
+  opt.getTrajectory(&trajectory);
+
   checkPath(vertices, segments);
-  double v_max = getMaximumMagnitude(segments, derivative_order::VELOCITY);
-  double a_max = getMaximumMagnitude(segments, derivative_order::ACCELERATION);
+  double v_max = getMaximumMagnitude(trajectory, derivative_order::VELOCITY);
+  double a_max =
+      getMaximumMagnitude(trajectory, derivative_order::ACCELERATION);
   std::cout << "v_max: " << v_max << " a_max: " << a_max << std::endl;
 
   timing::Timer timer_cost("cost_1D_100s_long");
@@ -367,7 +363,7 @@ TEST(MavTrajectoryGeneration,
   EXPECT_LT(v_max, approximate_v_max * 5.0);
   EXPECT_LT(a_max, approximate_a_max * 2.0);
   EXPECT_TRUE(
-      checkCost(opt.computeCost(), segments, derivative_to_optimize, 0.1));
+      checkCost(opt.computeCost(), trajectory, derivative_to_optimize, 0.1));
 }
 
 TEST(MavTrajectoryGeneration,
@@ -394,9 +390,13 @@ TEST(MavTrajectoryGeneration,
   Segment::Vector segments;
   opt.getSegments(&segments);
 
+  Trajectory trajectory;
+  opt.getTrajectory(&trajectory);
+
   checkPath(vertices, segments);
-  double v_max = getMaximumMagnitude(segments, derivative_order::VELOCITY);
-  double a_max = getMaximumMagnitude(segments, derivative_order::ACCELERATION);
+  double v_max = getMaximumMagnitude(trajectory, derivative_order::VELOCITY);
+  double a_max =
+      getMaximumMagnitude(trajectory, derivative_order::ACCELERATION);
   std::cout << "v_max: " << v_max << " a_max: " << a_max << std::endl;
 
   timing::Timer timer_cost("cost_3D_100s_long");
@@ -408,7 +408,7 @@ TEST(MavTrajectoryGeneration,
   EXPECT_LT(v_max, approximate_v_max * 5.0);
   EXPECT_LT(a_max, approximate_a_max * 2.0);
   EXPECT_TRUE(
-      checkCost(opt.computeCost(), segments, derivative_to_optimize, 0.1));
+      checkCost(opt.computeCost(), trajectory, derivative_to_optimize, 0.1));
 }
 
 bool checkExtrema(const std::vector<double>& testee,
@@ -450,6 +450,9 @@ TEST(MavTrajectoryGeneration,
 
   Segment::Vector segments;
   opt.getSegments(&segments);
+
+  Trajectory trajectory;
+  opt.getTrajectory(&trajectory);
 
   timing::Timer time_analytic("time_extrema_analytic_1", false);
   timing::Timer time_analytic_template_free(
@@ -507,9 +510,10 @@ TEST(MavTrajectoryGeneration,
     ++segment_idx;
   }
 
-  double v_max_ref = getMaximumMagnitude(segments, derivative_order::VELOCITY);
+  double v_max_ref =
+      getMaximumMagnitude(trajectory, derivative_order::VELOCITY);
   double a_max_ref =
-      getMaximumMagnitude(segments, derivative_order::ACCELERATION);
+      getMaximumMagnitude(trajectory, derivative_order::ACCELERATION);
 
   timing::Timer time_analytic_v("time_extrema_analytic_v");
   Extremum v_max =
@@ -544,6 +548,9 @@ TEST(MavTrajectoryGeneration, PathOptimization3D_segment_extrema_of_magnitude) {
 
   Segment::Vector segments;
   opt.getSegments(&segments);
+
+  Trajectory trajectory;
+  opt.getTrajectory(&trajectory);
 
   timing::Timer time_analytic("time_extrema_analytic_3", false);
   timing::Timer time_analytic_template_free(
@@ -610,9 +617,10 @@ TEST(MavTrajectoryGeneration, PathOptimization3D_segment_extrema_of_magnitude) {
     ++segment_idx;
   }
 
-  double v_max_ref = getMaximumMagnitude(segments, derivative_order::VELOCITY);
+  double v_max_ref =
+      getMaximumMagnitude(trajectory, derivative_order::VELOCITY);
   double a_max_ref =
-      getMaximumMagnitude(segments, derivative_order::ACCELERATION);
+      getMaximumMagnitude(trajectory, derivative_order::ACCELERATION);
 
   timing::Timer time_analytic_v("time_extrema_analytic_v");
   Extremum v_max =
@@ -697,29 +705,33 @@ TEST(MavTrajectoryGeneration,
             << std::endl;
 
   Segment::Vector segments1, segments2;
+  Trajectory trajectory1, trajectory2;
   opt.getPolynomialOptimizationRef().getSegments(&segments1);
   opt2.getPolynomialOptimizationRef().getSegments(&segments2);
+  opt.getPolynomialOptimizationRef().getTrajectory(&trajectory1);
+  opt2.getPolynomialOptimizationRef().getTrajectory(&trajectory2);
 
   checkPath(vertices, segments1);
   checkPath(vertices, segments2);
-  double v_max = getMaximumMagnitude(segments1, derivative_order::VELOCITY);
-  double a_max = getMaximumMagnitude(segments1, derivative_order::ACCELERATION);
+  double v_max = getMaximumMagnitude(trajectory1, derivative_order::VELOCITY);
+  double a_max =
+      getMaximumMagnitude(trajectory1, derivative_order::ACCELERATION);
   std::cout << "v_max 1: " << v_max << " a_max 1: " << a_max << std::endl;
   EXPECT_LT(v_max, approximate_v_max * 1.5);
   EXPECT_LT(a_max, approximate_a_max * 1.5);
 
   EXPECT_TRUE(checkCost(opt.getPolynomialOptimizationRef().computeCost(),
-                        segments1, derivative_to_optimize, 0.1));
+                        trajectory1, derivative_to_optimize, 0.1));
 
-  v_max = getMaximumMagnitude(segments2, derivative_order::VELOCITY);
-  a_max = getMaximumMagnitude(segments2, derivative_order::ACCELERATION);
+  v_max = getMaximumMagnitude(trajectory2, derivative_order::VELOCITY);
+  a_max = getMaximumMagnitude(trajectory2, derivative_order::ACCELERATION);
   std::cout << "v_max 2: " << v_max << " a_max 2: " << a_max << std::endl;
 
   EXPECT_LT(v_max, approximate_v_max * 1.5);
   EXPECT_LT(a_max, approximate_a_max * 1.5);
 
   EXPECT_TRUE(checkCost(opt2.getPolynomialOptimizationRef().computeCost(),
-                        segments2, derivative_to_optimize, 0.1));
+                        trajectory2, derivative_to_optimize, 0.1));
 }
 
 TEST(MavTrajectoryGeneration, 2_vertices_setup) {
@@ -906,7 +918,8 @@ TEST(MavTrajectoryGeneration, TimeScaling) {
   nlopt.getTrajectory(&trajectory);
 
   double initial_cost = nlopt.getCostAndGradient(NULL);
-  getMaxVelocityAndAcceleration(trajectory, &v_max_traj, &a_max_traj);
+  getMaxVelocityAndAccelerationAnalytical(trajectory, &v_max_traj, &a_max_traj);
+
   std::cout << "Starting v max: " << v_max_traj << " a max: " << a_max_traj
             << std::endl;
 
@@ -914,7 +927,7 @@ TEST(MavTrajectoryGeneration, TimeScaling) {
   nlopt.scaleSegmentTimesWithViolation();
   nlopt.getTrajectory(&trajectory);
   double scaled_cost = nlopt.getCostAndGradient(NULL);
-  getMaxVelocityAndAcceleration(trajectory, &v_max_traj, &a_max_traj);
+  getMaxVelocityAndAccelerationAnalytical(trajectory, &v_max_traj, &a_max_traj);
   std::cout << "Scaled v max: " << v_max_traj << " a max: " << a_max_traj
             << std::endl;
 
@@ -924,10 +937,9 @@ TEST(MavTrajectoryGeneration, TimeScaling) {
   nlopt.optimize();
   double mellinger_cost = nlopt.getCostAndGradient(NULL);
   nlopt.getTrajectory(&trajectory);
-  getMaxVelocityAndAcceleration(trajectory, &v_max_traj, &a_max_traj);
+  getMaxVelocityAndAccelerationAnalytical(trajectory, &v_max_traj, &a_max_traj);
   std::cout << "Mellinger v max: " << v_max_traj << " a max: " << a_max_traj
             << std::endl;
-
 
   EXPECT_LE(v_max_traj, v_max);
   EXPECT_LE(a_max_traj, a_max);
@@ -936,39 +948,13 @@ TEST(MavTrajectoryGeneration, TimeScaling) {
   EXPECT_LE(mellinger_cost, scaled_cost);
 }
 
-void createTestPolynomials() {
-  Vertex::Vector vertices;
-  vertices = createRandomVertices1D(max_derivative, 100, -50, 50, 12345);
-  const double approximate_v_max = 3.0;
-  const double approximate_a_max = 5.0;
-
-  std::vector<double> segment_times =
-      estimateSegmentTimes(vertices, approximate_v_max, approximate_a_max);
-
-  PolynomialOptimization<N> opt(1);
-  opt.setupFromVertices(vertices, segment_times);
-  opt.solveLinear();
-
-  Segment::Vector segments;
-  opt.getSegments(&segments);
-
-  int s_idx = 1;
-  for (const Segment& s : segments) {
-    std::cout << "s(" << s_idx << ", :) = "
-              << s[0].getCoefficients(derivative_order::POSITION)
-                     .reverse()
-                     .format(matlab_format)
-              << ";\n";
-    ++s_idx;
-  }
-}
+TEST(MavTrajectoryGeneration, MinMaxEvalTrajectory) {}
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
 
   int result = RUN_ALL_TESTS();
   timing::Timing::Print(std::cout);
-  //  createTestPolynomials();
 
   return result;
 }

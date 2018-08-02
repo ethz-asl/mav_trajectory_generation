@@ -126,7 +126,7 @@ double PolynomialOptimization<_N>::computeCost() const {
       cost += partial_cost;
     }
   }
-  return cost;  // cost = c^T * Q * c
+  return 0.5 * cost;  // cost = 0.5 * c^T * Q * c
 }
 
 template <int _N>
