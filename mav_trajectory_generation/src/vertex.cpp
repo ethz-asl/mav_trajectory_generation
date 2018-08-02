@@ -30,6 +30,7 @@ Vertex::Vector createRandomVertices(int maximum_derivative, size_t n_segments,
                                     size_t seed) {
   CHECK_GE(static_cast<int>(n_segments), 1);
   CHECK_EQ(pos_min.size(), pos_max.size());
+  CHECK_GE((pos_max - pos_min).norm(), 0.2);
   CHECK_GT(maximum_derivative, 0);
 
   Vertex::Vector vertices;
@@ -65,7 +66,7 @@ Vertex::Vector createRandomVertices(int maximum_derivative, size_t n_segments,
       for (size_t d = 0; d < dimension; ++d) {
         pos[d] = distribution[d](generator);
       }
-      if ((pos - last_pos).norm() > min_distance) break;
+      if ((pos - last_pos).norm() > min_distance) break;;
     }
 
     Vertex v(dimension);

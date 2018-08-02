@@ -406,10 +406,9 @@ bool PolynomialOptimization<_N>::computeSegmentMaximumMagnitudeCandidates(
     Polynomial polynomial_convolved(convolved_coefficients_length);
     polynomial_convolved.setCoefficients(convolved_coefficients);
     roots = polynomial_convolved.computeRoots();
-  }
-  // For dimension == 1, it doesn't make a difference, thus we can simply
-  // compute the roots of the derivative.
-  else {
+  } else {
+    // For dimension == 1, it doesn't make a difference, thus we can simply
+    // compute the roots of the derivative.
     const Polynomial d(n_dd,
                        segment[0].getCoefficients(Derivative + 1).head(n_dd));
     roots = d.computeRoots();
@@ -420,19 +419,11 @@ bool PolynomialOptimization<_N>::computeSegmentMaximumMagnitudeCandidates(
     return false;
   }
 
-  for (int i = 0; i < roots.size(); ++i) {
-    const double t_real = real(roots[i]);
-    // We only want real roots.
-    if (std::abs(imag(roots[i])) > std::numeric_limits<double>::epsilon()) {
-      continue;
-    }
-    // Only want roots in the time range.
-    if (t_real < t_start || t_real > t_stop) {
-      continue;
-    }
-    candidates->push_back(t_real);
-  }
-  return true;
+  // Use the same methods as elsewhere!
+  bool success = Polynomial::selectMinMaxCandidatesFromRoots(t_start, t_stop,
+                                                             roots, candidates);
+
+  return success;
 }
 
 template <int _N>

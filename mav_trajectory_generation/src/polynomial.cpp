@@ -27,7 +27,7 @@ namespace mav_trajectory_generation {
 bool Polynomial::selectMinMaxCandidatesFromRoots(
     double t_start, double t_end,
     const Eigen::VectorXcd& roots_derivative_of_derivative,
-    std::vector<double>* candidates) const {
+    std::vector<double>* candidates) {
   CHECK_NOTNULL(candidates);
   if (t_start > t_end) {
     LOG(WARNING) << "t_start is greater than t_end.";

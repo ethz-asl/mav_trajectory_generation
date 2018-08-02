@@ -161,7 +161,6 @@ Vertex::Vector createSquareVertices(int maximum_derivative,
                                     double side_length, int rounds);
 
 // Conveninence function to create 1D vertices.
-// createRandomVertices
 Vertex::Vector createRandomVertices1D(int maximum_derivative, size_t n_segments,
                                       double minimum_position,
                                       double maximum_position, size_t seed = 0);
