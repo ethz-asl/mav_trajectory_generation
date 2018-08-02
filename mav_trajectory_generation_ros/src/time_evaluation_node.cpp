@@ -97,12 +97,12 @@ class TimeEvaluationNode {
                                       Trajectory* trajectory) const;
 
   void evaluateTrajectory(const std::string& method_name,
-                          const Trajectory& traj,
+                          const Trajectory& traj, double computation_time,
                           TimeAllocationBenchmarkResult* result) const;
 
   void visualizeTrajectory(const std::string& method_name,
                            const Trajectory& traj,
-                           visualization_msgs::MarkerArray* markers);
+                           visualization_msgs::MarkerArray* markers) const;
 
   // Accessors.
   bool visualize() const { return visualize_; }
@@ -121,10 +121,8 @@ class TimeEvaluationNode {
   double computePointLineDistance(const Eigen::Vector3d& A,
                                   const Eigen::Vector3d& B,
                                   const Eigen::Vector3d& C) const;
-  std::string printResults() const;
-  void outputResults(
-      const std::string& filename,
-      const std::vector<TimeAllocationBenchmarkResult>& results) const;
+  std::string outputResultsToString() const;
+  void outputResultsToFile(const std::string& filename) const;
 
  private:
   ros::NodeHandle nh_;
@@ -154,8 +152,8 @@ TimeEvaluationNode::TimeEvaluationNode(const ros::NodeHandle& nh,
     : nh_(nh),
       nh_private_(nh_private),
       frame_id_("world"),
-      visualize_(true),
-      print_debug_info_(false),
+      visualize_(false),
+      print_debug_info_(true),
       v_max_(1.0),
       a_max_(2.0),
       max_derivative_order_(derivative_order::JERK) {
@@ -171,15 +169,14 @@ TimeEvaluationNode::TimeEvaluationNode(const ros::NodeHandle& nh,
 void TimeEvaluationNode::runBenchmark(int trial_number, int num_segments) {
   srand(trial_number);
 
-  const Eigen::VectorXd min_pos = Eigen::VectorXd::Constant(kDim, -5.0);
+  const Eigen::VectorXd min_pos = Eigen::VectorXd::Constant(kDim, -20.0);
   const Eigen::VectorXd max_pos = -min_pos;
 
   // Use trial number as seed to create the trajectory.
   Vertex::Vector vertices;
-  const double side_length = 10.0;
-  const int rounds = 2;
-  vertices = createSquareVertices(max_derivative_order_,
-                                  Eigen::Vector3d::Zero(), side_length, rounds);
+
+  vertices = createRandomVertices(max_derivative_order_, num_segments, min_pos,
+                                  max_pos, trial_number);
 
   TimeAllocationBenchmarkResult result;
   // Fill in all the basics in the results that are shared between all the
@@ -206,14 +203,19 @@ void TimeEvaluationNode::runBenchmark(int trial_number, int num_segments) {
   result.nominal_length = nominal_length;
 
   visualization_msgs::MarkerArray markers;
+  // Small timer used to get computation times.
+  timing::MiniTimer mini_timer;
 
   // Run all the evaluations.
   std::string method_name = "nfabian";
   Trajectory trajectory_nfabian;
   timing::Timer timer_nfabian(method_name);
+  mini_timer.start();
   runNfabian(vertices, &trajectory_nfabian);
+  mini_timer.stop();
   timer_nfabian.Stop();
-  evaluateTrajectory(method_name, trajectory_nfabian, &result);
+  evaluateTrajectory(method_name, trajectory_nfabian, mini_timer.getTime(),
+                     &result);
   results_.push_back(result);
   if (visualize_) {
     visualizeTrajectory(method_name, trajectory_nfabian, &markers);
@@ -222,9 +224,12 @@ void TimeEvaluationNode::runBenchmark(int trial_number, int num_segments) {
   method_name = "trapezoidal";
   Trajectory trajectory_trapezoidal;
   timing::Timer timer_trapezoidal(method_name);
+  mini_timer.start();
   runTrapezoidalTime(vertices, &trajectory_trapezoidal);
+  mini_timer.stop();
   timer_trapezoidal.Stop();
-  evaluateTrajectory(method_name, trajectory_trapezoidal, &result);
+  evaluateTrajectory(method_name, trajectory_trapezoidal, mini_timer.getTime(),
+                     &result);
   results_.push_back(result);
   if (visualize_) {
     visualizeTrajectory(method_name, trajectory_trapezoidal, &markers);
@@ -233,9 +238,12 @@ void TimeEvaluationNode::runBenchmark(int trial_number, int num_segments) {
   method_name = "nonlinear";
   Trajectory trajectory_nonlinear;
   timing::Timer timer_nonlinear(method_name);
+  mini_timer.start();
   runNonlinear(vertices, &trajectory_nonlinear);
+  mini_timer.stop();
   timer_nonlinear.Stop();
-  evaluateTrajectory(method_name, trajectory_nonlinear, &result);
+  evaluateTrajectory(method_name, trajectory_nonlinear, mini_timer.getTime(),
+                     &result);
   results_.push_back(result);
   if (visualize_) {
     visualizeTrajectory(method_name, trajectory_nonlinear, &markers);
@@ -244,9 +252,12 @@ void TimeEvaluationNode::runBenchmark(int trial_number, int num_segments) {
   method_name = "nonlinear_richter";
   Trajectory trajectory_nonlinear_richter;
   timing::Timer timer_nonlinear_richter(method_name);
+  mini_timer.start();
   runNonlinearRichter(vertices, &trajectory_nonlinear_richter);
+  mini_timer.stop();
   timer_nonlinear_richter.Stop();
-  evaluateTrajectory(method_name, trajectory_nonlinear_richter, &result);
+  evaluateTrajectory(method_name, trajectory_nonlinear_richter,
+                     mini_timer.getTime(), &result);
   results_.push_back(result);
   if (visualize_) {
     visualizeTrajectory(method_name, trajectory_nonlinear_richter, &markers);
@@ -255,9 +266,12 @@ void TimeEvaluationNode::runBenchmark(int trial_number, int num_segments) {
   method_name = "mellinger_outer_loop";
   Trajectory trajectory_mellinger_outer_loop;
   timing::Timer timer_mellinger(method_name);
+  mini_timer.start();
   runMellingerOuterLoop(vertices, false, &trajectory_mellinger_outer_loop);
+  mini_timer.stop();
   timer_mellinger.Stop();
-  evaluateTrajectory(method_name, trajectory_mellinger_outer_loop, &result);
+  evaluateTrajectory(method_name, trajectory_mellinger_outer_loop,
+                     mini_timer.getTime(), &result);
   results_.push_back(result);
   if (visualize_) {
     visualizeTrajectory(method_name, trajectory_mellinger_outer_loop, &markers);
@@ -266,11 +280,14 @@ void TimeEvaluationNode::runBenchmark(int trial_number, int num_segments) {
   method_name = "mellinger_outer_loop_trapezoidal_init";
   Trajectory trajectory_mellinger_outer_loop_trapezoidal_init;
   timing::Timer timer_mellinger_trapezoidal(method_name);
+  mini_timer.start();
   runMellingerOuterLoop(vertices, true,
                         &trajectory_mellinger_outer_loop_trapezoidal_init);
+  mini_timer.stop();
   timer_mellinger_trapezoidal.Stop();
   evaluateTrajectory(method_name,
-                     trajectory_mellinger_outer_loop_trapezoidal_init, &result);
+                     trajectory_mellinger_outer_loop_trapezoidal_init,
+                     mini_timer.getTime(), &result);
   results_.push_back(result);
   if (visualize_) {
     visualizeTrajectory(method_name,
@@ -281,11 +298,13 @@ void TimeEvaluationNode::runBenchmark(int trial_number, int num_segments) {
   method_name = "segment_violation_scaling";
   Trajectory trajectory_segment_violation_scaling;
   timing::Timer timer_segment_violation_scaling(method_name);
+  mini_timer.start();
   runSegmentViolationScalingTime(vertices,
                                  &trajectory_segment_violation_scaling);
+  mini_timer.stop();
   timer_segment_violation_scaling.Stop();
   evaluateTrajectory(method_name, trajectory_segment_violation_scaling,
-                     &result);
+                     mini_timer.getTime(), &result);
   results_.push_back(result);
   if (visualize_) {
     visualizeTrajectory(method_name, trajectory_segment_violation_scaling,
@@ -484,7 +503,7 @@ void TimeEvaluationNode::runSegmentViolationScalingTime(
 
 void TimeEvaluationNode::visualizeTrajectory(
     const std::string& method_name, const Trajectory& traj,
-    visualization_msgs::MarkerArray* markers) {
+    visualization_msgs::MarkerArray* markers) const {
   // Maybe hash the method name to a color somehow????
   // Just hardcode it for now per method name.
   mav_visualization::Color trajectory_color;
@@ -519,7 +538,7 @@ void TimeEvaluationNode::visualizeTrajectory(
 
 void TimeEvaluationNode::evaluateTrajectory(
     const std::string& method_name, const Trajectory& traj,
-    TimeAllocationBenchmarkResult* result) const {
+    double computation_time, TimeAllocationBenchmarkResult* result) const {
   result->method_name = method_name;
 
   result->trajectory_time = traj.getMaxTime();
@@ -530,7 +549,7 @@ void TimeEvaluationNode::evaluateTrajectory(
   mav_trajectory_generation::sampleWholeTrajectory(traj, kDefaultSamplingTime,
                                                    &path);
   result->trajectory_length = computePathLength(path);
-  result->computation_time = timing::Timing::GetTotalSeconds(method_name);
+  result->computation_time = computation_time;
 
   // Evaluate min/max extrema
   std::vector<int> dimensions = {0, 1, 2};  // Evaluate dimensions in x, y and z
@@ -625,7 +644,7 @@ visualization_msgs::Marker TimeEvaluationNode::createMarkerForPath(
   const int kPublishEveryNSamples = 1;
   const double kMaxMagnitude = 100.0;
 
-  path_marker.header.frame_id = "world";
+  path_marker.header.frame_id = frame_id_;
 
   path_marker.header.stamp = ros::Time::now();
   path_marker.type = visualization_msgs::Marker::LINE_STRIP;
@@ -682,8 +701,7 @@ double TimeEvaluationNode::computePathLength(
   return distance;
 }
 
-std::string TimeEvaluationNode::printResults() const {
-  // TODO: add optimization_success
+std::string TimeEvaluationNode::outputResultsToString() const {
   std::stringstream s;
   // Header.
   s << "trial_number, method_name, num_segments, nominal_length, "
@@ -706,46 +724,20 @@ std::string TimeEvaluationNode::printResults() const {
       << results_[i].area_traj_straight_line << std::endl;
   }
 
-  // File path.
-  std::string path = ros::package::getPath("mav_trajectory_generation_ros");
-  std::string filename = "/results_time_allocation.csv";
-  std::string results_path = path + filename;
-  outputResults(results_path, results_);
-  ROS_INFO("Save results at %s", results_path.c_str());
-
   return s.str();
 }
 
-void TimeEvaluationNode::outputResults(
-    const std::string& filename,
-    const std::vector<TimeAllocationBenchmarkResult>& results) const {
+void TimeEvaluationNode::outputResultsToFile(
+    const std::string& filename) const {
   // Append new lines to file
   FILE* fp = fopen(filename.c_str(), "w+");
   if (fp == NULL) {
-    std::cout << "Cannot open file. ABORT wrinting results!" << std::endl;
+    std::cout << "Cannot open file! " << filename << std::endl;
     return;
   }
 
-  fprintf(fp,
-          "trial_num, method_name, #segments, nominal_length, "
-          "optimization_success, bounds_violated, trajectory_time, "
-          "trajectory_length, computation_time, a_max_actual,"
-          " v_max_actual, abs_violation_a, abs_violation_v, "
-          "rel_violation_a, rel_violation_v, max_dist_sl_traj,"
-          "area_traj_sl\n");
-  for (const TimeAllocationBenchmarkResult& result : results) {
-    fprintf(fp, "%d,%s,%d,%f,%d,%d,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f\n",
-            result.trial_number, result.method_name.c_str(),
-            result.num_segments, result.nominal_length,
-            result.optimization_success, result.bounds_violated,
-            result.trajectory_time, result.trajectory_length,
-            result.computation_time, result.a_max_actual.value,
-            result.v_max_actual.value, result.abs_violation_a,
-            result.abs_violation_v, result.rel_violation_a,
-            result.rel_violation_v, result.max_dist_from_straight_line,
-            result.area_traj_straight_line);
-  }
-
+  std::string results = outputResultsToString();
+  fprintf(fp, "%s", results.c_str());
   fclose(fp);
 }
 
@@ -767,18 +759,13 @@ int main(int argc, char** argv) {
   std::vector<int> num_segments_vector = {1, 2, 10, 50};
 
   int start_trial_number = 0;
-
-  nh_private.param("start_trial_number", start_trial_number,
-                   start_trial_number);
+  std::string output_path;
+  nh_private.param("output_path", output_path, output_path);
 
   int trial_number = 0;
 
   for (int i = 0; i < num_segments_vector.size(); ++i) {
     for (int j = 0; j < num_trial_per_num_segments; ++j) {
-      if (trial_number < start_trial_number) {
-        trial_number++;
-        continue;
-      }
       ROS_INFO("Trial number %d Num segments: %d", trial_number,
                num_segments_vector[i]);
       std::srand(trial_number);
@@ -797,7 +784,13 @@ int main(int argc, char** argv) {
   }
 
   ROS_INFO("Finished evaluations.");
-  ROS_INFO("Results:\n%s", time_eval_node.printResults().c_str());
+  ROS_INFO_STREAM("Results:\n" << time_eval_node.outputResultsToString().c_str()
+                               << std::endl);
+
+  if (!output_path.empty()) {
+    time_eval_node.outputResultsToFile(output_path);
+  }
+
   // Print all timing results
   mav_trajectory_generation::timing::Timing::Print(std::cout);
 

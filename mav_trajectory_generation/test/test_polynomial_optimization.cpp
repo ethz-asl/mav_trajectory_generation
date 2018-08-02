@@ -913,16 +913,27 @@ TEST(MavTrajectoryGeneration, TimeScaling) {
   // Scaling of segment times
   nlopt.scaleSegmentTimesWithViolation();
   nlopt.getTrajectory(&trajectory);
-
+  double scaled_cost = nlopt.getCostAndGradient(NULL);
   getMaxVelocityAndAcceleration(trajectory, &v_max_traj, &a_max_traj);
-  std::cout << "Ending v max: " << v_max_traj << " a max: " << a_max_traj
+  std::cout << "Scaled v max: " << v_max_traj << " a max: " << a_max_traj
             << std::endl;
 
   EXPECT_LE(v_max_traj, v_max);
   EXPECT_LE(a_max_traj, a_max);
-  double final_cost = nlopt.getCostAndGradient(NULL);
 
-  EXPECT_LE(final_cost, initial_cost);
+  nlopt.optimize();
+  double mellinger_cost = nlopt.getCostAndGradient(NULL);
+  nlopt.getTrajectory(&trajectory);
+  getMaxVelocityAndAcceleration(trajectory, &v_max_traj, &a_max_traj);
+  std::cout << "Mellinger v max: " << v_max_traj << " a max: " << a_max_traj
+            << std::endl;
+
+
+  EXPECT_LE(v_max_traj, v_max);
+  EXPECT_LE(a_max_traj, a_max);
+
+  EXPECT_LE(scaled_cost, initial_cost);
+  EXPECT_LE(mellinger_cost, scaled_cost);
 }
 
 void createTestPolynomials() {
