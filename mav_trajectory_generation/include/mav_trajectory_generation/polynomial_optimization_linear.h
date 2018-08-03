@@ -141,8 +141,8 @@ class PolynomialOptimization {
       std::vector<double>* candidates);
 
   // Template-free version of above:
-  static bool computeSegmentMaximumMagnitudeCandidates(
-      const Segment& segment, int derivative, double t_start, double t_stop,
+  static bool computeSegmentMaximumMagnitudeCandidates(int derivative,
+      const Segment& segment, double t_start, double t_stop,
       std::vector<double>* candidates);
 
   // Computes the candidates for the maximum magnitude of a single

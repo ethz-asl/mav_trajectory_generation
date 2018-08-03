@@ -385,7 +385,7 @@ bool PolynomialOptimization<_N>::computeSegmentMaximumMagnitudeCandidates(
 
 template <int _N>
 bool PolynomialOptimization<_N>::computeSegmentMaximumMagnitudeCandidates(
-    const Segment& segment, int derivative, double t_start, double t_stop,
+    int derivative, const Segment& segment, double t_start, double t_stop,
     std::vector<double>* candidates) {
   CHECK(candidates);
   CHECK(N - derivative - 1 > 0) << "N-Derivative-1 has to be greater 0";
@@ -417,7 +417,7 @@ void PolynomialOptimization<_N>::
 
   // Continue with direction from t_start to t_start + dt until t_stop + dt.
   // Again, there may be an extremum at t_stop (e.g. end vertex).
-  for (double t = t_start + dt; t < t_stop + 2 * dt; t += dt) {
+  for (double t = t_start + dt; t < t_stop + dt; t += dt) {
     Eigen::VectorXd value_new;
     value_new = segment.evaluate(t, Derivative);
 
@@ -454,7 +454,7 @@ Extremum PolynomialOptimization<_N>::computeMaximumOfMagnitude(
     extrema_times.reserve(N - 1);
     // Add the beginning as well. Call below appends its extrema.
     extrema_times.push_back(0.0);
-    computeSegmentMaximumMagnitudeCandidates(s, derivative, 0.0, s.getTime(),
+    computeSegmentMaximumMagnitudeCandidates(derivative, s, 0.0, s.getTime(),
                                              &extrema_times);
 
     for (double t : extrema_times) {

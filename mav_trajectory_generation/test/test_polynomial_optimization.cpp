@@ -335,30 +335,48 @@ TEST_P(PolynomialOptimizationTests, ExtremaOfMagnitude) {
   for (const Segment& s : segments) {
     std::vector<double> res;
     time_analytic.Start();
-    EXPECT_TRUE(opt.computeSegmentMaximumMagnitudeCandidates<kDerivative>(s, 0, s.getTime(),
-                                                              &res));
+    EXPECT_TRUE(opt.computeSegmentMaximumMagnitudeCandidates(
+        kDerivative, s, 0, s.getTime(), &res));
     time_analytic.Stop();
 
     std::vector<double> res_template_free;
     time_analytic_template_free.Start();
-    EXPECT_TRUE(s.computeMinMaxMagnitudeCandidateTimes(kDerivative, 0.0, s.getTime(),
-                                           dimensions, &res_template_free));
+    EXPECT_TRUE(s.computeMinMaxMagnitudeCandidateTimes(
+        kDerivative, 0.0, s.getTime(), dimensions, &res_template_free));
     time_analytic_template_free.Stop();
 
     std::vector<double> res_sampling;
     time_sampling.Start();
     opt.computeSegmentMaximumMagnitudeCandidatesBySampling<kDerivative>(
-        s, 0, s.getTime(), 0.01, &res_sampling);
+        s, 0, s.getTime(), 0.001, &res_sampling);
     time_sampling.Stop();
 
     // First check that the candidates are ACTUAL extrema.
     // Do this by evaluating the derivative+1 of the segment.
     for (double candidate : res_sampling) {
       Eigen::VectorXd sampled = s.evaluate(candidate, kDerivative + 1);
-      EXPECT_NEAR(0.0, sampled.norm(), 1e-2) << "Time: " << candidate;
+      EXPECT_NEAR(0.0, sampled.norm(), 1e-2) << "Sampled Result: Time: "
+                                             << candidate;
+    }
+    // Do this for the other guys as well.
+    for (double candidate : res_template_free) {
+      if (candidate < 1e-2 || std::abs(candidate - s.getTime()) < 1e-2) {
+        continue;
+      }
+      Eigen::VectorXd sampled = s.evaluate(candidate, kDerivative + 1);
+      EXPECT_NEAR(0.0, sampled.norm(), 1e-2) << "Template-Free Result: Time: "
+                                             << candidate;
+    }
+    for (double candidate : res) {
+      if (candidate < 1e-2 || std::abs(candidate - s.getTime()) < 1e-2) {
+        continue;
+      }
+      Eigen::VectorXd sampled = s.evaluate(candidate, kDerivative + 1);
+      EXPECT_NEAR(0.0, sampled.norm(), 1e-2) << "Analytical Result: Time: "
+                                             << candidate;
     }
 
-    constexpr double check_tolerance = 0.01;
+    constexpr double check_tolerance = 0.001;
     bool success = checkExtrema(res_sampling, res, check_tolerance);
     if (!success) {
       std::cout << "############CHECK XTREMA FAILED: \n";
@@ -381,10 +399,12 @@ TEST_P(PolynomialOptimizationTests, ExtremaOfMagnitude) {
       }
       std::cout << std::endl;
 
-      std::cout
-          << "vx = "
-          << s[0].getCoefficients(kDerivative).reverse().format(matlab_format)
-          << ";\n";
+      for (int i = 0; i < K; i++) {
+        std::cout
+            << "vx" << i << " = "
+            << s[i].getCoefficients(kDerivative).reverse().format(matlab_format)
+            << ";\n";
+      }
       std::cout << "t = 0:0.001:" << s.getTime() << "; \n";
     }
     EXPECT_TRUE(success);
@@ -625,22 +645,22 @@ TEST_P(PolynomialOptimizationTests, TimeScaling) {
 
   std::cout << "Starting v max: " << v_max_traj << " a max: " << a_max_traj
             << std::endl;
-            /*
-  // Scaling of segment times
-  nlopt.scaleSegmentTimesWithViolation();
-  nlopt.getTrajectory(&trajectory);
-  double scaled_cost = nlopt.getCost();
-  getMaxVelocityAndAccelerationAnalytical(trajectory, &v_max_traj, &a_max_traj);
-  getMaxVelocityAndAccelerationNumerical(trajectory, &v_max_num, &a_max_num);
+  /*
+// Scaling of segment times
+nlopt.scaleSegmentTimesWithViolation();
+nlopt.getTrajectory(&trajectory);
+double scaled_cost = nlopt.getCost();
+getMaxVelocityAndAccelerationAnalytical(trajectory, &v_max_traj, &a_max_traj);
+getMaxVelocityAndAccelerationNumerical(trajectory, &v_max_num, &a_max_num);
 
-  std::cout << "Scaled v max: " << v_max_traj << " a max: " << a_max_traj
-            << std::endl;
+std::cout << "Scaled v max: " << v_max_traj << " a max: " << a_max_traj
+  << std::endl;
 
-  EXPECT_NEAR(v_max_traj, v_max_num, 1e-5);
-  EXPECT_NEAR(a_max_traj, a_max_num, 1e-5);
+EXPECT_NEAR(v_max_traj, v_max_num, 1e-5);
+EXPECT_NEAR(a_max_traj, a_max_num, 1e-5);
 
-  EXPECT_LE(v_max_traj, v_max + kTolerance);
-  EXPECT_LE(a_max_traj, a_max + kTolerance); */
+EXPECT_LE(v_max_traj, v_max + kTolerance);
+EXPECT_LE(a_max_traj, a_max + kTolerance); */
 
   nlopt.optimize();
   double mellinger_cost = nlopt.getCost();
@@ -657,8 +677,8 @@ TEST_P(PolynomialOptimizationTests, TimeScaling) {
   EXPECT_LE(v_max_traj, v_max + kTolerance);
   EXPECT_LE(a_max_traj, a_max + kTolerance);
 
-  //EXPECT_LE(scaled_cost, initial_cost);
-  //EXPECT_LE(mellinger_cost, scaled_cost);
+  // EXPECT_LE(scaled_cost, initial_cost);
+  // EXPECT_LE(mellinger_cost, scaled_cost);
 }
 
 TEST_P(PolynomialOptimizationTests, AMatrixInversion) {
@@ -769,12 +789,21 @@ OptimizationParams segment_50_dim_3 = {3 /* K */,
                                        5.0 /* a_mav */};
 
 OptimizationParams deriv_accel_1 = {1 /* K */,
-                                  derivative_order::ACCELERATION,
-                                  5 /* num_segments*/,
-                                  108 /* seed */,
-                                  10.0 /* pos_max */,
-                                  1.0 /* v_max */,
-                                  2.0 /* a_mav */};
+                                    derivative_order::ACCELERATION,
+                                    5 /* num_segments*/,
+                                    108 /* seed */,
+                                    10.0 /* pos_max */,
+                                    1.0 /* v_max */,
+                                    2.0 /* a_mav */};
+
+OptimizationParams deriv_accel_3_1 = {3 /* K */,
+                                      derivative_order::ACCELERATION,
+                                      1 /* num_segments*/,
+                                      108 /* seed */,
+                                      10.0 /* pos_max */,
+                                      1.0 /* v_max */,
+                                      2.0 /* a_mav */};
+
 OptimizationParams deriv_accel = {3 /* K */,
                                   derivative_order::ACCELERATION,
                                   5 /* num_segments*/,
@@ -799,7 +828,8 @@ INSTANTIATE_TEST_CASE_P(ThreeDimensions, PolynomialOptimizationTests,
                                           segment_50_dim_3));
 
 INSTANTIATE_TEST_CASE_P(Derivatives, PolynomialOptimizationTests,
-                        ::testing::Values(deriv_accel_1, deriv_accel, deriv_jerk));
+                        ::testing::Values(deriv_accel_1, deriv_accel_3_1,
+                                          deriv_accel, deriv_jerk));
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);

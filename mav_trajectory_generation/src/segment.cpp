@@ -113,6 +113,9 @@ bool Segment::computeMinMaxMagnitudeCandidateTimes(
       convolved_coefficients += Polynomial::convolve(d, dd);
     }
     Polynomial polynomial_convolved(convolved_coefficients);
+    std::cout << "Coefficients: "
+              << polynomial_convolved.getCoefficients(0).reverse().transpose()
+              << std::endl;
     // derivative = -1 because the convolved polynomial is the derivative
     // already. We wish to find the minimum and maximum candidates for the
     // integral.
@@ -157,7 +160,7 @@ bool Segment::computeMinMaxMagnitudeCandidates(
 }
 
 bool Segment::selectMinMaxMagnitudeFromCandidates(
-     int derivative, double t_start, double t_end,
+    int derivative, double t_start, double t_end,
     const std::vector<int>& dimensions, const std::vector<Extremum>& candidates,
     Extremum* minimum, Extremum* maximum) const {
   CHECK_NOTNULL(minimum);
