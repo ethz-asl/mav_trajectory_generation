@@ -379,8 +379,16 @@ template <int Derivative>
 bool PolynomialOptimization<_N>::computeSegmentMaximumMagnitudeCandidates(
     const Segment& segment, double t_start, double t_stop,
     std::vector<double>* candidates) {
+  return computeSegmentMaximumMagnitudeCandidates(segment, Derivative, t_start,
+                                                  t_stop, candidates);
+}
+
+template <int _N>
+bool PolynomialOptimization<_N>::computeSegmentMaximumMagnitudeCandidates(
+    const Segment& segment, int derivative, double t_start, double t_stop,
+    std::vector<double>* candidates) {
   CHECK(candidates);
-  static_assert(N - Derivative - 1 > 0, "N-Derivative-1 has to be greater 0");
+  CHECK(N - derivative - 1 > 0) << "N-Derivative-1 has to be greater 0";
 
   // Use the implementation of this in the segment (template-free) as it's
   // actually faster.
@@ -389,7 +397,7 @@ bool PolynomialOptimization<_N>::computeSegmentMaximumMagnitudeCandidates(
     dimensions.push_back(i);
   }
   return segment.computeMinMaxMagnitudeCandidateTimes(
-      Derivative, t_start, t_stop, dimensions, candidates);
+      derivative, t_start, t_stop, dimensions, candidates);
 }
 
 template <int _N>
@@ -431,6 +439,12 @@ template <int _N>
 template <int Derivative>
 Extremum PolynomialOptimization<_N>::computeMaximumOfMagnitude(
     std::vector<Extremum>* candidates) const {
+  return computeMaximumOfMagnitude(Derivative, candidates);
+}
+
+template <int _N>
+Extremum PolynomialOptimization<_N>::computeMaximumOfMagnitude(
+    int derivative, std::vector<Extremum>* candidates) const {
   if (candidates != nullptr) candidates->clear();
 
   int segment_idx = 0;
@@ -440,11 +454,11 @@ Extremum PolynomialOptimization<_N>::computeMaximumOfMagnitude(
     extrema_times.reserve(N - 1);
     // Add the beginning as well. Call below appends its extrema.
     extrema_times.push_back(0.0);
-    computeSegmentMaximumMagnitudeCandidates<Derivative>(s, 0.0, s.getTime(),
-                                                         &extrema_times);
+    computeSegmentMaximumMagnitudeCandidates(s, derivative, 0.0, s.getTime(),
+                                             &extrema_times);
 
     for (double t : extrema_times) {
-      const Extremum candidate(t, s.evaluate(t, Derivative).norm(),
+      const Extremum candidate(t, s.evaluate(t, derivative).norm(),
                                segment_idx);
       if (extremum < candidate) extremum = candidate;
       if (candidates != nullptr) candidates->emplace_back(candidate);
@@ -454,7 +468,7 @@ Extremum PolynomialOptimization<_N>::computeMaximumOfMagnitude(
   // Check last time at last segment.
   const Extremum candidate(
       segments_.back().getTime(),
-      segments_.back().evaluate(segments_.back().getTime(), Derivative).norm(),
+      segments_.back().evaluate(segments_.back().getTime(), derivative).norm(),
       n_segments_ - 1);
   if (extremum < candidate) extremum = candidate;
   if (candidates != nullptr) candidates->emplace_back(candidate);

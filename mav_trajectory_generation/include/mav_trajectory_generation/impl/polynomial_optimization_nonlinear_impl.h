@@ -255,6 +255,11 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTimeMellingerOuterLoop() {
 }
 
 template <int _N>
+double PolynomialOptimizationNonLinear<_N>::getCost() const {
+  return poly_opt_.computeCost();
+}
+
+template <int _N>
 double PolynomialOptimizationNonLinear<_N>::getCostAndGradient(
     std::vector<double>* gradients) {
   // Weighting terms for different costs
@@ -634,8 +639,7 @@ PolynomialOptimizationNonLinear<_N>::objectiveFunctionTimeMellingerOuterLoop(
     cost_trajectory = optimization_data->getCostAndGradient(NULL);
   }
 
-  if (true) {
-    // if (optimization_data->optimization_parameters_.print_debug_info) {
+  if (optimization_data->optimization_parameters_.print_debug_info) {
     std::cout << "---- cost at iteration "
               << optimization_data->optimization_info_.n_iterations << "---- "
               << std::endl;
@@ -748,38 +752,8 @@ double PolynomialOptimizationNonLinear<_N>::evaluateMaximumMagnitudeConstraint(
       constraint_data->this_object;
 
   Extremum max;
-  // for now, let's assume that the optimization has been done
-  switch (constraint_data->derivative) {
-    case derivative_order::POSITION:
-      max = optimization_data->poly_opt_
-                .template computeMaximumOfMagnitude<derivative_order::POSITION>(
-                    nullptr);
-      break;
-    case derivative_order::VELOCITY:
-      max = optimization_data->poly_opt_
-                .template computeMaximumOfMagnitude<derivative_order::VELOCITY>(
-                    nullptr);
-      break;
-    case derivative_order::ACCELERATION:
-      max = optimization_data->poly_opt_.template computeMaximumOfMagnitude<
-          derivative_order::ACCELERATION>(nullptr);
-      break;
-    case derivative_order::JERK:
-      max = optimization_data->poly_opt_
-                .template computeMaximumOfMagnitude<derivative_order::JERK>(
-                    nullptr);
-      break;
-    case derivative_order::SNAP:
-      max = optimization_data->poly_opt_
-                .template computeMaximumOfMagnitude<derivative_order::SNAP>(
-                    nullptr);
-      break;
-    default:
-      LOG(WARNING) << "[Nonlinear inequality constraint evaluation]: no "
-                      "implementation for derivative: "
-                   << constraint_data->derivative;
-      return 0;
-  }
+  max = optimization_data->poly_opt_.computeMaximumOfMagnitude(
+      constraint_data->derivative, nullptr);
 
   optimization_data->optimization_info_.maxima[constraint_data->derivative] =
       max;
@@ -832,8 +806,6 @@ void PolynomialOptimizationNonLinear<_N>::
   const size_t n_free_constraints = poly_opt_.getNumberFreeConstraints();
   const size_t dim = poly_opt_.getDimension();
   const int derivative_to_optimize = poly_opt_.getDerivativeToOptimize();
-
-  LOG(INFO) << "USE HARD CONSTRAINTS FOR ENDPOINT DERIVATIVE BOUNDARIES";
 
   // Set all values to -inf/inf and reset only bounded opti param with values
   lower_bounds->resize(dim * n_free_constraints,

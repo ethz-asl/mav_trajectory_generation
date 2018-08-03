@@ -213,6 +213,8 @@ class PolynomialOptimizationNonLinear {
   OptimizationInfo getOptimizationInfo() const { return optimization_info_; }
 
   // Functions for optimization, but may be useful for diagnostics outside.
+  double getCost() const;
+  // TODO(helenol): get the hell rid of this shit.
   double getCostAndGradient(std::vector<double>* gradients);
   void scaleSegmentTimesWithViolation();
 
