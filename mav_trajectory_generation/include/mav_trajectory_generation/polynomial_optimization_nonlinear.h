@@ -32,73 +32,56 @@ constexpr double kOptimizationTimeLowerBound = 0.1;
 
 // Class holding all important parameters for nonlinear optimization.
 struct NonlinearOptimizationParameters {
-  NonlinearOptimizationParameters()
-      // Default parameters should be reasonable enough to use without further
-      // fine-tuning.
-      : f_abs(-1),
-        f_rel(0.05),
-        x_rel(-1),
-        x_abs(-1),
-        initial_stepsize_rel(0.1),
-        equality_constraint_tolerance(1.0e-3),
-        inequality_constraint_tolerance(0.1),
-        max_iterations(3000),
-        time_penalty(500.0),
-        algorithm(nlopt::LN_SBPLX),
-        random_seed(0),
-        use_soft_constraints(true),
-        soft_constraint_weight(100.0),
-        time_alloc_method(kSquaredTimeAndConstraints),
-        print_debug_info(false),
-        print_debug_info_time_allocation(false) {}
+  // Default parameters should be reasonable enough to use without further
+  // fine-tuning.
 
   // Stopping criteria, if objective function changes less than absolute value.
   // Disabled if negative.
-  double f_abs;
+  double f_abs = -1;
 
   // Stopping criteria, if objective function changes less than relative value.
   // Disabled if negative.
-  double f_rel;
+  double f_rel = 0.05;
 
   // Stopping criteria, if state changes less than relative value.
   // Disabled if negative.
-  double x_rel;
+  double x_rel = -1;
 
   // Stopping criteria, if state changes less than absolute value.
   // Disabled if negative.
-  double x_abs;
+  double x_abs = -1;
 
   // Determines a fraction of the initial guess as initial step size.
   // Heuristic value if negative.
-  double initial_stepsize_rel;
+  double initial_stepsize_rel = 0.1;
 
   // Absolute tolerance, within an equality constraint is considered as met.
-  double equality_constraint_tolerance;
+  double equality_constraint_tolerance = 1.0e-3;
 
   // Absolute tolerance, within an inequality constraint is considered as met.
-  double inequality_constraint_tolerance;
+  double inequality_constraint_tolerance = 0.1;
 
   // Maximum number of iterations. Disabled if negative.
-  int max_iterations;
+  int max_iterations = 3000;
 
   // Penalty for the segment time.
-  double time_penalty;
+  double time_penalty = 500.0;
 
   // Optimization algorithm used by nlopt, see
   // http://ab-initio.mit.edu/wiki/index.php/NLopt_Algorithms
-  nlopt::algorithm algorithm;
+  nlopt::algorithm algorithm = nlopt::LN_SBPLX;
 
   // Random seed, if an optimization algorithm involving random numbers
   // is used (e.g. nlopt::GN_ISRES).
   // If set to a value < 0, a "random" (getTimeofday) value for the seed
   // is chosen.
-  int random_seed;
+  int random_seed = 0;
 
   // Decide whether to use soft constraints.
-  bool use_soft_constraints;
+  bool use_soft_constraints = true;
 
   // Weights the relative violation of a soft constraint.
-  double soft_constraint_weight;
+  double soft_constraint_weight = 100.0;
 
   enum TimeAllocMethod {
     kSquaredTime,
@@ -107,30 +90,23 @@ struct NonlinearOptimizationParameters {
     kSquaredTimeAndConstraints,
     kRichterTimeAndConstraints,
     kUnknown
-  } time_alloc_method;
+  } time_alloc_method = kSquaredTimeAndConstraints;
 
-  bool print_debug_info;
-  bool print_debug_info_time_allocation;
+  bool print_debug_info = false;
+  bool print_debug_info_time_allocation = false;
 };
 
-class OptimizationInfo {
- public:
-  OptimizationInfo()
-      : n_iterations(0),
-        stopping_reason(nlopt::FAILURE),
-        cost_trajectory(0),
-        cost_time(0),
-        cost_soft_constraints(0),
-        optimization_time(0) {}
-  void print(std::ostream& stream) const;
-  int n_iterations;
-  int stopping_reason;
-  double cost_trajectory;
-  double cost_time;
-  double cost_soft_constraints;
-  double optimization_time;
+struct OptimizationInfo {
+  int n_iterations = 0;
+  int stopping_reason = nlopt::FAILURE;
+  double cost_trajectory = 0.0;
+  double cost_time = 0.0;
+  double cost_soft_constraints = 0.0;
+  double optimization_time = 0.0;
   std::map<int, Extremum> maxima;
 };
+
+std::ostream& operator<<(std::ostream& stream, const OptimizationInfo& val);
 
 // Implements a nonlinear optimization of the unconstrained optimization
 // of paths consisting of polynomial segments as described in [1]
@@ -214,8 +190,7 @@ class PolynomialOptimizationNonLinear {
 
   // Functions for optimization, but may be useful for diagnostics outside.
   double getCost() const;
-  // TODO(helenol): get the hell rid of this shit.
-  double getCostAndGradient(std::vector<double>* gradients);
+
   void scaleSegmentTimesWithViolation();
 
  private:
@@ -246,8 +221,8 @@ class PolynomialOptimizationNonLinear {
   // Input: Custom data pointer = In our case, it's an ConstraintData object.
   // Output: Cost = based on the parameters passed in.
   static double objectiveFunctionTimeMellingerOuterLoop(
-          const std::vector<double>& segment_times,
-          std::vector<double>& gradient, void* data);
+      const std::vector<double>& segment_times, std::vector<double>& gradient,
+      void* data);
 
   // Objective function for the version optimizing segment times and free
   // derivatives.
@@ -296,8 +271,11 @@ class PolynomialOptimizationNonLinear {
 
   // Set lower and upper bounds on the optimization parameters
   void setFreeEndpointDerivativeHardConstraints(
-          const Vertex::Vector& vertices,
-          std::vector<double>* lower_bounds, std::vector<double>* upper_bounds);
+      const Vertex::Vector& vertices, std::vector<double>* lower_bounds,
+      std::vector<double>* upper_bounds);
+
+  // Computes the gradients by doing forward difference!
+  double getCostAndGradientMellinger(std::vector<double>* gradients);
 
   // Computes the total trajectory time.
   static double computeTotalTrajectoryTime(

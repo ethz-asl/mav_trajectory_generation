@@ -25,21 +25,24 @@
 
 namespace mav_trajectory_generation {
 
-inline void OptimizationInfo::print(std::ostream& stream) const {
+inline std::ostream& operator<<(std::ostream& stream,
+                                const OptimizationInfo& val) {
   stream << "--- optimization info ---" << std::endl;
-  stream << "  optimization time:     " << optimization_time << std::endl;
-  stream << "  n_iterations:          " << n_iterations << std::endl;
+  stream << "  optimization time:     " << val.optimization_time << std::endl;
+  stream << "  n_iterations:          " << val.n_iterations << std::endl;
   stream << "  stopping reason:       "
-         << nlopt::returnValueToString(stopping_reason) << std::endl;
-  stream << "  cost trajectory:       " << cost_trajectory << std::endl;
-  stream << "  cost time:             " << cost_time << std::endl;
-  stream << "  cost soft constraints: " << cost_soft_constraints << std::endl;
+         << nlopt::returnValueToString(val.stopping_reason) << std::endl;
+  stream << "  cost trajectory:       " << val.cost_trajectory << std::endl;
+  stream << "  cost time:             " << val.cost_time << std::endl;
+  stream << "  cost soft constraints: " << val.cost_soft_constraints
+         << std::endl;
   stream << "  maxima: " << std::endl;
-  for (const std::pair<int, Extremum>& m : maxima) {
+  for (const std::pair<int, Extremum>& m : val.maxima) {
     stream << "    " << positionDerivativeToString(m.first) << ": "
            << m.second.value << " in segment " << m.second.segment_idx
            << " and segment time " << m.second.time << std::endl;
   }
+  return stream;
 }
 
 template <int _N>
@@ -260,15 +263,22 @@ double PolynomialOptimizationNonLinear<_N>::getCost() const {
 }
 
 template <int _N>
-double PolynomialOptimizationNonLinear<_N>::getCostAndGradient(
+double PolynomialOptimizationNonLinear<_N>::getCostAndGradientMellinger(
     std::vector<double>* gradients) {
   // Weighting terms for different costs
-  const double w_d = 100.0;
-
   // Retrieve the current segment times
   std::vector<double> segment_times;
   poly_opt_.getSegmentTimes(&segment_times);
   const double J_d = poly_opt_.computeCost();
+
+  if (poly_opt_.getNumberSegments() == 1) {
+    if (gradients != NULL) {
+      gradients->clear();
+      gradients->resize(poly_opt_.getNumberSegments(), 0.0);
+    }
+
+    return J_d;
+  }
 
   if (gradients != NULL) {
     const size_t n_segments = poly_opt_.getNumberSegments();
@@ -284,7 +294,7 @@ double PolynomialOptimizationNonLinear<_N>::getCostAndGradient(
       // Calculate cost with higher segment time
       segment_times_bigger = segment_times;
       // Deduct h*(-1/(m-2)) according to paper Mellinger "Minimum snap
-      // traject generation and control for quadrotors"
+      // trajectory generation and control for quadrotors"
       double const_traj_time_corr = increment_time / (n_segments - 1.0);
       for (int i = 0; i < segment_times_bigger.size(); ++i) {
         if (i == n) {
@@ -319,7 +329,7 @@ double PolynomialOptimizationNonLinear<_N>::getCostAndGradient(
       const double dJd_dt = (J_d_bigger - J_d) / increment_time;
 
       // Calculate the gradient
-      gradients->at(n) = w_d * dJd_dt;
+      gradients->at(n) = dJd_dt;
     }
 
     // Set again the original segment times from before calculating the
@@ -329,7 +339,7 @@ double PolynomialOptimizationNonLinear<_N>::getCostAndGradient(
   }
 
   // Compute cost without gradient
-  return w_d * J_d;
+  return J_d;
 }
 
 template <int _N>
@@ -634,9 +644,9 @@ PolynomialOptimizationNonLinear<_N>::objectiveFunctionTimeMellingerOuterLoop(
   optimization_data->poly_opt_.solveLinear();
   double cost_trajectory;
   if (!gradient.empty()) {
-    cost_trajectory = optimization_data->getCostAndGradient(&gradient);
+    cost_trajectory = optimization_data->getCostAndGradientMellinger(&gradient);
   } else {
-    cost_trajectory = optimization_data->getCostAndGradient(NULL);
+    cost_trajectory = optimization_data->getCostAndGradientMellinger(NULL);
   }
 
   if (optimization_data->optimization_parameters_.print_debug_info) {

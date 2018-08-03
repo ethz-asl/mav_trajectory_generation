@@ -57,6 +57,8 @@ class TimeEvaluationNode {
                  double* cost) const;
   int runTrapezoidalTime(const Vertex::Vector& vertices, Trajectory* trajectory,
                          double* cost) const;
+  int runNonlinearTimeOnly(const Vertex::Vector& vertices,
+                           Trajectory* trajectory, double* cost) const;
   int runNonlinear(const Vertex::Vector& vertices, Trajectory* trajectory,
                    double* cost) const;
   int runNonlinearRichter(const Vertex::Vector& vertices,
@@ -124,8 +126,8 @@ TimeEvaluationNode::TimeEvaluationNode(const ros::NodeHandle& nh,
     : nh_(nh),
       nh_private_(nh_private),
       frame_id_("world"),
-      visualize_(true),
-      print_debug_info_(false),
+      visualize_(false),
+      print_debug_info_(true),
       v_max_(1.0),
       a_max_(2.0),
       max_derivative_order_(derivative_order::JERK) {
@@ -216,6 +218,39 @@ void TimeEvaluationNode::runBenchmark(int trial_number, int num_segments) {
     visualizeTrajectory(method_name, trajectory_trapezoidal, &markers);
   }
 
+  method_name = "segment_violation_scaling";
+  Trajectory trajectory_segment_violation_scaling;
+  timing::Timer timer_segment_violation_scaling(method_name);
+  mini_timer.start();
+  result.optimization_success = runSegmentViolationScalingTime(
+      vertices, &trajectory_segment_violation_scaling, &cost);
+  result.cost = cost;
+  mini_timer.stop();
+  timer_segment_violation_scaling.Stop();
+  evaluateTrajectory(method_name, trajectory_segment_violation_scaling,
+                     mini_timer.getTime(), &result);
+  results_.push_back(result);
+  if (visualize_) {
+    visualizeTrajectory(method_name, trajectory_segment_violation_scaling,
+                        &markers);
+  }
+
+  method_name = "nonlinear_time_only";
+  Trajectory trajectory_nonlinear_time;
+  timing::Timer timer_nonlinear_time(method_name);
+  mini_timer.start();
+  result.optimization_success =
+      runNonlinearTimeOnly(vertices, &trajectory_nonlinear_time, &cost);
+  result.cost = cost;
+  mini_timer.stop();
+  timer_nonlinear_time.Stop();
+  evaluateTrajectory(method_name, trajectory_nonlinear_time,
+                     mini_timer.getTime(), &result);
+  results_.push_back(result);
+  if (visualize_) {
+    visualizeTrajectory(method_name, trajectory_nonlinear_time, &markers);
+  }
+
   method_name = "nonlinear";
   Trajectory trajectory_nonlinear;
   timing::Timer timer_nonlinear(method_name);
@@ -282,24 +317,6 @@ void TimeEvaluationNode::runBenchmark(int trial_number, int num_segments) {
                         trajectory_mellinger_outer_loop_trapezoidal_init,
                         &markers);
   }
-
-  method_name = "segment_violation_scaling";
-  Trajectory trajectory_segment_violation_scaling;
-  timing::Timer timer_segment_violation_scaling(method_name);
-  mini_timer.start();
-  result.optimization_success = runSegmentViolationScalingTime(
-      vertices, &trajectory_segment_violation_scaling, &cost);
-  result.cost = cost;
-  mini_timer.stop();
-  timer_segment_violation_scaling.Stop();
-  evaluateTrajectory(method_name, trajectory_segment_violation_scaling,
-                     mini_timer.getTime(), &result);
-  results_.push_back(result);
-  if (visualize_) {
-    visualizeTrajectory(method_name, trajectory_segment_violation_scaling,
-                        &markers);
-  }
-
   if (visualize_) {
     path_marker_pub_.publish(markers);
   }
@@ -379,6 +396,28 @@ int TimeEvaluationNode::runNonlinearRichter(const Vertex::Vector& vertices,
   return result;
 }
 
+int TimeEvaluationNode::runNonlinearTimeOnly(const Vertex::Vector& vertices,
+                                             Trajectory* trajectory,
+                                             double* cost) const {
+  std::vector<double> segment_times;
+  segment_times =
+      mav_trajectory_generation::estimateSegmentTimes(vertices, v_max_, a_max_);
+
+  mav_trajectory_generation::NonlinearOptimizationParameters nlopt_parameters;
+  nlopt_parameters.time_alloc_method =
+      NonlinearOptimizationParameters::kSquaredTime;
+  nlopt_parameters.print_debug_info_time_allocation = print_debug_info_;
+  mav_trajectory_generation::PolynomialOptimizationNonLinear<kN> nlopt(
+      kDim, nlopt_parameters);
+  nlopt.setupFromVertices(vertices, segment_times, max_derivative_order_);
+  nlopt.addMaximumMagnitudeConstraint(derivative_order::VELOCITY, v_max_);
+  nlopt.addMaximumMagnitudeConstraint(derivative_order::ACCELERATION, a_max_);
+  int result = nlopt.optimize();
+  nlopt.getTrajectory(trajectory);
+  *cost = nlopt.getCost();
+  return result;
+}
+
 int TimeEvaluationNode::runMellingerOuterLoop(const Vertex::Vector& vertices,
                                               bool use_trapezoidal_time,
                                               Trajectory* trajectory,
@@ -439,6 +478,9 @@ int TimeEvaluationNode::runSegmentViolationScalingTime(
                                  0.0)
               << std::endl;
   }
+  CHECK_EQ(segment_times.size(), maxima_vel.size());
+  CHECK_EQ(segment_times.size(), maxima_acc.size());
+
   // Scale segment times according to violation
   for (int i = 0; i < segment_times.size(); ++i) {
     // Evaluate constraint/bound violation
@@ -449,6 +491,8 @@ int TimeEvaluationNode::runSegmentViolationScalingTime(
     rel_violation_a = abs_violation_a / a_max_;
 
     double smallest_rel_violation = std::max(rel_violation_a, rel_violation_v);
+    std::cout << "i: " << i << " violation: " << smallest_rel_violation
+              << std::endl;
 
     if (print_debug_info_) {
       std::cout << i << " segment time: " << segment_times[i]
@@ -559,10 +603,27 @@ void TimeEvaluationNode::evaluateTrajectory(
   // Evaluate min/max extrema
   Extremum v_min_actual, v_max_actual, a_min_actual, a_max_actual;
   std::vector<int> dimensions = {0, 1, 2};  // Evaluate dimensions in x, y and z
-  traj.computeMinMaxMagnitude(derivative_order::VELOCITY, dimensions,
-                              &v_min_actual, &v_max_actual);
-  traj.computeMinMaxMagnitude(derivative_order::ACCELERATION, dimensions,
-                              &a_min_actual, &a_max_actual);
+  bool success = traj.computeMinMaxMagnitude(
+      derivative_order::VELOCITY, dimensions, &v_min_actual, &v_max_actual);
+  success &= traj.computeMinMaxMagnitude(
+      derivative_order::ACCELERATION, dimensions, &a_min_actual, &a_max_actual);
+  if (!success) {
+    ROS_ERROR("CAN'T COMPUTE EXTERMA!!!!");
+  }
+  double v_max = 0.0;
+  double a_max = 0.0;
+
+  for (const mav_msgs::EigenTrajectoryPoint& point : path) {
+    if (point.velocity_W.norm() > v_max) {
+      v_max = point.velocity_W.norm();
+    }
+    if (point.acceleration_W.norm() > a_max) {
+      a_max = point.acceleration_W.norm();
+    }
+  }
+
+  result->v_max = v_max;
+  result->a_max = a_max;
 
   result->v_max = v_max_actual.value;
   result->a_max = a_max_actual.value;
@@ -625,13 +686,15 @@ bool TimeEvaluationNode::computeMinMaxMagnitudeAllSegments(
     if (!segments[segment_idx].computeMinMaxMagnitudeCandidates(
             derivative, 0.0, segments[segment_idx].getTime(), dimensions,
             &candidates)) {
+      ROS_WARN("Failed to get candidates for segment: %d", segment_idx);
       return false;
     }
     // Evaluate candidates.
     Extremum minimum_candidate, maximum_candidate;
     if (!segments[segment_idx].selectMinMaxMagnitudeFromCandidates(
-            0.0, segments[segment_idx].getTime(), derivative, dimensions,
+            derivative, 0.0, segments[segment_idx].getTime(), dimensions,
             candidates, &minimum_candidate, &maximum_candidate)) {
+      ROS_WARN("Failed select min/max for segment: %d", segment_idx);
       return false;
     }
     maxima->push_back(maximum_candidate);
@@ -758,7 +821,7 @@ int main(int argc, char** argv) {
   ROS_INFO("Initialized time evaluation node.");
 
   int num_trial_per_num_segments = 5;
-  std::vector<int> num_segments_vector = {1, 2, 10, 50};
+  std::vector<int> num_segments_vector = {1, 2, 5, 10, 50};
 
   int start_trial_number = 0;
   std::string output_path;

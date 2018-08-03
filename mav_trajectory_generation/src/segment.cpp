@@ -157,7 +157,7 @@ bool Segment::computeMinMaxMagnitudeCandidates(
 }
 
 bool Segment::selectMinMaxMagnitudeFromCandidates(
-    double t_start, double t_end, int derivative,
+     int derivative, double t_start, double t_end,
     const std::vector<int>& dimensions, const std::vector<Extremum>& candidates,
     Extremum* minimum, Extremum* maximum) const {
   CHECK_NOTNULL(minimum);
@@ -178,21 +178,6 @@ bool Segment::selectMinMaxMagnitudeFromCandidates(
     *maximum = std::max(*maximum, candidate);
     *minimum = std::min(*minimum, candidate);
   }
-  // Evaluate start and end time.
-  Extremum magnitude_start(t_start, 0.0, 0);
-  Extremum magnitude_end(t_end, 0.0, 0);
-  for (int dim : dimensions) {
-    magnitude_start.value +=
-        std::pow(polynomials_[dim].evaluate(t_start, derivative), 2);
-    magnitude_end.value +=
-        std::pow(polynomials_[dim].evaluate(t_end, derivative), 2);
-  }
-  magnitude_start.value = std::sqrt(magnitude_start.value);
-  magnitude_end.value = std::sqrt(magnitude_end.value);
-  *maximum = std::max(*maximum, magnitude_start);
-  *minimum = std::min(*minimum, magnitude_start);
-  *maximum = std::max(*maximum, magnitude_end);
-  *minimum = std::min(*minimum, magnitude_end);
 
   return true;
 }

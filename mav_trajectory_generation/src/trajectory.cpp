@@ -202,7 +202,7 @@ bool Trajectory::computeMinMaxMagnitude(int derivative,
     // Evaluate candidates.
     Extremum minimum_candidate, maximum_candidate;
     if (!segments_[segment_idx].selectMinMaxMagnitudeFromCandidates(
-            0.0, segments_[segment_idx].getTime(), derivative, dimensions,
+            derivative, 0.0, segments_[segment_idx].getTime(), dimensions,
             candidates, &minimum_candidate, &maximum_candidate)) {
       return false;
     }
