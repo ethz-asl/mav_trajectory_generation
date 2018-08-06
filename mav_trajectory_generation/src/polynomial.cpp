@@ -56,28 +56,6 @@ bool Polynomial::selectMinMaxCandidatesFromRoots(
   return true;
 }
 
-bool Polynomial::computeMinMaxCandidatesRpolyPlusPlus(
-    double t_start, double t_end, int derivative,
-    std::vector<double>* candidates) const {
-  candidates->clear();
-  if (N_ - derivative - 1 < 0) {
-    LOG(WARNING) << "N - derivative - 1 has to be at least 0.";
-    return false;
-  }
-  Eigen::VectorXd real_roots, complex_roots;
-  if (!rpoly_plus_plus::FindPolynomialRootsJenkinsTraub(getCoefficients(derivative + 1).reverse(),
-                             &real_roots, &complex_roots)) {
-    return false;
-  } else {
-    std::cout << "* Roots: " << real_roots.transpose() << std::endl;
-    if (!selectMinMaxCandidatesFromRoots(
-            t_start, t_end, real_roots, candidates)) {
-      return false;
-    } else {
-      return true;
-    }
-  }
-}
 
 bool Polynomial::computeMinMaxCandidates(
     double t_start, double t_end, int derivative,
@@ -88,19 +66,19 @@ bool Polynomial::computeMinMaxCandidates(
     LOG(WARNING) << "N - derivative - 1 has to be at least 0.";
     return false;
   }
-  Eigen::VectorXcd roots_derivative_of_derivative;
-  if (!findRootsJenkinsTraub(getCoefficients(derivative + 1),
-                             &roots_derivative_of_derivative)) {
-    return false;
-  } else {
-    std::cout << "* Roots: " << roots_derivative_of_derivative.transpose() << std::endl;
-    if (!selectMinMaxCandidatesFromRoots(
-            t_start, t_end, roots_derivative_of_derivative, candidates)) {
-      return false;
-    } else {
-      return true;
-    }
+  Eigen::VectorXd real_roots, complex_roots;
+  bool success = rpoly_plus_plus::FindPolynomialRootsJenkinsTraub(
+          getCoefficients(derivative + 1).reverse(), &real_roots,
+          &complex_roots);
+  if (!success) {
+    VLOG(1) << "Couldn't find roots, polynomial may be constant.";
   }
+
+  if (!selectMinMaxCandidatesFromRoots(t_start, t_end, real_roots,
+                                       candidates)) {
+    return false;
+  }
+  return true;
 }
 
 bool Polynomial::selectMinMaxFromRoots(

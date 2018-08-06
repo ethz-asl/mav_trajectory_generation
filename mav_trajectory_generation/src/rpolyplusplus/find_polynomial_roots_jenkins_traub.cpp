@@ -693,8 +693,8 @@ bool JenkinsTraubSolver::SolveClosedFormPolynomial() {
 
   // Is the polynomial constant?
   if (degree == 0) {
-    std::cout << "Trying to extract roots from a constant "
-              << "polynomial in FindPolynomialRoots" << std::endl;
+    // std::cout << "Trying to extract roots from a constant "
+    //         << "polynomial in FindPolynomialRoots" << std::endl;
     // We return true with no roots, not false, as if the polynomial is constant
     // it is correct that there are no roots. It is not the case that they were
     // there, but that we have failed to extract them.
