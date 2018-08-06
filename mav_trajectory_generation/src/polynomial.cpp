@@ -56,7 +56,6 @@ bool Polynomial::selectMinMaxCandidatesFromRoots(
   return true;
 }
 
-
 bool Polynomial::computeMinMaxCandidates(
     double t_start, double t_end, int derivative,
     std::vector<double>* candidates) const {
@@ -68,8 +67,7 @@ bool Polynomial::computeMinMaxCandidates(
   }
   Eigen::VectorXd real_roots, complex_roots;
   bool success = rpoly_plus_plus::FindPolynomialRootsJenkinsTraub(
-          getCoefficients(derivative + 1).reverse(), &real_roots,
-          &complex_roots);
+      getCoefficients(derivative + 1).reverse(), &real_roots, &complex_roots);
   if (!success) {
     VLOG(1) << "Couldn't find roots, polynomial may be constant.";
   }

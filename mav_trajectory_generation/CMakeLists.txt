@@ -22,6 +22,8 @@ endif()
 #############
 # LIBRARIES #
 #############
+# rpolyplusplus library from Chris Sweeney:
+# https://github.com/sweeneychris/RpolyPlusPlus
 cs_add_library(rpolyplusplus
   src/rpolyplusplus/polynomial.cpp
   src/rpolyplusplus/find_polynomial_roots_jenkins_traub.cpp
@@ -30,7 +32,6 @@ cs_add_library(rpolyplusplus
 cs_add_library(${PROJECT_NAME}
   src/motion_defines.cpp
   src/polynomial.cpp
-  src/rpoly.cpp
   src/segment.cpp
   src/timing.cpp
   src/trajectory.cpp
