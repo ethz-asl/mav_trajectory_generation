@@ -187,6 +187,8 @@ void TimeEvaluationNode::runBenchmark(int trial_number, int num_segments) {
 
   // Run all the evaluations.
   std::string method_name = "nfabian";
+  ROS_INFO_STREAM("Trial " << trial_number << " Segments " << num_segments
+                           << " Starting evaluation: " << method_name);
   Trajectory trajectory_nfabian;
   timing::Timer timer_nfabian(method_name);
   mini_timer.start();
@@ -203,6 +205,8 @@ void TimeEvaluationNode::runBenchmark(int trial_number, int num_segments) {
   }
 
   method_name = "trapezoidal";
+  ROS_INFO_STREAM("Trial " << trial_number << " Segments " << num_segments
+                           << " Starting evaluation: " << method_name);
   Trajectory trajectory_trapezoidal;
   timing::Timer timer_trapezoidal(method_name);
   mini_timer.start();
@@ -219,6 +223,8 @@ void TimeEvaluationNode::runBenchmark(int trial_number, int num_segments) {
   }
 
   method_name = "segment_violation_scaling";
+  ROS_INFO_STREAM("Trial " << trial_number << " Segments " << num_segments
+                           << " Starting evaluation: " << method_name);
   Trajectory trajectory_segment_violation_scaling;
   timing::Timer timer_segment_violation_scaling(method_name);
   mini_timer.start();
@@ -236,6 +242,8 @@ void TimeEvaluationNode::runBenchmark(int trial_number, int num_segments) {
   }
 
   method_name = "nonlinear_time_only";
+  ROS_INFO_STREAM("Trial " << trial_number << " Segments " << num_segments
+                           << " Starting evaluation: " << method_name);
   Trajectory trajectory_nonlinear_time;
   timing::Timer timer_nonlinear_time(method_name);
   mini_timer.start();
@@ -252,6 +260,8 @@ void TimeEvaluationNode::runBenchmark(int trial_number, int num_segments) {
   }
 
   method_name = "nonlinear";
+  ROS_INFO_STREAM("Trial " << trial_number << " Segments " << num_segments
+                           << " Starting evaluation: " << method_name);
   Trajectory trajectory_nonlinear;
   timing::Timer timer_nonlinear(method_name);
   mini_timer.start();
@@ -268,6 +278,8 @@ void TimeEvaluationNode::runBenchmark(int trial_number, int num_segments) {
   }
 
   method_name = "nonlinear_richter";
+  ROS_INFO_STREAM("Trial " << trial_number << " Segments " << num_segments
+                           << " Starting evaluation: " << method_name);
   Trajectory trajectory_nonlinear_richter;
   timing::Timer timer_nonlinear_richter(method_name);
   mini_timer.start();
@@ -284,6 +296,8 @@ void TimeEvaluationNode::runBenchmark(int trial_number, int num_segments) {
   }
 
   method_name = "mellinger_outer_loop";
+  ROS_INFO_STREAM("Trial " << trial_number << " Segments " << num_segments
+                           << " Starting evaluation: " << method_name);
   Trajectory trajectory_mellinger_outer_loop;
   timing::Timer timer_mellinger(method_name);
   mini_timer.start();
@@ -300,6 +314,8 @@ void TimeEvaluationNode::runBenchmark(int trial_number, int num_segments) {
   }
 
   method_name = "mellinger_outer_loop_trapezoidal_init";
+  ROS_INFO_STREAM("Trial " << trial_number << " Segments " << num_segments
+                           << " Starting evaluation: " << method_name);
   Trajectory trajectory_mellinger_outer_loop_trapezoidal_init;
   timing::Timer timer_mellinger_trapezoidal(method_name);
   mini_timer.start();

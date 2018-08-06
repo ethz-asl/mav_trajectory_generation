@@ -147,6 +147,10 @@ class Polynomial {
     return result;
   }
 
+  // Uses Jenkins-Traub to get all the roots of the polynomial at a certain
+  //
+  bool getRoots(int derivative, Eigen::VectorXcd* roots) const;
+
   // Finds all candidates for the minimum and maximum between t_start and t_end
   // by evaluating the roots of the polynomial's derivative.
   static bool selectMinMaxCandidatesFromRoots(

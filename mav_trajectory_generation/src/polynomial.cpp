@@ -25,6 +25,19 @@
 
 namespace mav_trajectory_generation {
 
+bool Polynomial::getRoots(int derivative, Eigen::VectorXcd* roots) const {
+  Eigen::VectorXd real_roots, complex_roots;
+  bool success = rpoly_plus_plus::FindPolynomialRootsJenkinsTraub(
+      getCoefficients(derivative).reverse(), &real_roots, &complex_roots);
+  // Repack the roots into one variable.
+  CHECK_EQ(real_roots.size(), complex_roots.size());
+  roots->resize(real_roots.size());
+  for (size_t i = 0; i < real_roots.size(); i++) {
+    (*roots)[i] = real_roots[i] + complex_roots[i] * 1i;
+  }
+  return success;
+}
+
 bool Polynomial::selectMinMaxCandidatesFromRoots(
     double t_start, double t_end,
     const Eigen::VectorXcd& roots_derivative_of_derivative,
@@ -36,6 +49,7 @@ bool Polynomial::selectMinMaxCandidatesFromRoots(
   }
   candidates->clear();
   candidates->reserve(roots_derivative_of_derivative.size() + 2);
+  // Put start and end in, as they are valid candidates.
   candidates->push_back(t_start);
   candidates->push_back(t_end);
   for (size_t i = 0;
@@ -46,6 +60,7 @@ bool Polynomial::selectMinMaxCandidatesFromRoots(
       continue;
     }
     const double candidate = roots_derivative_of_derivative[i].real();
+
     // Do not evaluate points outside the domain.
     if (candidate < t_start || candidate > t_end) {
       continue;
@@ -65,15 +80,12 @@ bool Polynomial::computeMinMaxCandidates(
     LOG(WARNING) << "N - derivative - 1 has to be at least 0.";
     return false;
   }
-  Eigen::VectorXd real_roots, complex_roots;
-  bool success = rpoly_plus_plus::FindPolynomialRootsJenkinsTraub(
-      getCoefficients(derivative + 1).reverse(), &real_roots, &complex_roots);
+  Eigen::VectorXcd roots;
+  bool success = getRoots(derivative + 1, &roots);
   if (!success) {
     VLOG(1) << "Couldn't find roots, polynomial may be constant.";
   }
-
-  if (!selectMinMaxCandidatesFromRoots(t_start, t_end, real_roots,
-                                       candidates)) {
+  if (!selectMinMaxCandidatesFromRoots(t_start, t_end, roots, candidates)) {
     return false;
   }
   return true;
