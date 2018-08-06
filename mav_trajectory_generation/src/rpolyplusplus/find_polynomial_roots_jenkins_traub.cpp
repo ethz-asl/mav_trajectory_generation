@@ -170,7 +170,7 @@ bool HasConverged(const T& sequence) {
 // Royal Society open science (2014)
 template <typename T>
 bool HasRootConverged(const std::vector<T>& roots) {
-  static const double kRootMagnitudeTolerance = 1e-8;
+  static const double kRootMagnitudeTolerance = 1e-6;
   if (roots.size() != 3) {
     return false;
   }

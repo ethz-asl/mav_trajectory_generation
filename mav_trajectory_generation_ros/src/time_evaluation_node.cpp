@@ -641,8 +641,8 @@ void TimeEvaluationNode::evaluateTrajectory(
   result->v_max = v_max;
   result->a_max = a_max;
 
-  result->v_max = v_max_actual.value;
-  result->a_max = a_max_actual.value;
+  //result->v_max = v_max_actual.value;
+  //result->a_max = a_max_actual.value;
 
   if (result->v_max > v_max_ || result->a_max > a_max_) {
     result->bounds_violated = true;
@@ -837,7 +837,7 @@ int main(int argc, char** argv) {
   ROS_INFO("Initialized time evaluation node.");
 
   int num_trial_per_num_segments = 5;
-  std::vector<int> num_segments_vector = {1, 2, 5, 10, 50};
+  std::vector<int> num_segments_vector = {1, 2, 5, 10};
 
   int start_trial_number = 0;
   std::string output_path;

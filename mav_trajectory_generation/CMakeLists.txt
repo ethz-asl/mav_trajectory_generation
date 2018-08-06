@@ -38,6 +38,8 @@ cs_add_library(${PROJECT_NAME}
   src/trajectory_sampling.cpp
   src/vertex.cpp
   src/io.cpp
+  src/rpoly/rpoly_ak1.cpp
+  src/cpoly/newr.cpp
 )
 # Link against yaml-cpp.
 target_link_libraries(${PROJECT_NAME} rpolyplusplus ${YamlCpp_LIBRARIES})
