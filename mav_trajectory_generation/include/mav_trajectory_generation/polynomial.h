@@ -183,6 +183,10 @@ class Polynomial {
   bool computeMinMaxCandidates(double t_start, double t_end, int derivative,
                                std::vector<double>* candidates) const;
 
+bool computeMinMaxCandidatesRpolyPlusPlus(
+    double t_start, double t_end, int derivative,
+    std::vector<double>* candidates) const;
+
   // Evaluates the minimum and maximum of a polynomial between time t_start and
   // t_end given the roots of the derivative.
   // Returns the minimum and maximum as pair<t, value>.

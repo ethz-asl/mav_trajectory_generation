@@ -22,6 +22,11 @@ endif()
 #############
 # LIBRARIES #
 #############
+cs_add_library(rpolyplusplus
+  src/rpolyplusplus/polynomial.cpp
+  src/rpolyplusplus/find_polynomial_roots_jenkins_traub.cpp
+)
+
 cs_add_library(${PROJECT_NAME}
   src/motion_defines.cpp
   src/polynomial.cpp
@@ -34,7 +39,7 @@ cs_add_library(${PROJECT_NAME}
   src/io.cpp
 )
 # Link against yaml-cpp.
-target_link_libraries(${PROJECT_NAME} ${YamlCpp_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} rpolyplusplus ${YamlCpp_LIBRARIES})
 
 ############
 # BINARIES #

@@ -18,6 +18,7 @@
  * permissions and limitations under the License.
  */
 #include "mav_trajectory_generation/polynomial.h"
+#include "mav_trajectory_generation/rpolyplusplus/find_polynomial_roots_jenkins_traub.h"
 
 #include <algorithm>
 #include <limits>
@@ -55,6 +56,29 @@ bool Polynomial::selectMinMaxCandidatesFromRoots(
   return true;
 }
 
+bool Polynomial::computeMinMaxCandidatesRpolyPlusPlus(
+    double t_start, double t_end, int derivative,
+    std::vector<double>* candidates) const {
+  candidates->clear();
+  if (N_ - derivative - 1 < 0) {
+    LOG(WARNING) << "N - derivative - 1 has to be at least 0.";
+    return false;
+  }
+  Eigen::VectorXd real_roots, complex_roots;
+  if (!rpoly_plus_plus::FindPolynomialRootsJenkinsTraub(getCoefficients(derivative + 1).reverse(),
+                             &real_roots, &complex_roots)) {
+    return false;
+  } else {
+    std::cout << "* Roots: " << real_roots.transpose() << std::endl;
+    if (!selectMinMaxCandidatesFromRoots(
+            t_start, t_end, real_roots, candidates)) {
+      return false;
+    } else {
+      return true;
+    }
+  }
+}
+
 bool Polynomial::computeMinMaxCandidates(
     double t_start, double t_end, int derivative,
     std::vector<double>* candidates) const {
@@ -69,6 +93,7 @@ bool Polynomial::computeMinMaxCandidates(
                              &roots_derivative_of_derivative)) {
     return false;
   } else {
+    std::cout << "* Roots: " << roots_derivative_of_derivative.transpose() << std::endl;
     if (!selectMinMaxCandidatesFromRoots(
             t_start, t_end, roots_derivative_of_derivative, candidates)) {
       return false;
