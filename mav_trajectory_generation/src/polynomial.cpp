@@ -59,8 +59,8 @@ bool Polynomial::getRoots(int derivative, Eigen::VectorXcd* roots) const {
   }
   return success; */
 
-  return findRootsNewtonsMethod(getCoefficients(derivative), roots);
-  //return findRootsJenkinsTraub(getCoefficients(derivative), roots);
+  //return findRootsNewtonsMethod(getCoefficients(derivative), roots);
+  return findRootsJenkinsTraub(getCoefficients(derivative), roots);
 }
 
 bool Polynomial::selectMinMaxCandidatesFromRoots(
