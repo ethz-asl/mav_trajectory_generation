@@ -22,13 +22,6 @@ endif()
 #############
 # LIBRARIES #
 #############
-# rpolyplusplus library from Chris Sweeney:
-# https://github.com/sweeneychris/RpolyPlusPlus
-cs_add_library(rpolyplusplus
-  src/rpolyplusplus/polynomial.cpp
-  src/rpolyplusplus/find_polynomial_roots_jenkins_traub.cpp
-)
-
 cs_add_library(${PROJECT_NAME}
   src/motion_defines.cpp
   src/polynomial.cpp
@@ -39,10 +32,9 @@ cs_add_library(${PROJECT_NAME}
   src/vertex.cpp
   src/io.cpp
   src/rpoly/rpoly_ak1.cpp
-  src/cpoly/newr.cpp
 )
 # Link against yaml-cpp.
-target_link_libraries(${PROJECT_NAME} rpolyplusplus ${YamlCpp_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} ${YamlCpp_LIBRARIES})
 
 ############
 # BINARIES #
