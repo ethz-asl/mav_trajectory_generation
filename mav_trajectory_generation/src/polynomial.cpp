@@ -18,9 +18,7 @@
  * permissions and limitations under the License.
  */
 #include "mav_trajectory_generation/polynomial.h"
-#include "mav_trajectory_generation/rpolyplusplus/find_polynomial_roots_jenkins_traub.h"
 #include "mav_trajectory_generation/rpoly/rpoly_ak1.h"
-#include "mav_trajectory_generation/cpoly/newr.h"
 
 #include <algorithm>
 #include <limits>
@@ -28,38 +26,6 @@
 namespace mav_trajectory_generation {
 
 bool Polynomial::getRoots(int derivative, Eigen::VectorXcd* roots) const {
-  /*
-   const size_t nc = N_ - 1;
-   Eigen::MatrixXd companion_matrix(nc, nc);
-   companion_matrix.row(0).setZero();
-   companion_matrix.block(1, 0, nc - 1, nc - 1).setIdentity();
-   companion_matrix.col(nc - 1) = -coefficients_.head(nc) / coefficients_(N_ - 1);
-
-   *roots = companion_matrix.eigenvalues();
-   return true;
- */
-   /*  typedef Eigen::Matrix<double, nc, nc> CompanionMatrix;
-    CompanionMatrix companion;
-   companion.template row(0).setZero();
-    companion.template block<nc - 1, nc - 1>(1, 0).setIdentity();
-    companion.template col(nc - 1) = - coefficients_.template head<nc>()
-     / coefficients_[N - 1];
-
-         Eigen::EigenSolver<CompanionMatrix> es(companion, false);
-         return es.eigenvalues(); */
-
-  /* Eigen::VectorXd real_roots, complex_roots;
-  bool success = rpoly_plus_plus::FindPolynomialRootsJenkinsTraub(
-      getCoefficients(derivative).reverse(), &real_roots, &complex_roots);
-  // Repack the roots into one variable.
-  CHECK_EQ(real_roots.size(), complex_roots.size());
-  roots->resize(real_roots.size());
-  for (size_t i = 0; i < real_roots.size(); i++) {
-    (*roots)[i] = real_roots[i] + complex_roots[i] * 1i;
-  }
-  return success; */
-
-  //return findRootsNewtonsMethod(getCoefficients(derivative), roots);
   return findRootsJenkinsTraub(getCoefficients(derivative), roots);
 }
 
