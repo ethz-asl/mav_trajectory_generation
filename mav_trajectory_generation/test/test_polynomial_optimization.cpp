@@ -407,7 +407,7 @@ TEST_P(PolynomialOptimizationTests, UnconstrainedNonlinear) {
       estimateSegmentTimes(vertices_, v_max, a_max);
 
   NonlinearOptimizationParameters parameters;
-  parameters.max_iterations = 100;
+  parameters.max_iterations = 3000;
   parameters.f_rel = 0.05;
   parameters.x_rel = 0.1;
   parameters.time_penalty = 500.0;
@@ -434,15 +434,17 @@ TEST_P(PolynomialOptimizationTests, UnconstrainedNonlinear) {
   opt.addMaximumMagnitudeConstraint(derivative_order::VELOCITY, v_max);
   opt.addMaximumMagnitudeConstraint(derivative_order::ACCELERATION, a_max);
   opt.solveLinear();
-  double initial_cost = opt.getCost();
+  double initial_cost = opt.getTotalCostWithSoftConstraints();
   timer_setup.Stop();
   timing::Timer timer_solve("solve_nonlinear_time_only" + getSuffix());
   ret = opt.optimize();
   timer_solve.Stop();
-  double final_cost = opt.getCost();
+  double final_cost = opt.getTotalCostWithSoftConstraints();
 
   EXPECT_NE(ret, nlopt::FAILURE);
   EXPECT_NE(ret, nlopt::INVALID_ARGS);
+
+  EXPECT_LE(final_cost, initial_cost * 1.1);
 
   std::cout << "nlopt1 stopped for reason: " << nlopt::returnValueToString(ret)
             << std::endl;
@@ -460,10 +462,13 @@ TEST_P(PolynomialOptimizationTests, UnconstrainedNonlinear) {
                              getSuffix());
   ret = opt2.optimize();
   timer_solve2.Stop();
-  double final_cost2 = opt2.getCost();
+  double final_cost2 = opt2.getTotalCostWithSoftConstraints();
 
   EXPECT_NE(ret, nlopt::FAILURE);
   EXPECT_NE(ret, nlopt::INVALID_ARGS);
+
+  EXPECT_LE(final_cost2, initial_cost * 1.1);
+  EXPECT_LE(final_cost2, final_cost * 1.5);
 
   std::cout << "nlopt2 stopped for reason: " << nlopt::returnValueToString(ret)
             << std::endl;

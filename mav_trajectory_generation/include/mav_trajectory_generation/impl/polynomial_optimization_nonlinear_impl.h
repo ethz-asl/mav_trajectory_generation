@@ -263,6 +263,25 @@ double PolynomialOptimizationNonLinear<_N>::getCost() const {
 }
 
 template <int _N>
+double PolynomialOptimizationNonLinear<_N>::getTotalCostWithSoftConstraints()
+    const {
+  double cost_trajectory = poly_opt_.computeCost();
+
+  // Use consistent cost metrics regardless of method set, to compare between
+  // methods.
+  std::vector<double> segment_times;
+  poly_opt_.getSegmentTimes(&segment_times);
+  double total_time =
+      std::accumulate(segment_times.begin(), segment_times.end(), 0.0);
+  double cost_time =
+      total_time * total_time * optimization_parameters_.time_penalty;
+  double cost_constraints = evaluateMaximumMagnitudeAsSoftConstraint(
+      inequality_constraints_, optimization_parameters_.soft_constraint_weight);
+
+  return cost_trajectory + cost_time + cost_constraints;
+}
+
+template <int _N>
 double PolynomialOptimizationNonLinear<_N>::getCostAndGradientMellinger(
     std::vector<double>* gradients) {
   // Weighting terms for different costs

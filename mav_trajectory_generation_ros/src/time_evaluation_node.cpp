@@ -179,6 +179,7 @@ void TimeEvaluationNode::runBenchmark(int trial_number, int num_segments) {
   visualization_msgs::MarkerArray markers;
   if (visualize_) {
     drawVertices(vertices, frame_id_, &markers);
+    markers.markers.back().scale.x = 0.1;
   }
 
   // Small timer used to get computation times.
@@ -348,7 +349,14 @@ int TimeEvaluationNode::runNfabian(const Vertex::Vector& vertices,
   linopt.setupFromVertices(vertices, segment_times, max_derivative_order_);
   linopt.solveLinear();
   linopt.getTrajectory(trajectory);
-  *cost = linopt.computeCost();
+
+  // Compute nonlinear cost.
+  mav_trajectory_generation::NonlinearOptimizationParameters nlopt_parameters;
+  mav_trajectory_generation::PolynomialOptimizationNonLinear<kN> nlopt(
+      kDim, nlopt_parameters);
+  nlopt.getPolynomialOptimizationRef() = linopt;
+
+  *cost = nlopt.getTotalCostWithSoftConstraints();
   return 1;
 }
 
@@ -364,7 +372,14 @@ int TimeEvaluationNode::runTrapezoidalTime(const Vertex::Vector& vertices,
   linopt.setupFromVertices(vertices, segment_times, max_derivative_order_);
   linopt.solveLinear();
   linopt.getTrajectory(trajectory);
-  *cost = linopt.computeCost();
+
+  // Compute nonlinear cost.
+  mav_trajectory_generation::NonlinearOptimizationParameters nlopt_parameters;
+  mav_trajectory_generation::PolynomialOptimizationNonLinear<kN> nlopt(
+      kDim, nlopt_parameters);
+  nlopt.getPolynomialOptimizationRef() = linopt;
+
+  *cost = nlopt.getTotalCostWithSoftConstraints();
   return 1;
 }
 
@@ -386,7 +401,7 @@ int TimeEvaluationNode::runNonlinear(const Vertex::Vector& vertices,
   nlopt.addMaximumMagnitudeConstraint(derivative_order::ACCELERATION, a_max_);
   int result = nlopt.optimize();
   nlopt.getTrajectory(trajectory);
-  *cost = nlopt.getCost();
+  *cost = nlopt.getTotalCostWithSoftConstraints();
   return result;
 }
 
@@ -408,7 +423,7 @@ int TimeEvaluationNode::runNonlinearRichter(const Vertex::Vector& vertices,
   nlopt.addMaximumMagnitudeConstraint(derivative_order::ACCELERATION, a_max_);
   int result = nlopt.optimize();
   nlopt.getTrajectory(trajectory);
-  *cost = nlopt.getCost();
+  *cost = nlopt.getTotalCostWithSoftConstraints();
   return result;
 }
 
@@ -430,7 +445,7 @@ int TimeEvaluationNode::runNonlinearTimeOnly(const Vertex::Vector& vertices,
   nlopt.addMaximumMagnitudeConstraint(derivative_order::ACCELERATION, a_max_);
   int result = nlopt.optimize();
   nlopt.getTrajectory(trajectory);
-  *cost = nlopt.getCost();
+  *cost = nlopt.getTotalCostWithSoftConstraints();
   return result;
 }
 
@@ -458,7 +473,7 @@ int TimeEvaluationNode::runMellingerOuterLoop(const Vertex::Vector& vertices,
   nlopt.addMaximumMagnitudeConstraint(derivative_order::ACCELERATION, a_max_);
   int result = nlopt.optimize();
   nlopt.getTrajectory(trajectory);
-  *cost = nlopt.getCost();
+  *cost = nlopt.getTotalCostWithSoftConstraints();
   return result;
 }
 
@@ -562,6 +577,15 @@ int TimeEvaluationNode::runSegmentViolationScalingTime(
                 << " | rel_vio_a: " << rel_violation_a << std::endl;
     }
   }
+
+  // Compute nonlinear cost.
+  mav_trajectory_generation::NonlinearOptimizationParameters nlopt_parameters;
+  mav_trajectory_generation::PolynomialOptimizationNonLinear<kN> nlopt(
+      kDim, nlopt_parameters);
+  nlopt.getPolynomialOptimizationRef() = linopt;
+
+  *cost = nlopt.getTotalCostWithSoftConstraints();
+
   return 1;
 }
 
@@ -575,7 +599,9 @@ void TimeEvaluationNode::visualizeTrajectory(
   if (method_name == "nfabian") {
     trajectory_color = mav_visualization::Color::Yellow();
   } else if (method_name == "trapezoidal") {
-    trajectory_color = mav_visualization::Color::Green();
+    trajectory_color = mav_visualization::Color::Teal();
+  } else if (method_name == "nonlinear_time_only") {
+    trajectory_color = mav_visualization::Color::Purple();
   } else if (method_name == "nonlinear") {
     trajectory_color = mav_visualization::Color::Red();
   } else if (method_name == "nonlinear_richter") {
@@ -585,7 +611,7 @@ void TimeEvaluationNode::visualizeTrajectory(
   } else if (method_name == "mellinger_outer_loop_trapezoidal_init") {
     trajectory_color = mav_visualization::Color::Gray();
   } else if (method_name == "segment_violation_scaling") {
-    trajectory_color = mav_visualization::Color::Chartreuse();
+    trajectory_color = mav_visualization::Color::Pink();
   } else {
     trajectory_color = mav_visualization::Color::White();
   }

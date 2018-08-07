@@ -69,7 +69,9 @@ struct NonlinearOptimizationParameters {
 
   // Optimization algorithm used by nlopt, see
   // http://ab-initio.mit.edu/wiki/index.php/NLopt_Algorithms
-  nlopt::algorithm algorithm = nlopt::LN_SBPLX;
+  // Previous value was nlopt::LN_SBPLX, but we found that BOBYQA has slightly
+  // better convergence and lower run-time in the unit tests.
+  nlopt::algorithm algorithm = nlopt::LN_BOBYQA;
 
   // Random seed, if an optimization algorithm involving random numbers
   // is used (e.g. nlopt::GN_ISRES).
@@ -189,7 +191,13 @@ class PolynomialOptimizationNonLinear {
   OptimizationInfo getOptimizationInfo() const { return optimization_info_; }
 
   // Functions for optimization, but may be useful for diagnostics outside.
+  // Gets the trajectory cost (same as the cost in the linear problem).
   double getCost() const;
+
+  // Gets the cost including the soft constraints and time costs, should be
+  // the same cost function as used in the full optimization. Returns the same
+  // metrics regardless of time estimation method set.
+  double getTotalCostWithSoftConstraints() const;
 
   void scaleSegmentTimesWithViolation();
 
