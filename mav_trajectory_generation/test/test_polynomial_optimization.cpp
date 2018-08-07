@@ -72,8 +72,9 @@ class PolynomialOptimizationTests
     pos_min.setConstant(-params_.pos_bounds);
     pos_max.setConstant(params_.pos_bounds);
 
-    vertices_ = createRandomVertices(max_derivative, params_.num_segments,
-                                     pos_min, pos_max, params_.seed);
+    vertices_ =
+        createRandomVertices(getHighestDerivativeFromN(N), params_.num_segments,
+                             pos_min, pos_max, params_.seed);
   }
 
   // Helper checking functions.
@@ -82,11 +83,11 @@ class PolynomialOptimizationTests
   bool checkCost(double cost_to_check, const Trajectory& trajectory,
                  size_t derivative, double relative_tolerance) const;
   void getMaxVelocityAndAccelerationAnalytical(const Trajectory& trajectory,
-                                               double* v_max_,
-                                               double* a_max_) const;
+                                               double* v_max,
+                                               double* a_max) const;
   void getMaxVelocityAndAccelerationNumerical(const Trajectory& trajectory,
-                                              double* v_max_,
-                                              double* a_max_) const;
+                                              double* v_max,
+                                              double* a_max) const;
   bool checkExtrema(const std::vector<double>& testee,
                     const std::vector<double>& reference,
                     double tol = 0.01) const;
@@ -250,8 +251,10 @@ TEST_P(PolynomialOptimizationTests, VertexGeneration) {
   pos_min.setConstant(-params_.pos_bounds);
   pos_max.setConstant(params_.pos_bounds);
 
-  EXPECT_EQ(vertices_.front().getNumberOfConstraints(), max_derivative + 1);
-  EXPECT_EQ(vertices_.back().getNumberOfConstraints(), max_derivative + 1);
+  EXPECT_EQ(vertices_.front().getNumberOfConstraints(),
+            getHighestDerivativeFromN(N) + 1);
+  EXPECT_EQ(vertices_.back().getNumberOfConstraints(),
+            getHighestDerivativeFromN(N) + 1);
 
   for (const Vertex& v : vertices_) {
     EXPECT_TRUE(v.hasConstraint(derivative_order::POSITION));
@@ -421,7 +424,7 @@ TEST_P(PolynomialOptimizationTests, UnconstrainedNonlinear) {
   //  parameters.algorithm = nlopt::GN_ISRES;
   //  parameters.algorithm = nlopt::LN_COBYLA;
   parameters.algorithm = nlopt::LN_BOBYQA;
-  //parameters.algorithm = nlopt::LN_SBPLX;
+  // parameters.algorithm = nlopt::LN_SBPLX;
 
   parameters.random_seed = 12345678;
 

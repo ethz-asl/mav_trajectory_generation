@@ -69,7 +69,8 @@ class Vertex {
 
   // Sets a constraint for position and sets all derivatives up to
   // (including) up_to_derivative to zero. Convenience method for
-  // beginning / end vertices.
+  // beginning / end vertices. up_to_derivative should be set to
+  // getHighestDerivativeFromN(N), where N is the order of your polynomial.
   void makeStartOrEnd(const Eigen::VectorXd& constraint, int up_to_derivative);
 
   void makeStartOrEnd(double value, int up_to_derivative) {
@@ -116,7 +117,8 @@ std::ostream& operator<<(std::ostream& stream,
                          const std::vector<Vertex>& vertices);
 
 // Makes a rough estimate based on v_max and a_max about the time
-// required to get from one vertex to the next. Uses the current preferred method.
+// required to get from one vertex to the next. Uses the current preferred
+// method.
 std::vector<double> estimateSegmentTimes(const Vertex::Vector& vertices,
                                          double v_max, double a_max);
 
@@ -141,6 +143,8 @@ std::vector<double> estimateSegmentTimesNfabian(
 double computeTimeVelocityRamp(const Eigen::VectorXd& start,
                                const Eigen::VectorXd& goal, double v_max,
                                double a_max);
+
+inline int getHighestDerivativeFromN(int N) { return N / 2 - 1; }
 
 // Creates random vertices for position within minimum_position and
 // maximum_position.

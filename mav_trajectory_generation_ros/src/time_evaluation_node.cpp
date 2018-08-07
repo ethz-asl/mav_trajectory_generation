@@ -149,7 +149,7 @@ void TimeEvaluationNode::runBenchmark(int trial_number, int num_segments) {
   // Use trial number as seed to create the trajectory.
   Vertex::Vector vertices;
 
-  vertices = createRandomVertices(max_derivative_order_, num_segments, min_pos,
+  vertices = createRandomVertices(getHighestDerivativeFromN(kN), num_segments, min_pos,
                                   max_pos, trial_number);
 
   TimeAllocationBenchmarkResult result;
@@ -547,7 +547,6 @@ int TimeEvaluationNode::runSegmentViolationScalingTime(
   Segment::Vector segments_after;
   trajectory->getSegments(&segments_after);
 
-  // TODO: only debug
   // Check violation afterwards
   std::vector<Extremum> maxima_vel_after, maxima_acc_after;
   computeMinMaxMagnitudeAllSegments(segments_after, derivative_order::VELOCITY,
@@ -663,20 +662,14 @@ void TimeEvaluationNode::evaluateTrajectory(
     }
   }
 
-  result->v_max = v_max;
-  result->a_max = a_max;
+  result->v_max = v_max_actual.value;
+  result->a_max = a_max_actual.value;
 
-  // result->v_max = v_max_actual.value;
-  // result->a_max = a_max_actual.value;
-
-  if (result->v_max > v_max_ || result->a_max > a_max_) {
+  if (result->v_max > v_max_ + 1e-4 || result->a_max > a_max_ + 1e-4) {
     result->bounds_violated = true;
   } else {
     result->bounds_violated = false;
   }
-
-  // Todo: Add success variable to check for allowed relative violation, ...
-  // const double allowed_rel_violation = 0.1;
 
   // Evaluate maximum trajectory distance per segment from straight line path
   // 1) Sample trajectory
@@ -712,7 +705,7 @@ void TimeEvaluationNode::evaluateTrajectory(
       area += 0.5 * (dist + prev_dist) * (point - prev_pos).norm();
     }
   }
-  // TODO: Distinguish max_dist for each segment?
+
   result->max_dist_from_straight_line = max_dist;
   result->area_traj_straight_line = area;
 }

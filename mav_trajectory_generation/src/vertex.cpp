@@ -66,8 +66,9 @@ Vertex::Vector createRandomVertices(int maximum_derivative, size_t n_segments,
       for (size_t d = 0; d < dimension; ++d) {
         pos[d] = distribution[d](generator);
       }
-      if ((pos - last_pos).norm() > min_distance) break;
-      ;
+      if ((pos - last_pos).norm() > min_distance) {
+        break;
+      }
     }
 
     Vertex v(dimension);
@@ -241,7 +242,7 @@ std::vector<double> estimateSegmentTimesVelocityRamp(
     Eigen::VectorXd start, end;
     vertices[i].getConstraint(derivative_order::POSITION, &start);
     vertices[i + 1].getConstraint(derivative_order::POSITION, &end);
-    double t =  computeTimeVelocityRamp(start, end, v_max, a_max);
+    double t = computeTimeVelocityRamp(start, end, v_max, a_max);
     segment_times.push_back(t);
   }
 
