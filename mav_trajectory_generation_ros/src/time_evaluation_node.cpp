@@ -355,7 +355,8 @@ int TimeEvaluationNode::runNfabian(const Vertex::Vector& vertices,
   mav_trajectory_generation::PolynomialOptimizationNonLinear<kN> nlopt(
       kDim, nlopt_parameters);
   nlopt.getPolynomialOptimizationRef() = linopt;
-
+  nlopt.addMaximumMagnitudeConstraint(derivative_order::VELOCITY, v_max_);
+  nlopt.addMaximumMagnitudeConstraint(derivative_order::ACCELERATION, a_max_);
   *cost = nlopt.getTotalCostWithSoftConstraints();
   return 1;
 }
@@ -378,6 +379,8 @@ int TimeEvaluationNode::runTrapezoidalTime(const Vertex::Vector& vertices,
   mav_trajectory_generation::PolynomialOptimizationNonLinear<kN> nlopt(
       kDim, nlopt_parameters);
   nlopt.getPolynomialOptimizationRef() = linopt;
+  nlopt.addMaximumMagnitudeConstraint(derivative_order::VELOCITY, v_max_);
+  nlopt.addMaximumMagnitudeConstraint(derivative_order::ACCELERATION, a_max_);
 
   *cost = nlopt.getTotalCostWithSoftConstraints();
   return 1;
@@ -582,7 +585,8 @@ int TimeEvaluationNode::runSegmentViolationScalingTime(
   mav_trajectory_generation::PolynomialOptimizationNonLinear<kN> nlopt(
       kDim, nlopt_parameters);
   nlopt.getPolynomialOptimizationRef() = linopt;
-
+  nlopt.addMaximumMagnitudeConstraint(derivative_order::VELOCITY, v_max_);
+  nlopt.addMaximumMagnitudeConstraint(derivative_order::ACCELERATION, a_max_);
   *cost = nlopt.getTotalCostWithSoftConstraints();
 
   return 1;
@@ -855,7 +859,7 @@ int main(int argc, char** argv) {
   ROS_INFO("Initialized time evaluation node.");
 
   int num_trial_per_num_segments = 5;
-  std::vector<int> num_segments_vector = {1, 2, 5, 10, 50};
+  std::vector<int> num_segments_vector = {1, 2, 5, 10, 20, 30, 40, 50};
 
   int start_trial_number = 0;
   std::string output_path;

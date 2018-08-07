@@ -276,7 +276,8 @@ double PolynomialOptimizationNonLinear<_N>::getTotalCostWithSoftConstraints()
   double cost_time =
       total_time * total_time * optimization_parameters_.time_penalty;
   double cost_constraints = evaluateMaximumMagnitudeAsSoftConstraint(
-      inequality_constraints_, optimization_parameters_.soft_constraint_weight);
+      inequality_constraints_, optimization_parameters_.soft_constraint_weight,
+      1e9);
 
   return cost_trajectory + cost_time + cost_constraints;
 }
