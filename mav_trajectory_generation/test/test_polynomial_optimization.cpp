@@ -336,7 +336,7 @@ TEST_P(PolynomialOptimizationTests, ExtremaOfMagnitude) {
     std::vector<double> res_sampling;
     time_sampling.Start();
     opt.computeSegmentMaximumMagnitudeCandidatesBySampling<kDerivative>(
-        s, 0, s.getTime(), 0.001, &res_sampling);
+        s, 0, s.getTime(), 0.01, &res_sampling);
     time_sampling.Stop();
 
     // First check that the candidates are ACTUAL extrema.
@@ -363,7 +363,7 @@ TEST_P(PolynomialOptimizationTests, ExtremaOfMagnitude) {
       for (const double& t : res_sampling) {
         std::cout << t << " ";
       }
-
+      std::cout << std::endl;
       for (int i = 0; i < D; i++) {
         std::cout
             << "vx" << i << " = "
@@ -638,13 +638,6 @@ TEST_P(PolynomialOptimizationTests, TimeScaling) {
   nlopt.addMaximumMagnitudeConstraint(
       mav_trajectory_generation::derivative_order::ACCELERATION, a_max);
   nlopt.solveLinear();
-
-  std::cout << "Solved linear. Segment times: ";
-  for (double segment_time : segment_times) {
-    std::cout << segment_time << " ";
-    EXPECT_LE(segment_time, 1e5);
-  }
-  std::cout << std::endl;
 
   Trajectory trajectory;
   double v_max_traj, a_max_traj, v_max_num, a_max_num;
