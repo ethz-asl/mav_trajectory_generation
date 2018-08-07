@@ -116,26 +116,30 @@ std::ostream& operator<<(std::ostream& stream,
                          const std::vector<Vertex>& vertices);
 
 // Makes a rough estimate based on v_max and a_max about the time
-// required to get from one vertex to the next.
-// t_est = 2 * distance/v_max * (1 + magic_fabian_constant * v_max/a_max * exp(-
-// distance/v_max * 2);
-// magic_fabian_constant was determined to 6.5 in a student project ...
+// required to get from one vertex to the next. Uses the current preferred method.
 std::vector<double> estimateSegmentTimes(const Vertex::Vector& vertices,
-                                         double v_max, double a_max,
-                                         double magic_fabian_constant = 6.5);
+                                         double v_max, double a_max);
 
 // Calculate the velocity assuming instantaneous constant acceleration a_max
 // and straight line rest-to-rest trajectories.
 // The time_factor \in [1..Inf] increases the allocated time making the segments
 // slower and thus feasibility more likely. This method does not take into
 // account the start and goal velocity and acceleration.
-bool estimateSegmentTimesVelocityRamp(const Vertex::Vector& vertices,
-                                      double v_max, double a_max,
-                                      double time_factor,
-                                      std::vector<double>* segment_times);
+std::vector<double> estimateSegmentTimesVelocityRamp(
+    const Vertex::Vector& vertices, double v_max, double a_max,
+    double time_factor = 1.0);
 
-double computeTimeVelocityRamp(const Eigen::Vector3d& start,
-                               const Eigen::Vector3d& goal, double v_max,
+// Makes a rough estimate based on v_max and a_max about the time
+// required to get from one vertex to the next.
+// t_est = 2 * distance/v_max * (1 + magic_fabian_constant * v_max/a_max * exp(-
+// distance/v_max * 2);
+// magic_fabian_constant was determined to 6.5 in a student project ...
+std::vector<double> estimateSegmentTimesNfabian(
+    const Vertex::Vector& vertices, double v_max, double a_max,
+    double magic_fabian_constant = 6.5);
+
+double computeTimeVelocityRamp(const Eigen::VectorXd& start,
+                               const Eigen::VectorXd& goal, double v_max,
                                double a_max);
 
 // Creates random vertices for position within minimum_position and

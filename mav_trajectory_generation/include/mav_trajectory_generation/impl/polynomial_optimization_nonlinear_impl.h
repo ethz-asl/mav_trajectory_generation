@@ -144,7 +144,7 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTime() {
     // Set a lower bound on the segment time per segment to avoid numerical
     // issues.
     nlopt_->set_initial_step(initial_step);
-    nlopt_->set_upper_bounds(std::numeric_limits<double>::infinity());
+    nlopt_->set_upper_bounds(std::numeric_limits<double>::max());
     nlopt_->set_lower_bounds(kOptimizationTimeLowerBound);
     nlopt_->set_min_objective(
         &PolynomialOptimizationNonLinear<N>::objectiveFunctionTime, this);
@@ -185,7 +185,7 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTimeMellingerOuterLoop() {
   try {
     // Set a lower bound on the segment time per segment to avoid numerical
     // issues.
-    nlopt_->set_upper_bounds(HUGE_VAL);
+    nlopt_->set_upper_bounds(std::numeric_limits<double>::max());
     nlopt_->set_lower_bounds(kOptimizationTimeLowerBound);
     nlopt_->set_min_objective(&PolynomialOptimizationNonLinear<
                                   N>::objectiveFunctionTimeMellingerOuterLoop,
@@ -352,7 +352,11 @@ void PolynomialOptimizationNonLinear<_N>::scaleSegmentTimesWithViolation() {
 
   // Evaluate min/max extrema
   Extremum v_min_actual, v_max_actual, a_min_actual, a_max_actual;
-  std::vector<int> dimensions = {0, 1, 2};  // Evaluate dimensions in x, y and z
+  std::vector<int> dimensions;
+  for (int i = 0; i < traj.D(); ++i) {
+    dimensions.push_back(i);
+  }
+
   traj.computeMinMaxMagnitude(derivative_order::VELOCITY, dimensions,
                               &v_min_actual, &v_max_actual);
   traj.computeMinMaxMagnitude(derivative_order::ACCELERATION, dimensions,
@@ -442,20 +446,19 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTimeAndFreeConstraints() {
   std::vector<Eigen::VectorXd> free_constraints;
   poly_opt_.getFreeConstraints(&free_constraints);
   if (free_constraints.size() == 0 || free_constraints.front().size() == 0) {
-    LOG(ERROR) << "No free variables, returning current solution.";
-    return 1;
+    LOG(WARNING)
+        << "No free derivative variables, same as time-only optimization.";
   }
 
-  CHECK(free_constraints.size() > 0);
-  CHECK(free_constraints.front().size() > 0);
-
-  const size_t n_optmization_variables =
+  const size_t n_optimization_variables =
       n_segments + free_constraints.size() * free_constraints.front().size();
 
-  initial_solution.reserve(n_optmization_variables);
-  initial_step.reserve(n_optmization_variables);
-  lower_bounds.reserve(n_optmization_variables);
-  upper_bounds.reserve(n_optmization_variables);
+  CHECK_GT(n_optimization_variables, 0);
+
+  initial_solution.reserve(n_optimization_variables);
+  initial_step.reserve(n_optimization_variables);
+  lower_bounds.reserve(n_optimization_variables);
+  upper_bounds.reserve(n_optimization_variables);
 
   // copy all constraints into one vector:
   for (double t : segment_times) {
@@ -470,10 +473,10 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTimeAndFreeConstraints() {
 
   // Setup for getting bounds on the free endpoint derivatives
   std::vector<double> lower_bounds_free, upper_bounds_free;
-  const size_t n_optmization_variables_free =
+  const size_t n_optimization_variables_free =
       free_constraints.size() * free_constraints.front().size();
-  lower_bounds_free.reserve(n_optmization_variables_free);
-  upper_bounds_free.reserve(n_optmization_variables_free);
+  lower_bounds_free.reserve(n_optimization_variables_free);
+  upper_bounds_free.reserve(n_optimization_variables_free);
 
   // Get the lower and upper bounds constraints on the free endpoint
   // derivatives
@@ -485,7 +488,7 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTimeAndFreeConstraints() {
   // Set segment time constraints
   for (int l = 0; l < n_segments; ++l) {
     lower_bounds.push_back(kOptimizationTimeLowerBound);
-    upper_bounds.push_back(std::numeric_limits<double>::infinity());
+    upper_bounds.push_back(std::numeric_limits<double>::max());
   }
   // Append free endpoint derivative constraints
   lower_bounds.insert(std::end(lower_bounds), std::begin(lower_bounds_free),
@@ -493,18 +496,31 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTimeAndFreeConstraints() {
   upper_bounds.insert(std::end(upper_bounds), std::begin(upper_bounds_free),
                       std::end(upper_bounds_free));
 
-  initial_step.reserve(n_optmization_variables);
-  for (double x : initial_solution) {
+  for (size_t i = 0; i < initial_solution.size(); i++) {
+    double x = initial_solution[i];
     const double abs_x = std::abs(x);
     // Initial step size cannot be 0.0 --> invalid arg
-    // TOD0: std::numerical_limits necessary or only for exactly 0.0?
-    if (abs_x == 0.0) {
+    if (abs_x <= std::numeric_limits<double>::lowest()) {
       initial_step.push_back(1e-13);
     } else {
       initial_step.push_back(optimization_parameters_.initial_stepsize_rel *
                              abs_x);
     }
+
+    // Check if initial solution isn't already out of bounds.
+    if (x < lower_bounds[i]) {
+      lower_bounds[i] = x;
+    } else if (x > upper_bounds[i]) {
+      upper_bounds[i] = x;
+    }
   }
+
+  // Make sure everything is the same size, otherwise NLOPT will have a bad
+  // time.
+  CHECK_EQ(lower_bounds.size(), upper_bounds.size());
+  CHECK_EQ(initial_solution.size(), lower_bounds.size());
+  CHECK_EQ(initial_solution.size(), initial_step.size());
+  CHECK_EQ(initial_solution.size(), n_optimization_variables);
 
   try {
     nlopt_->set_initial_step(initial_step);
@@ -523,6 +539,7 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTimeAndFreeConstraints() {
 
   try {
     timing::Timer timer_solve("optimize_nonlinear_full_total_time");
+
     result = nlopt_->optimize(initial_solution, final_cost);
     timer_solve.Stop();
   } catch (std::exception& e) {
@@ -671,7 +688,7 @@ template <int _N>
 double PolynomialOptimizationNonLinear<_N>::objectiveFunctionTimeAndConstraints(
     const std::vector<double>& x, std::vector<double>& gradient, void* data) {
   CHECK(gradient.empty())
-      << "computing gradient not possible, choose a gradient free method";
+      << "computing gradient not possible, choose a gradient-free method";
   CHECK_NOTNULL(data);
 
   PolynomialOptimizationNonLinear<N>* optimization_data =
@@ -689,7 +706,9 @@ double PolynomialOptimizationNonLinear<_N>::objectiveFunctionTimeAndConstraints(
   std::vector<double> segment_times;
   segment_times.reserve(n_segments);
 
-  for (size_t i = 0; i < n_segments; ++i) segment_times.push_back(x[i]);
+  for (size_t i = 0; i < n_segments; ++i) {
+    segment_times.push_back(x[i]);
+  }
 
   for (size_t d = 0; d < dim; ++d) {
     const size_t idx_start = n_segments + d * n_free_constraints;
@@ -755,7 +774,7 @@ double PolynomialOptimizationNonLinear<_N>::evaluateMaximumMagnitudeConstraint(
     const std::vector<double>& segment_times, std::vector<double>& gradient,
     void* data) {
   CHECK(gradient.empty())
-      << "computing gradient not possible, choose a gradient free method";
+      << "computing gradient not possible, choose a gradient-free method";
   ConstraintData* constraint_data =
       static_cast<ConstraintData*>(data);  // wheee ...
   PolynomialOptimizationNonLinear<N>* optimization_data =
@@ -819,9 +838,9 @@ void PolynomialOptimizationNonLinear<_N>::
 
   // Set all values to -inf/inf and reset only bounded opti param with values
   lower_bounds->resize(dim * n_free_constraints,
-                       -std::numeric_limits<double>::infinity());
+                       std::numeric_limits<double>::lowest());
   upper_bounds->resize(dim * n_free_constraints,
-                       std::numeric_limits<double>::infinity());
+                       std::numeric_limits<double>::max());
 
   // Add higher order derivative constraints (v_max and a_max)
   // Check at each vertex which of the derivatives is a free derivative.

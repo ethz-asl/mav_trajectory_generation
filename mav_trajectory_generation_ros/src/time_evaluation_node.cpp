@@ -341,8 +341,8 @@ void TimeEvaluationNode::runBenchmark(int trial_number, int num_segments) {
 int TimeEvaluationNode::runNfabian(const Vertex::Vector& vertices,
                                    Trajectory* trajectory, double* cost) const {
   std::vector<double> segment_times;
-  segment_times =
-      mav_trajectory_generation::estimateSegmentTimes(vertices, v_max_, a_max_);
+  segment_times = mav_trajectory_generation::estimateSegmentTimesNfabian(
+      vertices, v_max_, a_max_);
 
   mav_trajectory_generation::PolynomialOptimization<kN> linopt(kDim);
   linopt.setupFromVertices(vertices, segment_times, max_derivative_order_);
@@ -357,8 +357,8 @@ int TimeEvaluationNode::runTrapezoidalTime(const Vertex::Vector& vertices,
                                            double* cost) const {
   std::vector<double> segment_times;
   const double kTimeFactor = 1.0;
-  CHECK(mav_trajectory_generation::estimateSegmentTimesVelocityRamp(
-      vertices, v_max_, a_max_, kTimeFactor, &segment_times));
+  segment_times = mav_trajectory_generation::estimateSegmentTimesVelocityRamp(
+      vertices, v_max_, a_max_, kTimeFactor);
 
   mav_trajectory_generation::PolynomialOptimization<kN> linopt(kDim);
   linopt.setupFromVertices(vertices, segment_times, max_derivative_order_);
@@ -440,9 +440,8 @@ int TimeEvaluationNode::runMellingerOuterLoop(const Vertex::Vector& vertices,
                                               double* cost) const {
   std::vector<double> segment_times;
   if (use_trapezoidal_time) {
-    const double kTimeFactor = 1.0;
-    CHECK(estimateSegmentTimesVelocityRamp(vertices, v_max_, a_max_,
-                                           kTimeFactor, &segment_times));
+    segment_times = mav_trajectory_generation::estimateSegmentTimesVelocityRamp(
+        vertices, v_max_, a_max_);
   } else {
     segment_times = estimateSegmentTimes(vertices, v_max_, a_max_);
   }
@@ -641,8 +640,8 @@ void TimeEvaluationNode::evaluateTrajectory(
   result->v_max = v_max;
   result->a_max = a_max;
 
-  //result->v_max = v_max_actual.value;
-  //result->a_max = a_max_actual.value;
+  // result->v_max = v_max_actual.value;
+  // result->a_max = a_max_actual.value;
 
   if (result->v_max > v_max_ || result->a_max > a_max_) {
     result->bounds_violated = true;
