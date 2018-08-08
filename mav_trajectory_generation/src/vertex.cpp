@@ -30,6 +30,7 @@ Vertex::Vector createRandomVertices(int maximum_derivative, size_t n_segments,
                                     size_t seed) {
   CHECK_GE(static_cast<int>(n_segments), 1);
   CHECK_EQ(pos_min.size(), pos_max.size());
+  CHECK_GE((pos_max - pos_min).norm(), 0.2);
   CHECK_GT(maximum_derivative, 0);
 
   Vertex::Vector vertices;
@@ -65,7 +66,9 @@ Vertex::Vector createRandomVertices(int maximum_derivative, size_t n_segments,
       for (size_t d = 0; d < dimension; ++d) {
         pos[d] = distribution[d](generator);
       }
-      if ((pos - last_pos).norm() > min_distance) break;
+      if ((pos - last_pos).norm() > min_distance) {
+        break;
+      }
     }
 
     Vertex v(dimension);
@@ -84,24 +87,24 @@ Vertex::Vector createSquareVertices(int maximum_derivative,
   Vertex::Vector vertices;
   const size_t dimension = center.size();
 
-  Eigen::Vector3d pos1(center[0]-side_length/2.0, center[1]-side_length/2.0,
-                       center[2]);
+  Eigen::Vector3d pos1(center[0] - side_length / 2.0,
+                       center[1] - side_length / 2.0, center[2]);
   Vertex v1(dimension);
   v1.addConstraint(derivative_order::POSITION, pos1);
-  Eigen::Vector3d pos2(center[0]-side_length/2.0, center[1]+side_length/2.0,
-                       center[2]);
+  Eigen::Vector3d pos2(center[0] - side_length / 2.0,
+                       center[1] + side_length / 2.0, center[2]);
   Vertex v2(dimension);
   v2.addConstraint(derivative_order::POSITION, pos2);
-  Eigen::Vector3d pos3(center[0]+side_length/2.0, center[1]+side_length/2.0,
-                       center[2]);
+  Eigen::Vector3d pos3(center[0] + side_length / 2.0,
+                       center[1] + side_length / 2.0, center[2]);
   Vertex v3(dimension);
   v3.addConstraint(derivative_order::POSITION, pos3);
-  Eigen::Vector3d pos4(center[0]+side_length/2.0, center[1]-side_length/2.0,
-                       center[2]);
+  Eigen::Vector3d pos4(center[0] + side_length / 2.0,
+                       center[1] - side_length / 2.0, center[2]);
   Vertex v4(dimension);
   v4.addConstraint(derivative_order::POSITION, pos4);
 
-  vertices.reserve(4*rounds);
+  vertices.reserve(4 * rounds);
   vertices.push_back(v1);
   vertices.front().makeStartOrEnd(pos1, maximum_derivative);
 
@@ -223,8 +226,33 @@ std::ostream& operator<<(std::ostream& stream,
 }
 
 std::vector<double> estimateSegmentTimes(const Vertex::Vector& vertices,
-                                         double v_max, double a_max,
-                                         double magic_fabian_constant) {
+                                         double v_max, double a_max) {
+  return estimateSegmentTimesNfabian(vertices, v_max, a_max);
+}
+
+std::vector<double> estimateSegmentTimesVelocityRamp(
+    const Vertex::Vector& vertices, double v_max, double a_max,
+    double time_factor) {
+  CHECK_GE(vertices.size(), 2);
+  std::vector<double> segment_times;
+
+  segment_times.reserve(vertices.size() - 1);
+
+  for (size_t i = 0; i < vertices.size() - 1; ++i) {
+    Eigen::VectorXd start, end;
+    vertices[i].getConstraint(derivative_order::POSITION, &start);
+    vertices[i + 1].getConstraint(derivative_order::POSITION, &end);
+    double t = computeTimeVelocityRamp(start, end, v_max, a_max);
+    segment_times.push_back(t);
+  }
+
+  return segment_times;
+}
+
+std::vector<double> estimateSegmentTimesNfabian(const Vertex::Vector& vertices,
+                                                double v_max, double a_max,
+                                                double magic_fabian_constant) {
+  CHECK_GE(vertices.size(), 2);
   std::vector<double> segment_times;
   segment_times.reserve(vertices.size() - 1);
   for (size_t i = 0; i < vertices.size() - 1; ++i) {
@@ -232,73 +260,16 @@ std::vector<double> estimateSegmentTimes(const Vertex::Vector& vertices,
     vertices[i].getConstraint(derivative_order::POSITION, &start);
     vertices[i + 1].getConstraint(derivative_order::POSITION, &end);
     double distance = (end - start).norm();
-    double t = distance / v_max * 2 *
-               (1.0 + magic_fabian_constant * v_max / a_max *
-                          exp(-distance / v_max * 2));
+    double t = distance / v_max * 2 * (1.0 +
+                                       magic_fabian_constant * v_max / a_max *
+                                           exp(-distance / v_max * 2));
     segment_times.push_back(t);
   }
   return segment_times;
 }
 
-bool estimateSegmentTimesVelocityRamp(const Vertex::Vector& vertices,
-                                      double v_max, double a_max,
-                                      double time_factor,
-                                      std::vector<double>* segment_times) {
-  // Sanity checks.
-  CHECK_NOTNULL(segment_times);
-
-  if (vertices.size() < 2) {
-    return false;  // Segment needs at least two vertices.
-  }
-  if (!vertices.front().hasConstraint(derivative_order::POSITION) ||
-      !vertices.back().hasConstraint(derivative_order::POSITION)) {
-    return false;  // Segment start and goal position need to be set.
-  }
-  for (const Vertex& v : vertices) {
-    if (v.D() < 3) {
-      return false;  // Wrong dimensions.
-    }
-  }
-  segment_times->resize(vertices.size() - 1);
-
-  // Estimate all segment times from one vertex with position constraint to the
-  // next.
-  for (size_t i = 0; i < segment_times->size(); ++i) {
-    Eigen::VectorXd start, end;
-    vertices[i].getConstraint(derivative_order::POSITION, &start);
-    // Find first vertex with position constraint.
-    size_t end_idx = i + 1;
-    for (size_t j = end_idx; j < vertices.size(); ++j) {
-      if (vertices[j].getConstraint(derivative_order::POSITION, &end)) {
-        end_idx = j;
-        break;
-      }
-    }
-    // Fake intermediate unconstrained vertices to be equally spaced on
-    // straight line.
-    const int num_segments = end_idx - i;
-    const double segment_distance =
-        (end.head(3) - start.head(3)).norm() / num_segments;
-    std::vector<Eigen::Vector3d> positions(num_segments + 1);
-    positions[0] = start.head(3);
-    const Eigen::Vector3d dir = (end.head(3) - start.head(3)).normalized();
-    for (size_t i = 1; i < num_segments + 1; ++i) {
-      positions[i] = positions[i - 1] + segment_distance * dir;
-    }
-    // Calculate velocity ramp segment times for these (fake) vertices.
-    for (size_t k = 0; k < positions.size() - 1; ++k) {
-      (*segment_times)[i + k] =
-          time_factor *
-          computeTimeVelocityRamp(positions[k], positions[k + 1], v_max, a_max);
-    }
-    i = end_idx - 1;  // Skip all vertices that are not position constrained.
-  }
-
-  return true;
-}
-
-double computeTimeVelocityRamp(const Eigen::Vector3d& start,
-                               const Eigen::Vector3d& goal, double v_max,
+double computeTimeVelocityRamp(const Eigen::VectorXd& start,
+                               const Eigen::VectorXd& goal, double v_max,
                                double a_max) {
   const double distance = (start - goal).norm();
   // Time to accelerate or decelerate to or from maximum velocity:

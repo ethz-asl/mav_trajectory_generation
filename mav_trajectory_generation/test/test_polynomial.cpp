@@ -37,8 +37,9 @@ const double kSamplingInterval = 1.0e-3;
 const double kEqualityResolution = 1.0e-2;
 const int kDerivative = derivative_order::POSITION;
 
-void findMinMaxBySampling(const Polynomial& polynomial, double t_start,
-                          double t_end, std::pair<double, double>* min,
+void findMinMaxBySampling(const Polynomial& polynomial, int derivative,
+                          double t_start, double t_end,
+                          std::pair<double, double>* min,
                           std::pair<double, double>* max) {
   min->first = t_start;
   min->second = std::numeric_limits<double>::max();
@@ -46,7 +47,7 @@ void findMinMaxBySampling(const Polynomial& polynomial, double t_start,
   max->second = std::numeric_limits<double>::lowest();
   double t = t_start;
   while (t <= t_end) {
-    const double value = polynomial.evaluate(t, kDerivative);
+    const double value = polynomial.evaluate(t, derivative);
     if (value < min->second) {
       min->first = t;
       min->second = value;
@@ -64,7 +65,7 @@ bool approxEqual(double x_1, double x_2) {
   return dist < kEqualityResolution;
 }
 
-TEST(MavTrajectoryGeneration, Convolution) {
+TEST(PolynomialTest, Convolution) {
   Eigen::VectorXd coeffs_1(2), coeffs_2(2);
   coeffs_1 << 1.0, 2.0;
   coeffs_2 << -1.0, 3.0;
@@ -86,44 +87,51 @@ TEST(PolynomialTest, FindMinMax) {
   std::srand(1234567);
   static int num_failures = 0;
   const int kNumPolynomials = 1e2;
-  for (size_t i = 0; i < kNumPolynomials; i++) {
-    // Create random polynomial.
-    int num_coeffs = std::rand() % (Polynomial::kMaxN - 1) + 1;
-    Eigen::VectorXd coeffs(num_coeffs);
-    for (size_t i = 0; i < num_coeffs; i++) {
-      coeffs[i] = createRandomDouble(kCoeffMin, kCoeffMax);
-    }
-    Polynomial p(coeffs);
+  std::vector<int> derivatives_to_test = {derivative_order::POSITION,
+                                          derivative_order::VELOCITY,
+                                          derivative_order::ACCELERATION};
+  for (int derivative : derivatives_to_test) {
+    for (size_t i = 0; i < kNumPolynomials; i++) {
+      // Create random polynomial.
+      int num_coeffs = std::rand() % (Polynomial::kMaxN - 1) + 1 + derivative;
+      Eigen::VectorXd coeffs(num_coeffs);
+      for (size_t i = 0; i < num_coeffs; i++) {
+        coeffs[i] = createRandomDouble(kCoeffMin, kCoeffMax);
+      }
+      Polynomial p(coeffs);
 
-    // Calculate minimum and maximum.
-    std::pair<double, double> min_sampling, max_sampling, min_computing,
-        max_computing;
-    const double t_start = createRandomDouble(kTMin, kTMax);
-    const double t_end = createRandomDouble(t_start, kTMax);
-    timing::Timer timer_sampling("find_min_max_sampling");
-    findMinMaxBySampling(p, t_start, t_end, &min_sampling, &max_sampling);
-    timer_sampling.Stop();
-    timing::Timer timer_analytic("find_min_max_analytic");
-    bool success = p.computeMinMax(t_start, t_end, kDerivative, &min_computing,
-                                   &max_computing);
-    timer_analytic.Stop();
-    if (!success) {
-      std::cout << "Failed to compute roots of derivative of polynomial: "
-                << coeffs.transpose() << std::endl;
-      num_failures++;
-      continue;
+      // Calculate minimum and maximum.
+      std::pair<double, double> min_sampling, max_sampling, min_computing,
+          max_computing;
+      const double t_start = createRandomDouble(kTMin, kTMax);
+      const double t_end = createRandomDouble(t_start, kTMax);
+      timing::Timer timer_sampling("find_min_max_sampling");
+      findMinMaxBySampling(p, derivative, t_start, t_end, &min_sampling,
+                           &max_sampling);
+      timer_sampling.Stop();
+      timing::Timer timer_analytic("find_min_max_analytic");
+      bool success = p.computeMinMax(t_start, t_end, derivative, &min_computing,
+                                     &max_computing);
+      timer_analytic.Stop();
+      if (!success) {
+        std::cout << "Failed to compute roots of derivative of polynomial: "
+                  << coeffs.transpose() << std::endl;
+        num_failures++;
+        continue;
+      }
+      EXPECT_TRUE(approxEqual(max_sampling.first, max_computing.first))
+          << "t_max_sampling: " << max_sampling.first << std::endl
+          << "t_max_computing: " << max_computing.first << std::endl
+          << "max_sampling: " << max_sampling.second << std::endl
+          << "max_computing: " << max_computing.second << std::endl;
+      EXPECT_TRUE(approxEqual(min_sampling.first, min_computing.first))
+          << "t_min_sampling: " << min_sampling.first << std::endl
+          << "t_min_computing: " << min_computing.first << std::endl
+          << "min_sampling: " << min_sampling.second << std::endl
+          << "min_computing: " << min_computing.second << std::endl;
     }
-    EXPECT_TRUE(approxEqual(max_sampling.first, max_computing.first)) <<
-    "t_max_sampling: " << max_sampling.first << std::endl <<
-    "t_max_computing: " << max_computing.first << std::endl <<
-    "max_sampling: " << max_sampling.second << std::endl <<
-    "max_computing: " << max_computing.second << std::endl;
-    EXPECT_TRUE(approxEqual(min_sampling.first, min_computing.first)) <<
-    "t_min_sampling: " << min_sampling.first << std::endl <<
-    "t_min_computing: " << min_computing.first << std::endl <<
-    "min_sampling: " << min_sampling.second << std::endl <<
-    "min_computing: " << min_computing.second << std::endl;
   }
+  EXPECT_EQ(num_failures, 0);
   std::cout << "Failed to compute minimum for " << num_failures << " / "
             << kNumPolynomials << " polynomials." << std::endl;
 }

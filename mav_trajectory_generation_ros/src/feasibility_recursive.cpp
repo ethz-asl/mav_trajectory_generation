@@ -51,8 +51,7 @@ InputFeasibilityResult FeasibilityRecursive::checkInputFeasibility(
   if (input_constraints_.hasConstraint(InputConstraintType::kVMax)) {
     roots_acc.resize(3);
     for (size_t i = 0; i < 3; i++) {
-      if (!findRootsJenkinsTraub(
-              segment[i].getCoefficients(derivative_order::ACCELERATION),
+      if (!segment[i].getRoots(derivative_order::ACCELERATION,
               &roots_acc[i])) {
         return InputFeasibilityResult::kInputIndeterminable;
       }
@@ -64,8 +63,7 @@ InputFeasibilityResult FeasibilityRecursive::checkInputFeasibility(
       input_constraints_.hasConstraint(InputConstraintType::kOmegaXYMax)) {
     roots_jerk.resize(3);
     for (size_t i = 0; i < 3; i++) {
-      if (!findRootsJenkinsTraub(
-              segment[i].getCoefficients(derivative_order::JERK),
+      if (!segment[i].getRoots(derivative_order::JERK,
               &roots_jerk[i])) {
         return InputFeasibilityResult::kInputIndeterminable;
       }
@@ -75,8 +73,7 @@ InputFeasibilityResult FeasibilityRecursive::checkInputFeasibility(
   if (input_constraints_.hasConstraint(InputConstraintType::kOmegaXYMax)) {
     roots_snap.resize(3);
     for (size_t i = 0; i < 3; i++) {
-      if (!findRootsJenkinsTraub(
-              segment[i].getCoefficients(derivative_order::SNAP),
+      if (!segment[i].getRoots(derivative_order::SNAP,
               &roots_snap[i])) {
         return InputFeasibilityResult::kInputIndeterminable;
       }

@@ -25,13 +25,13 @@ endif()
 cs_add_library(${PROJECT_NAME}
   src/motion_defines.cpp
   src/polynomial.cpp
-  src/rpoly.cpp
   src/segment.cpp
   src/timing.cpp
   src/trajectory.cpp
   src/trajectory_sampling.cpp
   src/vertex.cpp
   src/io.cpp
+  src/rpoly/rpoly_ak1.cpp
 )
 # Link against yaml-cpp.
 target_link_libraries(${PROJECT_NAME} ${YamlCpp_LIBRARIES})

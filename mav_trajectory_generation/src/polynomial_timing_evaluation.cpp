@@ -98,8 +98,8 @@ bool timeEval(int n_segments, double average_distance, size_t seed) {
   const double approximate_v_max = 2.0;
   const double approximate_a_max = 2.0;
   const double magic_fabian_constant = 6.5;
-  std::vector<double> segment_times = estimateSegmentTimes(
-      vertices, approximate_v_max, approximate_a_max, magic_fabian_constant);
+  std::vector<double> segment_times =
+      estimateSegmentTimes(vertices, approximate_v_max, approximate_a_max);
 
   mav_trajectory_generation::timing::Timer timer_solve(
       "polynomial_optimization_template_" + std::to_string(n_segments));

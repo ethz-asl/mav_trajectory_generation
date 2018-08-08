@@ -3,8 +3,8 @@ This repository contains tools for polynomial trajectory generation and optimiza
 These techniques are especially suitable for rotary-wing micro aerial vehicles (MAVs).
 This README provides a brief overview of our trajectory generation utilities with some examples.
 
-**Authors**: Markus Achtelik, Michael Burri, Helen Oleynikova, Rik Bähnemann, Marija Popović  
-**Maintainer**: Rik Bähnemann, brik@ethz.ch  
+**Authors**: Markus Achtelik, Michael Burri, Helen Oleynikova, Rik Bähnemann, Marija Popović
+**Maintainer**: Rik Bähnemann, brik@ethz.ch
 **Affiliation**: Autonomous Systems Lab, ETH Zurich
 
 ## Bibliography
@@ -120,11 +120,10 @@ vertices.push_back(end);
 std::vector<double> segment_times;
 const double v_max = 2.0;
 const double a_max = 2.0;
-const double magic_fabian_constant = 6.5; // A tuning parameter.
-segment_times = estimateSegmentTimes(vertices, v_max, a_max, magic_fabian_constant);
+segment_times = estimateSegmentTimes(vertices, v_max, a_max);
 ```
 
-4. Create an optimizer object and solve. The template parameter (N) denotes the number of coefficients of the underlying polynomial, which has to be even. If we want the trajectories to be snap-continuous, N needs to be at least 10.
+4. Create an optimizer object and solve. The template parameter (N) denotes the number of coefficients of the underlying polynomial, which has to be even. If we want the trajectories to be snap-continuous, N needs to be at least 10; for minimizing jerk, 8.
 
 ```c++
 const int N = 10;

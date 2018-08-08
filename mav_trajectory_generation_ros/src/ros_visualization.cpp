@@ -172,7 +172,7 @@ void drawVertices(const Vertex::Vector& vertices, const std::string& frame_id,
   visualization_msgs::Marker& marker = marker_array->markers.front();
 
   marker.type = visualization_msgs::Marker::LINE_STRIP;
-  marker.color = mav_visualization::Color::Chartreuse();
+  marker.color = mav_visualization::Color::Green();
   marker.scale.x = 0.01;
   marker.ns = "straight_path";
 

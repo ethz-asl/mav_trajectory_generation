@@ -27,8 +27,6 @@
 #include <utility>
 #include <vector>
 
-#include "mav_trajectory_generation/rpoly.h"
-
 namespace mav_trajectory_generation {
 
 // Implementation of polynomials of order N-1. Order must be known at
@@ -106,10 +104,9 @@ class Polynomial {
       result.setZero();
       result.head(N_ - derivative) =
           coefficients_.tail(N_ - derivative)
-              .cwiseProduct(
-                  base_coefficients_
-                      .block(derivative, derivative, 1, N_ - derivative)
-                      .transpose());
+              .cwiseProduct(base_coefficients_.block(derivative, derivative, 1,
+                                                     N_ - derivative)
+                                .transpose());
       return result;
     }
   }
@@ -150,33 +147,16 @@ class Polynomial {
     return result;
   }
 
-  // Computes the complex roots of the polynomial.
-  // Only for the polynomial itself, not for its derivatives.
-  Eigen::VectorXcd computeRoots() const {
-    //      Companion matrix method , see
-    //      http://en.wikipedia.org/wiki/Companion_matrix.
-    //      Works, but is not very stable for high condition numbers. Could be
-    //      eigen's eigensolver.
-    //      However, would not need the dependency to rpoly.
-    //      const size_t nc = N - 1;
-    //      typedef Eigen::Matrix<double, nc, nc> CompanionMatrix;
-    //      CompanionMatrix companion;
-    //      companion.template row(0).setZero();
-    //      companion.template block<nc - 1, nc - 1>(1, 0).setIdentity();
-    //      companion.template col(nc - 1) = - coefficients_.template head<nc>()
-    //      / coefficients_[N - 1];
-    //
-    //      Eigen::EigenSolver<CompanionMatrix> es(companion, false);
-    //      return es.eigenvalues();
-    return findRootsJenkinsTraub(coefficients_);
-  }
+  // Uses Jenkins-Traub to get all the roots of the polynomial at a certain
+  //
+  bool getRoots(int derivative, Eigen::VectorXcd* roots) const;
 
   // Finds all candidates for the minimum and maximum between t_start and t_end
   // by evaluating the roots of the polynomial's derivative.
-  bool selectMinMaxCandidatesFromRoots(
+  static bool selectMinMaxCandidatesFromRoots(
       double t_start, double t_end,
       const Eigen::VectorXcd& roots_derivative_of_derivative,
-      std::vector<double>* candidates) const;
+      std::vector<double>* candidates);
 
   // Finds all candidates for the minimum and maximum between t_start and t_end
   // by computing the roots of the derivative polynomial.

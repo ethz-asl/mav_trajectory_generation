@@ -126,7 +126,7 @@ double PolynomialOptimization<_N>::computeCost() const {
       cost += partial_cost;
     }
   }
-  return cost;  // cost = c^T * Q * c
+  return 0.5 * cost;  // cost = 0.5 * c^T * Q * c
 }
 
 template <int _N>
@@ -379,60 +379,25 @@ template <int Derivative>
 bool PolynomialOptimization<_N>::computeSegmentMaximumMagnitudeCandidates(
     const Segment& segment, double t_start, double t_stop,
     std::vector<double>* candidates) {
+  return computeSegmentMaximumMagnitudeCandidates(segment, Derivative, t_start,
+                                                  t_stop, candidates);
+}
+
+template <int _N>
+bool PolynomialOptimization<_N>::computeSegmentMaximumMagnitudeCandidates(
+    int derivative, const Segment& segment, double t_start, double t_stop,
+    std::vector<double>* candidates) {
   CHECK(candidates);
-  static_assert(N - Derivative - 1 > 0, "N-Derivative-1 has to be greater 0");
+  CHECK(N - derivative - 1 > 0) << "N-Derivative-1 has to be greater 0";
 
-  const int n_d = N - Derivative;
-  const int n_dd = N - Derivative - 1;
-  const int convolved_coefficients_length =
-      ConvolutionDimension<n_d, n_dd>::length;
-
-  Eigen::VectorXcd roots;
-
-  if (segment.D() > 1) {
-    Eigen::Matrix<double, convolved_coefficients_length, 1>
-        convolved_coefficients;  // Column vector.
-    convolved_coefficients.setZero();
-    for (const Polynomial& p : segment.getPolynomialsRef()) {
-      // Our coefficients are INCREASING, so when you take the derivative,
-      // only the lower powers of t have non-zero coefficients.
-      // So we take the head.
-      Eigen::Matrix<double, n_d, 1> d = p.getCoefficients(Derivative).head(n_d);
-      Eigen::Matrix<double, n_dd, 1> dd =
-          p.getCoefficients(Derivative + 1).head(n_dd);
-      convolved_coefficients += convolve(d, dd);
-    }
-
-    Polynomial polynomial_convolved(convolved_coefficients_length);
-    polynomial_convolved.setCoefficients(convolved_coefficients);
-    roots = polynomial_convolved.computeRoots();
+  // Use the implementation of this in the segment (template-free) as it's
+  // actually faster.
+  std::vector<int> dimensions;
+  for (int i = 0; i < segment.D(); i++) {
+    dimensions.push_back(i);
   }
-  // For dimension == 1, it doesn't make a difference, thus we can simply
-  // compute the roots of the derivative.
-  else {
-    const Polynomial d(n_dd,
-                       segment[0].getCoefficients(Derivative + 1).head(n_dd));
-    roots = d.computeRoots();
-  }
-
-  if (roots.size() == 0) {
-    // Then Jenkins-Traub failed! :( Should fall back to something else.
-    return false;
-  }
-
-  for (int i = 0; i < roots.size(); ++i) {
-    const double t_real = real(roots[i]);
-    // We only want real roots.
-    if (std::abs(imag(roots[i])) > std::numeric_limits<double>::epsilon()) {
-      continue;
-    }
-    // Only want roots in the time range.
-    if (t_real < t_start || t_real > t_stop) {
-      continue;
-    }
-    candidates->push_back(t_real);
-  }
-  return true;
+  return segment.computeMinMaxMagnitudeCandidateTimes(
+      derivative, t_start, t_stop, dimensions, candidates);
 }
 
 template <int _N>
@@ -448,18 +413,21 @@ void PolynomialOptimization<_N>::
 
   // Determine initial direction from t_start -dt to t_start.
   // t_start may be an extremum, especially for start and end vertices!
-  double direction = value_old.squaredNorm() - value_start.squaredNorm();
+  double direction = value_old.norm() - value_start.norm();
 
   // Continue with direction from t_start to t_start + dt until t_stop + dt.
   // Again, there may be an extremum at t_stop (e.g. end vertex).
-  for (double t = t_start + dt; t < t_stop + 2 * dt; t += dt) {
+  for (double t = t_start + dt; t < t_stop + dt; t += dt) {
     Eigen::VectorXd value_new;
     value_new = segment.evaluate(t, Derivative);
 
-    double direction_new = value_new.squaredNorm() - value_old.squaredNorm();
+    double direction_new = value_new.norm() - value_old.norm();
 
-    if (sgn(direction) != sgn(direction_new)) {
-      candidates->push_back(t - dt);  // extremum was at last dt
+    if (std::signbit(direction) != std::signbit(direction_new)) {
+      Eigen::VectorXd value_deriv = segment.evaluate(t - dt, Derivative + 1);
+      if (value_deriv.norm() < 1e-2) {
+        candidates->push_back(t - dt);  // extremum was at last dt
+      }
     }
 
     value_old = value_new;
@@ -471,6 +439,12 @@ template <int _N>
 template <int Derivative>
 Extremum PolynomialOptimization<_N>::computeMaximumOfMagnitude(
     std::vector<Extremum>* candidates) const {
+  return computeMaximumOfMagnitude(Derivative, candidates);
+}
+
+template <int _N>
+Extremum PolynomialOptimization<_N>::computeMaximumOfMagnitude(
+    int derivative, std::vector<Extremum>* candidates) const {
   if (candidates != nullptr) candidates->clear();
 
   int segment_idx = 0;
@@ -480,11 +454,11 @@ Extremum PolynomialOptimization<_N>::computeMaximumOfMagnitude(
     extrema_times.reserve(N - 1);
     // Add the beginning as well. Call below appends its extrema.
     extrema_times.push_back(0.0);
-    computeSegmentMaximumMagnitudeCandidates<Derivative>(s, 0.0, s.getTime(),
-                                                         &extrema_times);
+    computeSegmentMaximumMagnitudeCandidates(derivative, s, 0.0, s.getTime(),
+                                             &extrema_times);
 
     for (double t : extrema_times) {
-      const Extremum candidate(t, s.evaluate(t, Derivative).norm(),
+      const Extremum candidate(t, s.evaluate(t, derivative).norm(),
                                segment_idx);
       if (extremum < candidate) extremum = candidate;
       if (candidates != nullptr) candidates->emplace_back(candidate);
@@ -494,7 +468,7 @@ Extremum PolynomialOptimization<_N>::computeMaximumOfMagnitude(
   // Check last time at last segment.
   const Extremum candidate(
       segments_.back().getTime(),
-      segments_.back().evaluate(segments_.back().getTime(), Derivative).norm(),
+      segments_.back().evaluate(segments_.back().getTime(), derivative).norm(),
       n_segments_ - 1);
   if (extremum < candidate) extremum = candidate;
   if (candidates != nullptr) candidates->emplace_back(candidate);
