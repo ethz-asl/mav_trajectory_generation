@@ -403,10 +403,12 @@ void PolynomialOptimizationNonLinear<_N>::scaleSegmentTimesWithViolation() {
   bool within_range = velocity_violation <= 1.0 + violation_range &&
                       acceleration_violation <= 1.0 + violation_range;
 
-  std::cout << "Beginning  v: max: " << v_max_actual.value << " / " << v_max
-            << " viol: " << velocity_violation
-            << " a: max: " << a_max_actual.value << " / " << a_max
-            << " viol: " << acceleration_violation << std::endl;
+  if (optimization_parameters_.print_debug_info_time_allocation) {
+    std::cout << "Beginning  v: max: " << v_max_actual.value << " / " << v_max
+              << " viol: " << velocity_violation
+              << " a: max: " << a_max_actual.value << " / " << a_max
+              << " viol: " << acceleration_violation << std::endl;
+  }
 
   while (!within_range && (counter < max_counter)) {
     // From Liu, Sikang, et al. "Planning Dynamically Feasible Trajectories for
@@ -442,11 +444,13 @@ void PolynomialOptimizationNonLinear<_N>::scaleSegmentTimesWithViolation() {
     velocity_violation = v_max_actual.value / v_max;
     acceleration_violation = a_max_actual.value / a_max;
 
-    std::cout << "Iteration " << counter << " v: max: " << v_max_actual.value
-              << " / " << v_max << " viol: " << velocity_violation
-              << " a: max: " << a_max_actual.value << " / " << a_max
-              << " viol: " << acceleration_violation
-              << " total time: " << traj.getMaxTime() << std::endl;
+    if (optimization_parameters_.print_debug_info_time_allocation) {
+      std::cout << "Iteration " << counter << " v: max: " << v_max_actual.value
+                << " / " << v_max << " viol: " << velocity_violation
+                << " a: max: " << a_max_actual.value << " / " << a_max
+                << " viol: " << acceleration_violation
+                << " total time: " << traj.getMaxTime() << std::endl;
+    }
 
     within_range = velocity_violation <= 1.0 + violation_range &&
                    acceleration_violation <= 1.0 + violation_range;
