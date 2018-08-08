@@ -19,6 +19,7 @@
 #define MAV_TRAJECTORY_GENERATION_IMPL_POLYNOMIAL_OPTIMIZATION_NONLINEAR_IMPL_H_
 
 #include <chrono>
+#include <numeric>
 
 #include "mav_trajectory_generation/polynomial_optimization_linear.h"
 #include "mav_trajectory_generation/timing.h"
