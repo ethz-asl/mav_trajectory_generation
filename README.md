@@ -4,7 +4,9 @@ These techniques are especially suitable for rotary-wing micro aerial vehicles (
 This README provides a brief overview of our trajectory generation utilities with some examples.
 
 **Authors**: Markus Achtelik, Michael Burri, Helen Oleynikova, Rik Bähnemann, Marija Popović
+
 **Maintainer**: Rik Bähnemann, brik@ethz.ch
+
 **Affiliation**: Autonomous Systems Lab, ETH Zurich
 
 ## Bibliography
