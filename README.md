@@ -3,11 +3,9 @@ This repository contains tools for polynomial trajectory generation and optimiza
 These techniques are especially suitable for rotary-wing micro aerial vehicles (MAVs).
 This README provides a brief overview of our trajectory generation utilities with some examples.
 
-**Authors**: Markus Achtelik, Michael Burri, Helen Oleynikova, Rik Bähnemann, Marija Popović
-
-**Maintainer**: Rik Bähnemann, brik@ethz.ch
-
-**Affiliation**: Autonomous Systems Lab, ETH Zurich
+**Authors**: Markus Achtelik, Michael Burri, Helen Oleynikova, Rik Bähnemann, Marija Popović  
+**Maintainer**: Rik Bähnemann, brik@ethz.ch  
+**Affiliation**: Autonomous Systems Lab, ETH Zurich  
 
 ## Bibliography
 This implementation is largely based on the work of C. Richter *et al*, who should be cited if this is used in a scientific publication (or the preceding conference papers):
