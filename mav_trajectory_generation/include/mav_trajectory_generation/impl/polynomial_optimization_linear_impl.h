@@ -379,7 +379,7 @@ template <int Derivative>
 bool PolynomialOptimization<_N>::computeSegmentMaximumMagnitudeCandidates(
     const Segment& segment, double t_start, double t_stop,
     std::vector<double>* candidates) {
-  return computeSegmentMaximumMagnitudeCandidates(segment, Derivative, t_start,
+  return computeSegmentMaximumMagnitudeCandidates(Derivative, segment, t_start,
                                                   t_stop, candidates);
 }
 
