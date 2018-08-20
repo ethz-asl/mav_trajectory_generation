@@ -30,11 +30,13 @@ namespace mav_trajectory_generation {
 
 // Converts a trajectory into a ROS polynomial trajectory msg.
 bool trajectoryToPolynomialTrajectoryMsg(
-    const Trajectory& trajectory, mav_planning_msgs::PolynomialTrajectory4D* msg);
+    const Trajectory& trajectory,
+    mav_planning_msgs::PolynomialTrajectory4D* msg);
 
 // Converts a ROS polynomial trajectory msg into a Trajectory.
 bool polynomialTrajectoryMsgToTrajectory(
-    const mav_planning_msgs::PolynomialTrajectory4D& msg, Trajectory* trajectory);
+    const mav_planning_msgs::PolynomialTrajectory4D& msg,
+    Trajectory* trajectory);
 
 }  // namespace mav_trajectory_generation
 
