@@ -22,8 +22,8 @@
 #include <mav_msgs/conversions.h>
 #include <mav_visualization/helpers.h>
 
-#include "mav_trajectory_generation_ros/ros_visualization.h"
 #include "mav_trajectory_generation/trajectory_sampling.h"
+#include "mav_trajectory_generation_ros/ros_visualization.h"
 
 namespace mav_trajectory_generation {
 
@@ -198,6 +198,36 @@ void drawVertices(const Vertex::Vector& vertices, const std::string& frame_id,
   header.stamp = ros::Time::now();
   internal::setMarkerProperties(header, 0.0, visualization_msgs::Marker::ADD,
                                 marker_array);
+}
+
+void drawVerticesFromTrajectory(const Trajectory& trajectory,
+                                const std::string& frame_id,
+                                visualization_msgs::MarkerArray* marker_array) {
+  CHECK_NOTNULL(marker_array);
+
+  std::vector<double> segment_times = trajectory.getSegmentTimes();
+  if (segment_times.empty()) {
+    ROS_WARN("Empty trajectory.");
+    return;
+  }
+  Vertex::Vector vertices(segment_times.size() + 1, trajectory.D());
+
+  double trajectory_time = 0.0;
+  for (size_t i = 0; i < vertices.size(); ++i) {
+    vertices[i] =
+        trajectory.getVertexAtTime(trajectory_time, derivative_order::POSITION);
+    if (i < segment_times.size() - 1) trajectory_time += segment_times[i];
+    // Assertion.
+    if (trajectory_time > trajectory.getMaxTime()) {
+      ROS_ERROR("trajectory_time > max_time_");
+      return;
+    }
+  }
+
+  // Add final vertex manually to not end up in numeric errors.
+  vertices.back() = trajectory.getGoalVertex(derivative_order::POSITION);
+
+  drawVertices(vertices, frame_id, marker_array);
 }
 
 }  // namespace mav_trajectory_generation
