@@ -88,6 +88,9 @@ class FeasibilityBase {
     ROS_ERROR_STREAM("Input feasibility check not implemented.");
     return InputFeasibilityResult::kInputIndeterminable;
   }
+  inline InputConstraints getInputConstraints() const {
+    return input_constraints_;
+  }
 
   // Checks if a trajectory stays within a set of half planes.
   bool checkHalfPlaneFeasibility(const Trajectory& trajectory) const;
