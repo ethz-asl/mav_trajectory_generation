@@ -197,7 +197,7 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTimeMellingerOuterLoop() {
   }
 
   double final_cost = std::numeric_limits<double>::max();
-  int result;
+  int result = nlopt::FAILURE;
 
   try {
     result = nlopt_->optimize(segment_times, final_cost);
@@ -310,14 +310,14 @@ double PolynomialOptimizationNonLinear<_N>::getCostAndGradientMellinger(
     // Initialize changed segment times for numerical derivative
     std::vector<double> segment_times_bigger(n_segments);
     const double increment_time = 0.1;
-    for (int n = 0; n < n_segments; ++n) {
+    for (size_t n = 0; n < n_segments; ++n) {
       // Now the same with an increased segment time
       // Calculate cost with higher segment time
       segment_times_bigger = segment_times;
       // Deduct h*(-1/(m-2)) according to paper Mellinger "Minimum snap
       // trajectory generation and control for quadrotors"
       double const_traj_time_corr = increment_time / (n_segments - 1.0);
-      for (int i = 0; i < segment_times_bigger.size(); ++i) {
+      for (size_t i = 0; i < segment_times_bigger.size(); ++i) {
         if (i == n) {
           segment_times_bigger[i] += increment_time;
         } else {
@@ -478,7 +478,7 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTimeAndFreeConstraints() {
   const size_t n_optimization_variables =
       n_segments + free_constraints.size() * free_constraints.front().size();
 
-  CHECK_GT(n_optimization_variables, 0);
+  CHECK_GT(n_optimization_variables, 0u);
 
   initial_solution.reserve(n_optimization_variables);
   initial_step.reserve(n_optimization_variables);
@@ -511,7 +511,7 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTimeAndFreeConstraints() {
                                            &upper_bounds_free);
 
   // Set segment time constraints
-  for (int l = 0; l < n_segments; ++l) {
+  for (size_t l = 0; l < n_segments; ++l) {
     lower_bounds.push_back(kOptimizationTimeLowerBound);
     upper_bounds.push_back(std::numeric_limits<double>::max());
   }
@@ -877,11 +877,11 @@ void PolynomialOptimizationNonLinear<_N>::
     const int derivative_hc = constraint_data->derivative;
     const double value_hc = constraint_data->value;
 
-    for (int v = 0; v < vertices.size(); ++v) {
+    for (size_t v = 0; v < vertices.size(); ++v) {
       for (int deriv = 0; deriv <= derivative_to_optimize; ++deriv) {
         if (!vertices[v].hasConstraint(deriv)) {
           if (deriv == derivative_hc) {
-            for (int k = 0; k < dim; ++k) {
+            for (size_t k = 0; k < dim; ++k) {
               unsigned int start_idx = k * n_free_constraints;
               lower_bounds->at(start_idx + free_deriv_counter) =
                   -std::abs(value_hc);
