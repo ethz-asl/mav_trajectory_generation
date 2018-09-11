@@ -245,13 +245,13 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTimeMellingerOuterLoop() {
     std::cout << std::endl;
     std::cout << "[MEL   Trajectory Time] Before: "
               << std::accumulate(original_segment_times.begin(),
-                                 original_segment_times.end(), 0)
+                                 original_segment_times.end(), 0.0)
               << " | After Rel Change: "
               << std::accumulate(relative_segment_times.begin(),
-                                 relative_segment_times.end(), 0)
+                                 relative_segment_times.end(), 0.0)
               << " | After Scaling: "
               << std::accumulate(scaled_segment_times.begin(),
-                                 scaled_segment_times.end(), 0)
+                                 scaled_segment_times.end(), 0.0)
               << std::endl;
   }
 
