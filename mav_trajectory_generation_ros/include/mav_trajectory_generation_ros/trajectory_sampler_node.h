@@ -24,8 +24,8 @@
 #include <mav_msgs/conversions.h>
 #include <mav_msgs/default_topics.h>
 #include <mav_msgs/eigen_mav_msgs.h>
-#include <planning_msgs/PolynomialSegment4D.h>
-#include <planning_msgs/PolynomialTrajectory4D.h>
+#include <mav_planning_msgs/PolynomialSegment4D.h>
+#include <mav_planning_msgs/PolynomialTrajectory4D.h>
 #include <ros/ros.h>
 #include <std_srvs/Empty.h>
 #include <trajectory_msgs/MultiDOFJointTrajectory.h>
@@ -42,7 +42,7 @@ class TrajectorySamplerNode {
 
  private:
   void pathSegmentsCallback(
-      const planning_msgs::PolynomialTrajectory4D& segments_message);
+      const mav_planning_msgs::PolynomialTrajectory4D& segments_message);
   bool stopSamplingCallback(std_srvs::Empty::Request& request,
                             std_srvs::Empty::Response& response);
   void commandTimerCallback(const ros::TimerEvent&);

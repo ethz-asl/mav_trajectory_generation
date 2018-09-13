@@ -21,6 +21,6 @@
   <depend>mav_msgs</depend>
   <depend>mav_trajectory_generation</depend>
   <depend>mav_visualization</depend>
-  <depend>planning_msgs</depend>
+  <depend>mav_planning_msgs</depend>
   <depend>eigen_checks</depend>
 </package>

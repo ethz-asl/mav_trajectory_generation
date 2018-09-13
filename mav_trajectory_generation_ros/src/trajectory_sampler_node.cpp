@@ -47,7 +47,7 @@ TrajectorySamplerNode::TrajectorySamplerNode(const ros::NodeHandle& nh,
 TrajectorySamplerNode::~TrajectorySamplerNode() { publish_timer_.stop(); }
 
 void TrajectorySamplerNode::pathSegmentsCallback(
-    const planning_msgs::PolynomialTrajectory4D& segments_message) {
+    const mav_planning_msgs::PolynomialTrajectory4D& segments_message) {
   if (segments_message.segments.empty()) {
     ROS_WARN("Trajectory sampler: received empty waypoint message");
     return;
