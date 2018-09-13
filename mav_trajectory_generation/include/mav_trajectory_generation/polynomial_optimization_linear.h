@@ -140,6 +140,11 @@ class PolynomialOptimization {
       const Segment& segment, double t_start, double t_stop,
       std::vector<double>* candidates);
 
+  // Template-free version of above:
+  static bool computeSegmentMaximumMagnitudeCandidates(int derivative,
+      const Segment& segment, double t_start, double t_stop,
+      std::vector<double>* candidates);
+
   // Computes the candidates for the maximum magnitude of a single
   // segment in the specified derivative.
   // Computed by sampling and rather meant for debugging / testing.
@@ -165,6 +170,15 @@ class PolynomialOptimization {
   // Output: return = The global maximum of the path.
   template <int Derivative>
   Extremum computeMaximumOfMagnitude(std::vector<Extremum>* candidates) const;
+
+  // Template-free version of above.
+  Extremum computeMaximumOfMagnitude(int derivative,
+                                     std::vector<Extremum>* candidates) const;
+
+  void getVertices(Vertex::Vector* vertices) const {
+    CHECK_NOTNULL(vertices);
+    *vertices = vertices_;
+  }
 
   // Only for internal use -- always use getTrajectory() instead if you can!
   void getSegments(Segment::Vector* segments) const {
@@ -204,6 +218,7 @@ class PolynomialOptimization {
   size_t getNumberAllConstraints() const { return n_all_constraints_; }
   size_t getNumberFixedConstraints() const { return n_fixed_constraints_; }
   size_t getNumberFreeConstraints() const { return n_free_constraints_; }
+  int getDerivativeToOptimize() const { return derivative_to_optimize_; }
 
   // Accessor functions for internal matrices.
   void getAInverse(Eigen::MatrixXd* A_inv) const;

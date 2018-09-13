@@ -186,11 +186,11 @@ InputFeasibilityResult FeasibilityAnalytic::recursiveRollPitchFeasibility(
   // Evaluate minimum thrust and maximum jerk of this section.
   Extremum f_min, f_max, j_min, j_max;
   if (!thrust_segment.selectMinMaxMagnitudeFromCandidates(
-          t_1, t_2, 0, kPosDim, thrust_candidates, &f_min, &f_max)) {
+          0, t_1, t_2, kPosDim, thrust_candidates, &f_min, &f_max)) {
     return InputFeasibilityResult::kInputIndeterminable;
   }
   if (!pos_segment.selectMinMaxMagnitudeFromCandidates(
-          t_1, t_2, derivative_order::JERK, kPosDim, jerk_candidates, &j_min,
+          derivative_order::JERK, t_1, t_2, kPosDim, jerk_candidates, &j_min,
           &j_max)) {
     return InputFeasibilityResult::kInputIndeterminable;
   }

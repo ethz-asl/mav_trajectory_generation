@@ -202,7 +202,7 @@ bool Trajectory::computeMinMaxMagnitude(int derivative,
     // Evaluate candidates.
     Extremum minimum_candidate, maximum_candidate;
     if (!segments_[segment_idx].selectMinMaxMagnitudeFromCandidates(
-            0.0, segments_[segment_idx].getTime(), derivative, dimensions,
+            derivative, 0.0, segments_[segment_idx].getTime(), dimensions,
             candidates, &minimum_candidate, &maximum_candidate)) {
       return false;
     }
@@ -217,6 +217,51 @@ bool Trajectory::computeMinMaxMagnitude(int derivative,
     }
   }
   return true;
+}
+
+std::vector<double> Trajectory::getSegmentTimes() const {
+  std::vector<double> segment_times(segments_.size());
+  for (size_t i = 0; i < segment_times.size(); ++i) {
+    segment_times[i] = segments_[i].getTime();
+  }
+  return segment_times;
+}
+
+bool Trajectory::addTrajectories(const std::vector<Trajectory>& trajectories,
+                                 Trajectory* merged) const {
+  CHECK_NOTNULL(merged);
+  merged->clear();
+  *merged = *this;
+
+  for (const Trajectory& t : trajectories) {
+    // Check dimensions and coefficients.
+    // TODO(rikba): Allow different number of coefficients.
+    if (t.D() != D_ || t.N() != N_) {
+      return false;
+    }
+    // Add segments.
+    Segment::Vector segments;
+    t.getSegments(&segments);
+    merged->addSegments(segments);
+  }
+
+  return true;
+}
+
+Vertex Trajectory::getVertexAtTime(double t, int max_derivative_order) const {
+  Vertex v(D_);
+  for (size_t i = 0; i <= max_derivative_order; i++) {
+    v.addConstraint(i, evaluate(t, i));
+  }
+  return v;
+}
+
+Vertex Trajectory::getStartVertex(int max_derivative_order) const {
+  return getVertexAtTime(0.0, max_derivative_order);
+}
+
+Vertex Trajectory::getGoalVertex(int max_derivative_order) const {
+  return getVertexAtTime(max_time_, max_derivative_order);
 }
 
 }  // namespace mav_trajectory_generation

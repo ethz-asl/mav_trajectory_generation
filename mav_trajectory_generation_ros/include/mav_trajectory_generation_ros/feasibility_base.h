@@ -80,13 +80,16 @@ class FeasibilityBase {
   FeasibilityBase(const InputConstraints& input_constraints);
 
   // Checks a trajectory for input feasibility.
-  InputFeasibilityResult checkInputFeasibility(
+  InputFeasibilityResult checkInputFeasibilityTrajectory(
       const Trajectory& trajectory) const;
   // Checks a segment for input feasibility.
   inline virtual InputFeasibilityResult checkInputFeasibility(
       const Segment& segment) const {
     ROS_ERROR_STREAM("Input feasibility check not implemented.");
     return InputFeasibilityResult::kInputIndeterminable;
+  }
+  inline InputConstraints getInputConstraints() const {
+    return input_constraints_;
   }
 
   // Checks if a trajectory stays within a set of half planes.

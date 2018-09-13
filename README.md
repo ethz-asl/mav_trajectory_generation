@@ -5,10 +5,10 @@ This README provides a brief overview of our trajectory generation utilities wit
 
 **Authors**: Markus Achtelik, Michael Burri, Helen Oleynikova, Rik Bähnemann, Marija Popović  
 **Maintainer**: Rik Bähnemann, brik@ethz.ch  
-**Affiliation**: Autonomous Systems Lab, ETH Zurich
+**Affiliation**: Autonomous Systems Lab, ETH Zurich  
 
 ## Bibliography
-This implementation is largely based on the work of C. Richter *et al*, who should be cited if this is used in a scientific publication (or the preceding conference papers):
+This implementation is largely based on the work of C. Richter *et al*, who should be cited if this is used in a scientific publication (or the preceding conference papers):  
 [1] C. Richter, A. Bry, and N. Roy, “**Polynomial trajectory planning for aggressive quadrotor flight in dense indoor environments,**” in *International Journal of Robotics Research*, Springer, 2016.
 ```
 @incollection{richter2016polynomial,
@@ -21,7 +21,7 @@ This implementation is largely based on the work of C. Richter *et al*, who shou
 }
 ```
 
-Furthermore, the nonlinear optimization features our own extensions, described in:
+Furthermore, the nonlinear optimization features our own extensions, described in:  
 
 Michael Burri, Helen Oleynikova, Markus Achtelik, and Roland Siegwart, “**Real-Time Visual-Inertial Mapping, Re-localization and Planning Onboard MAVs in Previously Unknown Environments**”. In *IEEE Int. Conf. on Intelligent Robots and Systems* (IROS), September 2015.
 ```
@@ -61,16 +61,21 @@ cd src
 wstool init
 wstool set --git mav_trajectory_generation git@github.com:ethz-asl/mav_trajectory_generation.git -y
 wstool update
-wstool merge mav_trajectory_generation/install/mav_trajectory_generation.rosinstall
+wstool merge mav_trajectory_generation/install/mav_trajectory_generation_https.rosinstall
 wstool update -j8
 echo "source ~/catkin_ws/devel/setup.bash" >> ~/.bashrc
 source ~/.bashrc
 ```
 
+In case you have your SSH keys for github set up, feel free to use the ssh rosinstall instead:
+```
+wstool merge mav_trajectory_generation/install/mav_trajectory_generation_ssh.rosinstall
+```
+
 4. Use [catkin_build](http://catkin-tools.readthedocs.io/en/latest/verbs/catkin_build.html) to build the repository:
 
 ```
-catkin build
+catkin build mav_trajectory_generation_ros
 ```
 
 
@@ -120,11 +125,10 @@ vertices.push_back(end);
 std::vector<double> segment_times;
 const double v_max = 2.0;
 const double a_max = 2.0;
-const double magic_fabian_constant = 6.5; // A tuning parameter.
-segment_times = estimateSegmentTimes(vertices, v_max, a_max, magic_fabian_constant);
+segment_times = estimateSegmentTimes(vertices, v_max, a_max);
 ```
 
-4. Create an optimizer object and solve. The template parameter (N) denotes the number of coefficients of the underlying polynomial, which has to be even. If we want the trajectories to be snap-continuous, N needs to be at least 10.
+4. Create an optimizer object and solve. The template parameter (N) denotes the number of coefficients of the underlying polynomial, which has to be even. If we want the trajectories to be snap-continuous, N needs to be at least 10; for minimizing jerk, 8.
 
 ```c++
 const int N = 10;

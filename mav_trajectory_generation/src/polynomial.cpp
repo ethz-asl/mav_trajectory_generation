@@ -18,16 +18,21 @@
  * permissions and limitations under the License.
  */
 #include "mav_trajectory_generation/polynomial.h"
+#include "mav_trajectory_generation/rpoly/rpoly_ak1.h"
 
 #include <algorithm>
 #include <limits>
 
 namespace mav_trajectory_generation {
 
+bool Polynomial::getRoots(int derivative, Eigen::VectorXcd* roots) const {
+  return findRootsJenkinsTraub(getCoefficients(derivative), roots);
+}
+
 bool Polynomial::selectMinMaxCandidatesFromRoots(
     double t_start, double t_end,
     const Eigen::VectorXcd& roots_derivative_of_derivative,
-    std::vector<double>* candidates) const {
+    std::vector<double>* candidates) {
   CHECK_NOTNULL(candidates);
   if (t_start > t_end) {
     LOG(WARNING) << "t_start is greater than t_end.";
@@ -35,6 +40,7 @@ bool Polynomial::selectMinMaxCandidatesFromRoots(
   }
   candidates->clear();
   candidates->reserve(roots_derivative_of_derivative.size() + 2);
+  // Put start and end in, as they are valid candidates.
   candidates->push_back(t_start);
   candidates->push_back(t_end);
   for (size_t i = 0;
@@ -45,6 +51,7 @@ bool Polynomial::selectMinMaxCandidatesFromRoots(
       continue;
     }
     const double candidate = roots_derivative_of_derivative[i].real();
+
     // Do not evaluate points outside the domain.
     if (candidate < t_start || candidate > t_end) {
       continue;
@@ -64,18 +71,15 @@ bool Polynomial::computeMinMaxCandidates(
     LOG(WARNING) << "N - derivative - 1 has to be at least 0.";
     return false;
   }
-  Eigen::VectorXcd roots_derivative_of_derivative;
-  if (!findRootsJenkinsTraub(getCoefficients(derivative + 1),
-                             &roots_derivative_of_derivative)) {
-    return false;
-  } else {
-    if (!selectMinMaxCandidatesFromRoots(
-            t_start, t_end, roots_derivative_of_derivative, candidates)) {
-      return false;
-    } else {
-      return true;
-    }
+  Eigen::VectorXcd roots;
+  bool success = getRoots(derivative + 1, &roots);
+  if (!success) {
+    VLOG(1) << "Couldn't find roots, polynomial may be constant.";
   }
+  if (!selectMinMaxCandidatesFromRoots(t_start, t_end, roots, candidates)) {
+    return false;
+  }
+  return true;
 }
 
 bool Polynomial::selectMinMaxFromRoots(

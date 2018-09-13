@@ -23,7 +23,8 @@
 namespace mav_trajectory_generation {
 
 bool trajectoryToPolynomialTrajectoryMsg(
-    const Trajectory& trajectory, mav_planning_msgs::PolynomialTrajectory4D* msg) {
+    const Trajectory& trajectory,
+    mav_planning_msgs::PolynomialTrajectory4D* msg) {
   CHECK_NOTNULL(msg);
   msg->segments.clear();
 
@@ -54,7 +55,8 @@ bool trajectoryToPolynomialTrajectoryMsg(
     eigen_segment.num_coeffs = segment.N();
     eigen_segment.segment_time_ns = segment.getTimeNSec();
 
-    mav_planning_msgs::polynomialSegmentMsgFromEigen(eigen_segment, &segment_msg);
+    mav_planning_msgs::polynomialSegmentMsgFromEigen(eigen_segment,
+                                                     &segment_msg);
     msg->segments.push_back(segment_msg);
   }
 
@@ -64,9 +66,11 @@ bool trajectoryToPolynomialTrajectoryMsg(
 
 // Converts a ROS polynomial trajectory msg into a Trajectory.
 bool polynomialTrajectoryMsgToTrajectory(
-    const mav_planning_msgs::PolynomialTrajectory4D& msg, Trajectory* trajectory) {
+    const mav_planning_msgs::PolynomialTrajectory4D& msg,
+    Trajectory* trajectory) {
   mav_planning_msgs::EigenPolynomialTrajectory eigen_trajectory_msg;
-  mav_planning_msgs::eigenPolynomialTrajectoryFromMsg(msg, &eigen_trajectory_msg);
+  mav_planning_msgs::eigenPolynomialTrajectoryFromMsg(msg,
+                                                      &eigen_trajectory_msg);
   // TODO(helenol): maybe add more error checking here.
   Segment::Vector segment_vector;
   for (const mav_planning_msgs::EigenPolynomialSegment& msg_segment :

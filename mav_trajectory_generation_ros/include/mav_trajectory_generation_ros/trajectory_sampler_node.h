@@ -31,8 +31,8 @@
 #include <trajectory_msgs/MultiDOFJointTrajectory.h>
 
 #include <mav_trajectory_generation/polynomial.h>
+#include <mav_trajectory_generation/trajectory_sampling.h>
 #include <mav_trajectory_generation_ros/ros_conversions.h>
-#include <mav_trajectory_generation_ros/trajectory_sampling.h>
 
 class TrajectorySamplerNode {
  public:
@@ -55,6 +55,10 @@ class TrajectorySamplerNode {
   ros::Publisher command_pub_;
   ros::ServiceServer stop_srv_;
   ros::Time start_time_;
+
+  // Service client for getting the MAV interface to listen to our sent
+  // commands.
+  ros::ServiceClient position_hold_client_;
 
   // Flag whether to publish entire trajectory at once or not.
   bool publish_whole_trajectory_;

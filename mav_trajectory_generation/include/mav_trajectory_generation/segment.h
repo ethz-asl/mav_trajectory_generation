@@ -45,7 +45,7 @@ class Segment {
   typedef std::vector<Segment> Vector;
 
   Segment(int N, int D) : time_(0.0), N_(N), D_(D) {
-    polynomials_.resize(D_, N_);
+    polynomials_.resize(D_, Polynomial(N_));
   }
   Segment(const Segment& segment) = default;
 
@@ -104,7 +104,7 @@ class Segment {
   // Convenience function. Evaluates the magnitudes between t_start and t_end
   // for a set of candidates for given dimensions.
   bool selectMinMaxMagnitudeFromCandidates(
-      double t_start, double t_end, int derivative,
+      int derivative, double t_start, double t_end,
       const std::vector<int>& dimensions,
       const std::vector<Extremum>& candidates, Extremum* minimum,
       Extremum* maximum) const;
@@ -112,7 +112,8 @@ class Segment {
   // Split a segment to get a segment with the specified dimension.
   bool getSegmentWithSingleDimension(int dimension, Segment* new_segment) const;
   // Compose this segment and another segment to a new segment.
-  bool getSegmentWithAppendedDimension(const Segment& segment_to_append, Segment* new_segment) const;
+  bool getSegmentWithAppendedDimension(const Segment& segment_to_append,
+                                       Segment* new_segment) const;
 
  protected:
   Polynomial::Vector polynomials_;

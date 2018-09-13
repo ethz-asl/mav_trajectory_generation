@@ -69,7 +69,8 @@ class Vertex {
 
   // Sets a constraint for position and sets all derivatives up to
   // (including) up_to_derivative to zero. Convenience method for
-  // beginning / end vertices.
+  // beginning / end vertices. up_to_derivative should be set to
+  // getHighestDerivativeFromN(N), where N is the order of your polynomial.
   void makeStartOrEnd(const Eigen::VectorXd& constraint, int up_to_derivative);
 
   void makeStartOrEnd(double value, int up_to_derivative) {
@@ -101,6 +102,10 @@ class Vertex {
   // Checks if both lhs and rhs are equal up to tol in case of double values.
   bool isEqualTol(const Vertex& rhs, double tol) const;
 
+  // Get subdimension vertex.
+  bool getSubdimension(const std::vector<size_t>& subdimensions,
+                       int max_derivative_order, Vertex* subvertex) const;
+
  private:
   int D_;
   Constraints constraints_;
@@ -112,13 +117,34 @@ std::ostream& operator<<(std::ostream& stream,
                          const std::vector<Vertex>& vertices);
 
 // Makes a rough estimate based on v_max and a_max about the time
+// required to get from one vertex to the next. Uses the current preferred
+// method.
+std::vector<double> estimateSegmentTimes(const Vertex::Vector& vertices,
+                                         double v_max, double a_max);
+
+// Calculate the velocity assuming instantaneous constant acceleration a_max
+// and straight line rest-to-rest trajectories.
+// The time_factor \in [1..Inf] increases the allocated time making the segments
+// slower and thus feasibility more likely. This method does not take into
+// account the start and goal velocity and acceleration.
+std::vector<double> estimateSegmentTimesVelocityRamp(
+    const Vertex::Vector& vertices, double v_max, double a_max,
+    double time_factor = 1.0);
+
+// Makes a rough estimate based on v_max and a_max about the time
 // required to get from one vertex to the next.
 // t_est = 2 * distance/v_max * (1 + magic_fabian_constant * v_max/a_max * exp(-
 // distance/v_max * 2);
 // magic_fabian_constant was determined to 6.5 in a student project ...
-std::vector<double> estimateSegmentTimes(const Vertex::Vector& vertices,
-                                         double v_max, double a_max,
-                                         double magic_fabian_constant = 6.5);
+std::vector<double> estimateSegmentTimesNfabian(
+    const Vertex::Vector& vertices, double v_max, double a_max,
+    double magic_fabian_constant = 6.5);
+
+double computeTimeVelocityRamp(const Eigen::VectorXd& start,
+                               const Eigen::VectorXd& goal, double v_max,
+                               double a_max);
+
+inline int getHighestDerivativeFromN(int N) { return N / 2 - 1; }
 
 // Creates random vertices for position within minimum_position and
 // maximum_position.
@@ -138,8 +164,11 @@ Vertex::Vector createRandomVertices(int maximum_derivative, size_t n_segments,
                                     const Eigen::VectorXd& maximum_position,
                                     size_t seed = 0);
 
+Vertex::Vector createSquareVertices(int maximum_derivative,
+                                    const Eigen::Vector3d& center,
+                                    double side_length, int rounds);
+
 // Conveninence function to create 1D vertices.
-// createRandomVertices
 Vertex::Vector createRandomVertices1D(int maximum_derivative, size_t n_segments,
                                       double minimum_position,
                                       double maximum_position, size_t seed = 0);
