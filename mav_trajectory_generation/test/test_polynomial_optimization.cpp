@@ -135,7 +135,8 @@ void PolynomialOptimizationTests::checkPath(
       EXPECT_TRUE(EIGEN_MATRIX_NEAR(desired, actual, tol))
           << "[fixed constraint check t=0] at vertex " << i
           << " and constraint " << positionDerivativeToString(derivative)
-          << "\nsegment:\n" << segment << segment_derivative.str();
+          << "\nsegment:\n"
+          << segment << segment_derivative.str();
     }
     for (Vertex::Constraints::const_iterator it = v_end.cBegin();
          it != v_end.cEnd(); ++it) {
@@ -148,7 +149,8 @@ void PolynomialOptimizationTests::checkPath(
       EXPECT_TRUE(EIGEN_MATRIX_NEAR(desired, actual, tol))
           << "[fixed constraint check] at vertex " << i + 1
           << " and constraint " << positionDerivativeToString(derivative)
-          << "\nsegment:\n" << segment << segment_derivative.str();
+          << "\nsegment:\n"
+          << segment << segment_derivative.str();
     }
 
     // Check if values at vertices are continuous.
@@ -515,7 +517,7 @@ TEST_P(PolynomialOptimizationTests, ConstraintPacking) {
   min_pos = Eigen::VectorXd::Constant(D, -50.0);
   max_pos = -min_pos;
   const int kSeed = 12345;
-  const size_t kNumSetups = 10;
+  const size_t kNumSetups = 5;
 
   for (size_t i = 0; i < kNumSetups; i++) {
     Vertex::Vector vertices;
@@ -692,6 +694,49 @@ TEST_P(PolynomialOptimizationTests, TimeScaling) {
   EXPECT_LE(mellinger_cost, scaled_cost);
 }
 
+TEST_P(PolynomialOptimizationTests, TimeScalingInTrajectory) {
+  constexpr double kTolerance = 1e-3;
+
+  std::vector<double> segment_times =
+      estimateSegmentTimesVelocityRamp(vertices_, v_max * 2.0, a_max * 2.0);
+  EXPECT_EQ(segment_times.size(), params_.num_segments);
+
+  PolynomialOptimization<N> opt(D);
+  opt.setupFromVertices(vertices_, segment_times, max_derivative);
+  opt.solveLinear();
+
+  Trajectory trajectory;
+  opt.getTrajectory(&trajectory);
+
+  double v_max_traj, a_max_traj, v_max_num, a_max_num;
+  getMaxVelocityAndAccelerationAnalytical(trajectory, &v_max_traj, &a_max_traj);
+  getMaxVelocityAndAccelerationNumerical(trajectory, &v_max_num, &a_max_num);
+
+  std::cout << "Starting v max: " << v_max_traj << " (" << v_max_num
+            << ") a max: " << a_max_traj << " (" << a_max_num << ")"
+            << std::endl;
+
+  EXPECT_LE(v_max_traj, v_max * 5.0);
+  EXPECT_LE(a_max_traj, a_max * 5.0);
+
+  EXPECT_NEAR(v_max_traj, v_max_num, kTolerance);
+  EXPECT_NEAR(a_max_traj, a_max_num, kTolerance);
+
+  // Scaling of segment times
+  trajectory.scaleSegmentTimesToMeetConstraints(v_max, a_max);
+  getMaxVelocityAndAccelerationAnalytical(trajectory, &v_max_traj, &a_max_traj);
+  getMaxVelocityAndAccelerationNumerical(trajectory, &v_max_num, &a_max_num);
+  std::cout << "Scaled v max: " << v_max_traj << " (" << v_max_num
+            << ") a max: " << a_max_traj << " (" << a_max_num << ")"
+            << std::endl;
+
+  EXPECT_NEAR(v_max_traj, v_max_num, kTolerance);
+  EXPECT_NEAR(a_max_traj, a_max_num, kTolerance);
+
+  EXPECT_LE(v_max_traj, v_max + kTolerance);
+  EXPECT_LE(a_max_traj, a_max + kTolerance);
+}
+
 TEST_P(PolynomialOptimizationTests, AMatrixInversion) {
   const double max_time = 60;
   for (double t = 1; t <= max_time; t += 1) {
@@ -799,14 +844,6 @@ OptimizationParams segment_50_dim_3 = {3 /* D */,
                                        3.0 /* v_max */,
                                        5.0 /* a_mav */};
 
-OptimizationParams segment_75_dim_3 = {3 /* D */,
-                                       derivative_order::SNAP,
-                                       75 /* num_segments*/,
-                                       106 /* seed */,
-                                       10.0 /* pos_max */,
-                                       3.0 /* v_max */,
-                                       5.0 /* a_mav */};
-
 OptimizationParams deriv_accel_1 = {1 /* D */,
                                     derivative_order::ACCELERATION,
                                     5 /* num_segments*/,
@@ -844,7 +881,7 @@ INSTANTIATE_TEST_CASE_P(OneDimension, PolynomialOptimizationTests,
 
 INSTANTIATE_TEST_CASE_P(ThreeDimensions, PolynomialOptimizationTests,
                         ::testing::Values(segment_1_dim_3, segment_10_dim_3,
-                                          segment_50_dim_3, segment_75_dim_3));
+                                          segment_50_dim_3));
 
 INSTANTIATE_TEST_CASE_P(Derivatives, PolynomialOptimizationTests,
                         ::testing::Values(deriv_accel_1, deriv_accel_3_1,
