@@ -310,10 +310,6 @@ bool Trajectory::scaleSegmentTimesToMeetConstraints(double v_max,
 
     double violation_scaling = std::max(
         1.0, std::max(velocity_violation, sqrt(acceleration_violation)));
-    std::cout << "Vel violation: " << velocity_violation
-              << " accel violation: " << acceleration_violation
-              << " v max: " << v_max << " a max: " << a_max
-              << " scaling: " << violation_scaling << std::endl;
 
     // First figure out how to stretch the trajectory in time.
     double violation_scaling_inverse = 1.0 / violation_scaling;
