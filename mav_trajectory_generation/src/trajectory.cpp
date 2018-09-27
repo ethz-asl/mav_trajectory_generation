@@ -267,7 +267,7 @@ Vertex Trajectory::getGoalVertex(int max_derivative_order) const {
 // Compute max velocity and max acceleration.
 bool Trajectory::computeMaxVelocityAndAcceleration(double* v_max,
                                                    double* a_max) const {
-  std::vector<int> dimensions;  // Evaluate in whatever dimensions we have.
+  std::vector<int> dimensions(D_);  // Evaluate in whatever dimensions we have.
   std::iota(dimensions.begin(), dimensions.end(), 0);
 
   Extremum v_min_traj, v_max_traj, a_min_traj, a_max_traj;
