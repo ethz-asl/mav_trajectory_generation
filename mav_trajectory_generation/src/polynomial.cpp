@@ -196,6 +196,14 @@ bool Polynomial::getPolynomialWithAppendedCoefficients(
   }
 }
 
+void Polynomial::scalePolynomialInTime(double scaling_factor) {
+  double scale = 1.0;
+  for (int n = 0; n < N_; n++) {
+    coefficients_[n] *= scale;
+    scale *= scaling_factor;
+  }
+}
+
 Eigen::MatrixXd Polynomial::base_coefficients_ =
     computeBaseCoefficients(Polynomial::kMaxConvolutionSize);
 

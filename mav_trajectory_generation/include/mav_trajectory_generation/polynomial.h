@@ -104,9 +104,10 @@ class Polynomial {
       result.setZero();
       result.head(N_ - derivative) =
           coefficients_.tail(N_ - derivative)
-              .cwiseProduct(base_coefficients_.block(derivative, derivative, 1,
-                                                     N_ - derivative)
-                                .transpose());
+              .cwiseProduct(
+                  base_coefficients_
+                      .block(derivative, derivative, 1, N_ - derivative)
+                      .transpose());
       return result;
     }
   }
@@ -148,7 +149,7 @@ class Polynomial {
   }
 
   // Uses Jenkins-Traub to get all the roots of the polynomial at a certain
-  //
+  // derivative.
   bool getRoots(int derivative, Eigen::VectorXcd* roots) const;
 
   // Finds all candidates for the minimum and maximum between t_start and t_end
@@ -234,6 +235,12 @@ class Polynomial {
   static inline int getConvolutionLength(int data_size, int kernel_size) {
     return data_size + kernel_size - 1;
   }
+
+  // Scales the polynomial in time with a scaling factor.
+  // To stretch out by a factor of 10, pass scaling_factor (b) = 1/10. To shrink
+  // by a factor of 10, pass scalign factor = 10.
+  // p_out = a12*b^12*t^12 + a11*b^11*t^11... etc.
+  void scalePolynomialInTime(double scaling_factor);
 
  private:
   int N_;
