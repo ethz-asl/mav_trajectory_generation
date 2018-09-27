@@ -320,7 +320,7 @@ TEST_P(PolynomialOptimizationTests, ExtremaOfMagnitude) {
   Trajectory trajectory;
   opt.getTrajectory(&trajectory);
 
-  std::vector<int> dimensions;
+  std::vector<int> dimensions(D);
   std::iota(dimensions.begin(), dimensions.end(), 0);
 
   timing::Timer time_analytic("time_extrema_analytic" + getSuffix(), false);
