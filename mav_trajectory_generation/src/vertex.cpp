@@ -238,11 +238,14 @@ std::vector<double> estimateSegmentTimesVelocityRamp(
 
   segment_times.reserve(vertices.size() - 1);
 
+  constexpr double kMinSegmentTime = 0.1;
+
   for (size_t i = 0; i < vertices.size() - 1; ++i) {
     Eigen::VectorXd start, end;
     vertices[i].getConstraint(derivative_order::POSITION, &start);
     vertices[i + 1].getConstraint(derivative_order::POSITION, &end);
     double t = computeTimeVelocityRamp(start, end, v_max, a_max);
+    t = std::max(kMinSegmentTime, t);
     segment_times.push_back(t);
   }
 

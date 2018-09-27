@@ -393,9 +393,7 @@ bool PolynomialOptimization<_N>::computeSegmentMaximumMagnitudeCandidates(
   // Use the implementation of this in the segment (template-free) as it's
   // actually faster.
   std::vector<int> dimensions;
-  for (int i = 0; i < segment.D(); i++) {
-    dimensions.push_back(i);
-  }
+  std::iota(dimensions.begin(), dimensions.end(), 0);
   return segment.computeMinMaxMagnitudeCandidateTimes(
       derivative, t_start, t_stop, dimensions, candidates);
 }

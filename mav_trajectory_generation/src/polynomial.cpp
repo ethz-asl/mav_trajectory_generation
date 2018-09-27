@@ -197,8 +197,10 @@ bool Polynomial::getPolynomialWithAppendedCoefficients(
 }
 
 void Polynomial::scalePolynomialInTime(double scaling_factor) {
+  double scale = 1.0;
   for (int n = 0; n < N_; n++) {
-    coefficients_[n] *= pow(scaling_factor, n);
+    coefficients_[n] *= scale;
+    scale *= scaling_factor;
   }
 }
 

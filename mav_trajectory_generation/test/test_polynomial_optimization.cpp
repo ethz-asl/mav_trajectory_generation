@@ -199,9 +199,8 @@ bool PolynomialOptimizationTests::checkCost(double cost_to_check,
 void PolynomialOptimizationTests::getMaxVelocityAndAccelerationAnalytical(
     const Trajectory& trajectory, double* v_max, double* a_max) const {
   std::vector<int> dimensions;  // Evaluate in whatever dimensions we have.
-  for (int i = 0; i < trajectory.D(); i++) {
-    dimensions.push_back(i);
-  }
+  std::iota(dimensions.begin(), dimensions.end(), 0);
+
   mav_trajectory_generation::Extremum v_min_traj, v_max_traj, a_min_traj,
       a_max_traj;
 
@@ -322,9 +321,8 @@ TEST_P(PolynomialOptimizationTests, ExtremaOfMagnitude) {
   opt.getTrajectory(&trajectory);
 
   std::vector<int> dimensions;
-  for (int i = 0; i < D; i++) {
-    dimensions.push_back(i);
-  }
+  std::iota(dimensions.begin(), dimensions.end(), 0);
+
   timing::Timer time_analytic("time_extrema_analytic" + getSuffix(), false);
   timing::Timer time_sampling("time_extrema_sampling" + getSuffix(), false);
   int segment_idx = 0;

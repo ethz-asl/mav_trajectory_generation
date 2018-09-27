@@ -268,9 +268,8 @@ Vertex Trajectory::getGoalVertex(int max_derivative_order) const {
 bool Trajectory::computeMaxVelocityAndAcceleration(double* v_max,
                                                    double* a_max) const {
   std::vector<int> dimensions;  // Evaluate in whatever dimensions we have.
-  for (int i = 0; i < D_; i++) {
-    dimensions.push_back(i);
-  }
+  std::iota(dimensions.begin(), dimensions.end(), 0);
+
   Extremum v_min_traj, v_max_traj, a_min_traj, a_max_traj;
 
   bool success = computeMinMaxMagnitude(
@@ -290,23 +289,28 @@ bool Trajectory::computeMaxVelocityAndAcceleration(double* v_max,
 // of the trajectory, and only *increases* segment times.
 bool Trajectory::scaleSegmentTimesToMeetConstraints(double v_max,
                                                     double a_max) {
-  double v_max_actual, a_max_actual;
-  computeMaxVelocityAndAcceleration(&v_max_actual, &a_max_actual);
-
-  double velocity_violation = v_max_actual / v_max;
-  double acceleration_violation = a_max_actual / a_max;
-
-  int counter = 0;
   // In vast majority of cases, this will converge within 1 iteration.
-  constexpr int kMaxCounter = 20;
+  constexpr size_t kMaxCounter = 20;
   constexpr double kTolerance = 1e-3;
-  bool within_range = velocity_violation <= 1.0 + kTolerance &&
-                      acceleration_violation <= 1.0 + kTolerance;
 
-  while (!within_range && (counter < kMaxCounter)) {
+  bool within_range = false;
+
+  for (size_t i = 0; i < kMaxCounter; i++) {
     // From Liu, Sikang, et al. "Planning Dynamically Feasible Trajectories for
     // Quadrotors Using Safe Flight Corridors in 3-D Complex Environments." IEEE
     // Robotics and Automation Letters 2.3 (2017).
+    double v_max_actual, a_max_actual;
+    computeMaxVelocityAndAcceleration(&v_max_actual, &a_max_actual);
+
+    // Reevaluate constraint/bound violation
+    double velocity_violation = v_max_actual / v_max;
+    double acceleration_violation = a_max_actual / a_max;
+
+    within_range = velocity_violation <= 1.0 + kTolerance &&
+                   acceleration_violation <= 1.0 + kTolerance;
+    if (within_range) {
+      break;
+    }
 
     double violation_scaling = std::max(
         1.0, std::max(velocity_violation, sqrt(acceleration_violation)));
@@ -325,18 +329,6 @@ bool Trajectory::scaleSegmentTimesToMeetConstraints(double v_max,
       new_max_time += new_time;
     }
     max_time_ = new_max_time;
-
-    // Reevaluate min/max extrema
-    v_max_actual = 0.0;
-    computeMaxVelocityAndAcceleration(&v_max_actual, &a_max_actual);
-
-    // Reevaluate constraint/bound violation
-    velocity_violation = v_max_actual / v_max;
-    acceleration_violation = a_max_actual / a_max;
-
-    within_range = velocity_violation <= 1.0 + kTolerance &&
-                   acceleration_violation <= 1.0 + kTolerance;
-    counter++;
   }
   return within_range;
 }
