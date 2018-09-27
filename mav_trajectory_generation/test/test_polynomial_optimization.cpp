@@ -198,7 +198,7 @@ bool PolynomialOptimizationTests::checkCost(double cost_to_check,
 
 void PolynomialOptimizationTests::getMaxVelocityAndAccelerationAnalytical(
     const Trajectory& trajectory, double* v_max, double* a_max) const {
-  std::vector<int> dimensions;  // Evaluate in whatever dimensions we have.
+  std::vector<int> dimensions(D);  // Evaluate in whatever dimensions we have.
   std::iota(dimensions.begin(), dimensions.end(), 0);
 
   mav_trajectory_generation::Extremum v_min_traj, v_max_traj, a_min_traj,
