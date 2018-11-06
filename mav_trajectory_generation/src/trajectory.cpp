@@ -19,8 +19,15 @@
  */
 
 #include "mav_trajectory_generation/trajectory.h"
-
 #include <limits>
+
+// fixes error due to std::iota (has been introduced in c++ standard lately 
+// and may cause compilation errors depending on compiler)
+#if __cplusplus <= 199711L
+  #include <algorithm>
+#else
+  #include <numeric>
+#endif
 
 namespace mav_trajectory_generation {
 
