@@ -91,7 +91,7 @@ std::string getInputConstraintName(InputConstraintType type) {
     case InputConstraintType::kOmegaZMax:
       return "omega_z_max";
     case InputConstraintType::kOmegaZDotMax:
-      return "omega_z_max";
+      return "omega_z_dot_max";
   }
   return "Unknown!";
 }
