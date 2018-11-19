@@ -245,13 +245,13 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTimeMellingerOuterLoop() {
     std::cout << std::endl;
     std::cout << "[MEL   Trajectory Time] Before: "
               << std::accumulate(original_segment_times.begin(),
-                                 original_segment_times.end(), 0)
+                                 original_segment_times.end(), 0.0)
               << " | After Rel Change: "
               << std::accumulate(relative_segment_times.begin(),
-                                 relative_segment_times.end(), 0)
+                                 relative_segment_times.end(), 0.0)
               << " | After Scaling: "
               << std::accumulate(scaled_segment_times.begin(),
-                                 scaled_segment_times.end(), 0)
+                                 scaled_segment_times.end(), 0.0)
               << std::endl;
   }
 
@@ -368,20 +368,6 @@ void PolynomialOptimizationNonLinear<_N>::scaleSegmentTimesWithViolation() {
   // Get trajectory
   Trajectory traj;
   poly_opt_.getTrajectory(&traj);
-  std::vector<double> segment_times;
-  poly_opt_.getSegmentTimes(&segment_times);
-
-  // Evaluate min/max extrema
-  Extremum v_min_actual, v_max_actual, a_min_actual, a_max_actual;
-  std::vector<int> dimensions;
-  for (int i = 0; i < traj.D(); ++i) {
-    dimensions.push_back(i);
-  }
-
-  traj.computeMinMaxMagnitude(derivative_order::VELOCITY, dimensions,
-                              &v_min_actual, &v_max_actual);
-  traj.computeMinMaxMagnitude(derivative_order::ACCELERATION, dimensions,
-                              &a_min_actual, &a_max_actual);
 
   // Get constraints
   double v_max = 0.0;
@@ -394,67 +380,28 @@ void PolynomialOptimizationNonLinear<_N>::scaleSegmentTimesWithViolation() {
     }
   }
 
-  double velocity_violation = v_max_actual.value / v_max;
-  double acceleration_violation = a_max_actual.value / a_max;
-
-  int counter = 0;
-  const double violation_range = 0.01;
-  const int max_counter = 20;
-  bool within_range = velocity_violation <= 1.0 + violation_range &&
-                      acceleration_violation <= 1.0 + violation_range;
-
   if (optimization_parameters_.print_debug_info_time_allocation) {
-    std::cout << "Beginning  v: max: " << v_max_actual.value << " / " << v_max
-              << " viol: " << velocity_violation
-              << " a: max: " << a_max_actual.value << " / " << a_max
-              << " viol: " << acceleration_violation << std::endl;
+    double v_max_actual, a_max_actual;
+    traj.computeMaxVelocityAndAcceleration(&v_max_actual, &a_max_actual);
+    std::cout << "[Time Scaling] Beginning:  v: max: " << v_max_actual << " / "
+              << v_max << " a: max: " << a_max_actual << " / " << a_max
+              << std::endl;
   }
 
-  while (!within_range && (counter < max_counter)) {
-    // From Liu, Sikang, et al. "Planning Dynamically Feasible Trajectories for
-    // Quadrotors Using Safe Flight Corridors in 3-D Complex Environments." IEEE
-    // Robotics and Automation Letters 2.3 (2017).
+  // Run the trajectory time scaling.
+  traj.scaleSegmentTimesToMeetConstraints(v_max, a_max);
 
-    double violation_scaling = std::max(
-        1.0, std::max(velocity_violation, sqrt(acceleration_violation)));
+  std::vector<double> segment_times;
+  segment_times = traj.getSegmentTimes();
+  poly_opt_.updateSegmentTimes(segment_times);
+  poly_opt_.solveLinear();
 
-    // Convert new segment times
-    std::vector<double> segment_times_new = segment_times;
-    // Check and make sure that segment times are >
-    // kOptimizationTimeLowerBound
-    for (double& t : segment_times_new) {
-      t = std::max(kOptimizationTimeLowerBound, t * violation_scaling);
-    }
-
-    // Update new segment times
-    poly_opt_.updateSegmentTimes(segment_times_new);
-    poly_opt_.solveLinear();
-
-    // Get new trajectory
-    traj.clear();
-    poly_opt_.getTrajectory(&traj);
-
-    // Reevaluate min/max extrema
-    traj.computeMinMaxMagnitude(derivative_order::VELOCITY, dimensions,
-                                &v_min_actual, &v_max_actual);
-    traj.computeMinMaxMagnitude(derivative_order::ACCELERATION, dimensions,
-                                &a_min_actual, &a_max_actual);
-
-    // Reevaluate constraint/bound violation
-    velocity_violation = v_max_actual.value / v_max;
-    acceleration_violation = a_max_actual.value / a_max;
-
-    if (optimization_parameters_.print_debug_info_time_allocation) {
-      std::cout << "Iteration " << counter << " v: max: " << v_max_actual.value
-                << " / " << v_max << " viol: " << velocity_violation
-                << " a: max: " << a_max_actual.value << " / " << a_max
-                << " viol: " << acceleration_violation
-                << " total time: " << traj.getMaxTime() << std::endl;
-    }
-
-    within_range = velocity_violation <= 1.0 + violation_range &&
-                   acceleration_violation <= 1.0 + violation_range;
-    counter++;
+  if (optimization_parameters_.print_debug_info_time_allocation) {
+    double v_max_actual, a_max_actual;
+    traj.computeMaxVelocityAndAcceleration(&v_max_actual, &a_max_actual);
+    std::cout << "[Time Scaling] End: v: max: " << v_max_actual << " / "
+              << v_max << " a: max: " << a_max_actual << " / " << a_max
+              << std::endl;
   }
 }
 
