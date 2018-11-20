@@ -9,7 +9,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http:///www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -29,7 +29,7 @@
 
 namespace mav_trajectory_generation {
 
-/// Analytic input feasibility checks.
+// Analytic input feasibility checks.
 class FeasibilityAnalytic : public FeasibilityBase {
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -47,9 +47,9 @@ class FeasibilityAnalytic : public FeasibilityBase {
     inline double getMinSectionTimeS() const { return min_section_time_s_; }
 
    private:
-    /// The minimum section length the binary search is going to check. If the
-    /// trajectory is feasible with respect to an upper bound for this section
-    /// length it is considered overall feasible.
+    // The minimum section length the binary search is going to check. If the
+    // trajectory is feasible with respect to an upper bound for this section
+    // length it is considered overall feasible.
     double min_section_time_s_;
   };
 
@@ -58,18 +58,18 @@ class FeasibilityAnalytic : public FeasibilityBase {
   FeasibilityAnalytic(const InputConstraints& input_constraints);
   FeasibilityAnalytic(const Settings& settings,
                       const InputConstraints& input_constraints);
-  /// Checks a segment for input feasibility.
+  // Checks a segment for input feasibility.
   virtual InputFeasibilityResult checkInputFeasibility(
       const Segment& segment) const;
 
-  /// The user settings.
+  // The user settings.
   Settings settings_;
 
  private:
   InputFeasibilityResult analyticThrustFeasibility(
       const Segment& segment, std::vector<Extremum>* thrust_candidates,
       Segment* thrust_segment) const;
-  /** Implements the recursive feasibility check for roll and pitch rates given
+  /* Implements the recursive feasibility check for roll and pitch rates given
    * the analytic solution for the minimum thrust and maximum jerk for a
    * segment. Follows [1]. [1] Mueller, Mark W., Markus Hehn, and Raffaello
    * D'Andrea. "A Computationally Efficient Motion Primitive for Quadrocopter
@@ -84,4 +84,4 @@ class FeasibilityAnalytic : public FeasibilityBase {
 };
 }  // namespace mav_trajectory_generation
 
-#endif  /// MAV_TRAJECTORY_GENERATION_ROS_FEASIBILITY_ANALYTIC_H_
+#endif  // MAV_TRAJECTORY_GENERATION_ROS_FEASIBILITY_ANALYTIC_H_

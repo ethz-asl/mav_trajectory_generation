@@ -25,8 +25,8 @@
 
 namespace mav_trajectory_generation {
 
-/// Container holding the properties of an extremum (time, value,
-/// segment where it occurred).
+// Container holding the properties of an extremum (time, value,
+// segment where it occurred).
 struct Extremum {
  public:
   Extremum() : time(0.0), value(0.0), segment_idx(0) {}
@@ -38,9 +38,9 @@ struct Extremum {
   bool operator>(const Extremum& rhs) const { return value > rhs.value; }
 
   double
-      time;  ///< Time where the extremum occurs, relative to the segment start.
-  double value;     ///< Value of the extremum at time.
-  int segment_idx;  ///< Index of the segment where the extremum occurs.
+      time;  // Time where the extremum occurs, relative to the segment start.
+  double value;     // Value of the extremum at time.
+  int segment_idx;  // Index of the segment where the extremum occurs.
 };
 
 inline std::ostream& operator<<(std::ostream& stream, const Extremum& e) {

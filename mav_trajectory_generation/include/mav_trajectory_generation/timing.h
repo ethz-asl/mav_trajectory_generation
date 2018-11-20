@@ -103,13 +103,13 @@ class Accumulator {
 struct TimerMapValue {
   TimerMapValue() {}
 
-  /// Create an accumulator with specified window size.
+  // Create an accumulator with specified window size.
   Accumulator<double, double, 50> acc_;
 };
 
-/// A class that has the timer interface but does nothing. Swapping this in in
-/// place of the Timer class (say with a typedef) should allow one to disable
-/// timing. Because all of the functions are inline, they should just disappear.
+// A class that has the timer interface but does nothing. Swapping this in in
+// place of the Timer class (say with a typedef) should allow one to disable
+// timing. Because all of the functions are inline, they should just disappear.
 class DummyTimer {
  public:
   DummyTimer(size_t /*handle*/, bool /*constructStopped*/ = false) {}
@@ -142,7 +142,7 @@ class Timing {
  public:
   typedef std::map<std::string, size_t> map_t;
   friend class Timer;
-  /// Definition of static functions to query the timers.
+  // Definition of static functions to query the timers.
   static size_t GetHandle(std::string const& tag);
   static std::string GetTag(size_t handle);
   static double GetTotalSeconds(size_t handle);
@@ -186,12 +186,14 @@ typedef DummyTimer DebugTimer;
 typedef Timer DebugTimer;
 #endif
 
-/// Small timer for benchmarking.
+// Small timer for benchmarking.
 class MiniTimer {
  public:
   MiniTimer() : start_(std::chrono::system_clock::now()) {}
 
-  void start() { start_ = std::chrono::system_clock::now(); }
+  void start() {
+    start_ = std::chrono::system_clock::now();
+  }
 
   double stop() {
     end_ = std::chrono::system_clock::now();

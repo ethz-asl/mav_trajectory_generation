@@ -56,18 +56,18 @@ class TrajectorySamplerNode {
   ros::ServiceServer stop_srv_;
   ros::Time start_time_;
 
-  /// Service client for getting the MAV interface to listen to our sent
-  /// commands.
+  // Service client for getting the MAV interface to listen to our sent
+  // commands.
   ros::ServiceClient position_hold_client_;
 
-  /// Flag whether to publish entire trajectory at once or not.
+  // Flag whether to publish entire trajectory at once or not.
   bool publish_whole_trajectory_;
-  /// Trajectory sampling interval.
+  // Trajectory sampling interval.
   double dt_;
-  /// Time at currently published trajectory sample.
+  // Time at currently published trajectory sample.
   double current_sample_time_;
 
-  /// The trajectory to sub-sample.
+  // The trajectory to sub-sample.
   mav_trajectory_generation::Trajectory trajectory_;
 };
 

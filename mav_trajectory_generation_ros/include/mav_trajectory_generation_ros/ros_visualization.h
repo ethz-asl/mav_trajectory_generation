@@ -30,33 +30,33 @@
 
 namespace mav_trajectory_generation {
 
-/// Draws the trajectory of the MAV, with additional markers spaced by distance.
-/// If distance = 0.0, then these additional markers are disabled.
+// Draws the trajectory of the MAV, with additional markers spaced by distance.
+// If distance = 0.0, then these additional markers are disabled.
 void drawMavTrajectory(const Trajectory& trajectory, double distance,
                        const std::string& frame_id,
                        visualization_msgs::MarkerArray* marker_array);
 
-/// Draw an eigen trajectory with additional markers spaced by distance (0.0 to
-/// disable).
+// Draw an eigen trajectory with additional markers spaced by distance (0.0 to
+// disable).
 void drawMavSampledTrajectory(
     const mav_msgs::EigenTrajectoryPoint::Vector& flat_states, double distance,
     const std::string& frame_id, visualization_msgs::MarkerArray* marker_array);
 
-/// Same as drawMavTrajectory, but also draws an additional marker at a set
-/// distance.
+// Same as drawMavTrajectory, but also draws an additional marker at a set
+// distance.
 void drawMavTrajectoryWithMavMarker(
     const Trajectory& trajectory, double distance, const std::string& frame_id,
     const mav_visualization::MarkerGroup& additional_marker,
     visualization_msgs::MarkerArray* marker_array);
 
-/// Draw a eigen trajectory with additional marker.
+// Draw a eigen trajectory with additional marker.
 void drawMavSampledTrajectoryWithMavMarker(
     const mav_msgs::EigenTrajectoryPoint::Vector& flat_states, double distance,
     const std::string& frame_id,
     const mav_visualization::MarkerGroup& additional_marker,
     visualization_msgs::MarkerArray* marker_array);
 
-/// Visualize original vertices.
+// Visualize original vertices.
 void drawVertices(const Vertex::Vector& vertices, const std::string& frame_id,
                   visualization_msgs::MarkerArray* marker_array);
 

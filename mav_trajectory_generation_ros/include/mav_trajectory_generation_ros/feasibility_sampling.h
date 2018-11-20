@@ -29,7 +29,7 @@
 
 namespace mav_trajectory_generation {
 
-/// Sampling based input feasibility checks.
+// Sampling based input feasibility checks.
 class FeasibilitySampling : public FeasibilityBase {
  public:
   class Settings {
@@ -50,11 +50,11 @@ class FeasibilitySampling : public FeasibilityBase {
   FeasibilitySampling(const InputConstraints& input_constraints);
   FeasibilitySampling(const Settings& settings,
                       const InputConstraints& input_constraints);
-  /// Checks a segment for input feasibility.
+  // Checks a segment for input feasibility.
   virtual InputFeasibilityResult checkInputFeasibility(
       const Segment& segment) const;
 
-  /// The user settings.
+  // The user settings.
   Settings settings_;
 };
 }  // namespace mav_trajectory_generation

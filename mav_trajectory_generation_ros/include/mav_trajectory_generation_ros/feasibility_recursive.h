@@ -29,7 +29,7 @@
 
 namespace mav_trajectory_generation {
 
-/** Recursive input feasibility checks.
+/* Recursive input feasibility checks.
  * This implementation is based on [1] and extended to test yaw rates and
  * higher order polynomials.
  * The general idea is to check a segment for lower and upper bounds that can be
@@ -61,9 +61,9 @@ class FeasibilityRecursive : public FeasibilityBase {
     inline double getMinSectionTimeS() const { return min_section_time_s_; }
 
    private:
-    /// The minimum section length the binary search is going to check. If the
-    /// trajectory is feasible with respect to an upper bound for this section
-    /// length it is considered overall feasible.
+    // The minimum section length the binary search is going to check. If the
+    // trajectory is feasible with respect to an upper bound for this section
+    // length it is considered overall feasible.
     double min_section_time_s_;
   };
 
@@ -73,16 +73,16 @@ class FeasibilityRecursive : public FeasibilityBase {
   FeasibilityRecursive(const Settings& settings,
                        const InputConstraints& input_constraints);
 
-  /// Checks a segment for input feasibility.
+  // Checks a segment for input feasibility.
   virtual InputFeasibilityResult checkInputFeasibility(
       const Segment& segment) const;
 
-  /// The user settings.
+  // The user settings.
   Settings settings_;
 
  private:
-  /// Recursive test to determine velocity, acceleration, and angular rate
-  /// (roll, pitch) feasibility between t_1 and t_2.
+  // Recursive test to determine velocity, acceleration, and angular rate (roll,
+  // pitch) feasibility between t_1 and t_2.
   InputFeasibilityResult recursiveFeasibility(const Segment& segment,
                                               const Roots& roots_acc,
                                               const Roots& roots_jerk,

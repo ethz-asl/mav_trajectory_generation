@@ -26,34 +26,33 @@
 namespace mav_trajectory_generation {
 
 enum InputConstraintType {
-  kFMin = 0,     ///< Minimum acceleration (normalized thrust) in [m/s/s].
-  kFMax,         ///< Maximum acceleration (normalized thrust) in [m/s/s].
-  kVMax,         ///< Maximum velocity in [m/s].
-  kOmegaXYMax,   ///< Maximum roll/pitch rate in [rad/s].
-  kOmegaZMax,    ///< Maximum yaw rate in [rad/s].
-  kOmegaZDotMax  ///< Maximum yaw acceleration in [rad/s/s].
+  kFMin = 0,    // Minimum acceleration (normalized thrust) in [m/s/s].
+  kFMax,  // Maximum acceleration (normalized thrust) in [m/s/s].
+  kVMax,      // Maximum velocity in [m/s].
+  kOmegaXYMax,       // Maximum roll/pitch rate in [rad/s].
+  kOmegaZMax, // Maximum yaw rate in [rad/s].
+  kOmegaZDotMax // Maximum yaw acceleration in [rad/s/s].
 };
 
-/// Dynamic constraints of the MAV.
+// Dynamic constraints of the MAV.
 class InputConstraints {
  public:
-  /// Empty constraints object.
+  // Empty constraints object.
   InputConstraints() {}
 
-  /// Set a constraint given type and value.
+  // Set a constraint given type and value.
   void addConstraint(int constraint_type, double value);
 
-  /// Sets all constraints to reasonable default values.
+  // Sets all constraints to reasonable default values.
   void setDefaultValues();
 
-  /// Return a constraint. Returns false if constraint is not set.
+  // Return a constraint. Returns false if constraint is not set.
   bool getConstraint(int constraint_type, double* value) const;
 
-  /// Check if a specific constraint type is set.
+  // Check if a specific constraint type is set.
   bool hasConstraint(int constraint_type) const;
 
-  /// Remove a specific constraint type. Returns false if constraint was not
-  /// set.
+  // Remove a specific constraint type. Returns false if constraint was not set.
   bool removeConstraint(int constraint_type);
 
  private:
@@ -61,4 +60,4 @@ class InputConstraints {
 };
 }  // namespace mav_trajectory_generation
 
-#endif  // MAV_TRAJECTORY_GENERATION_ROS_INPUT_CONSTRAINTS_H_
+#endif // MAV_TRAJECTORY_GENERATION_ROS_INPUT_CONSTRAINTS_H_
