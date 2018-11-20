@@ -123,6 +123,9 @@ class Trajectory {
   // Compute max velocity and max acceleration. Shorthand for the method above.
   bool computeMaxVelocityAndAcceleration(double* v_max, double* a_max) const;
 
+  // This method SCALES the segment times evenly.
+  bool scaleSegmentTimes(double scaling);
+
   // This method SCALES the segment times evenly to ensure that the trajectory
   // is feasible given the provided v_max and a_max. Does not change the shape
   // of the trajectory, and only *increases* segment times.

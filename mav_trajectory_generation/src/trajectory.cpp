@@ -21,7 +21,7 @@
 #include "mav_trajectory_generation/trajectory.h"
 #include <limits>
 
-// fixes error due to std::iota (has been introduced in c++ standard lately 
+// fixes error due to std::iota (has been introduced in c++ standard lately
 // and may cause compilation errors depending on compiler)
 #if __cplusplus <= 199711L
   #include <algorithm>
@@ -289,6 +289,25 @@ bool Trajectory::computeMaxVelocityAndAcceleration(double* v_max,
   *v_max = v_max_traj.value;
   *a_max = a_max_traj.value;
   return success;
+}
+
+bool Trajectory::scaleSegmentTimes(double scaling) {
+  if (scaling < 1.0e-6) return false;
+
+  // Scale the segment times of each segment.
+  double new_max_time = 0.0;
+  double scaling_inverse = 1.0 / scaling;
+  for (size_t i = 0; i < segments_.size(); i++) {
+    double new_time = segments_[i].getTime() * scaling;
+    for (int d = 0; d < segments_[i].D(); d++) {
+      (segments_[i])[d].scalePolynomialInTime(scaling_inverse);
+    }
+    segments_[i].setTime(new_time);
+    new_max_time += new_time;
+  }
+  max_time_ = new_max_time;
+
+  return true;
 }
 
 // This method SCALES the segment times evenly to ensure that the trajectory
