@@ -26,7 +26,17 @@
 #include <set>
 #include <tuple>
 
+// fixes error due to std::iota (has been introduced in c++ standard lately 
+// and may cause compilation errors depending on compiler)
+#if __cplusplus <= 199711L
+  #include <algorithm>
+#else
+  #include <numeric>
+#endif
+
 #include "mav_trajectory_generation/convolution.h"
+
+
 
 namespace mav_trajectory_generation {
 
@@ -392,10 +402,8 @@ bool PolynomialOptimization<_N>::computeSegmentMaximumMagnitudeCandidates(
 
   // Use the implementation of this in the segment (template-free) as it's
   // actually faster.
-  std::vector<int> dimensions;
-  for (int i = 0; i < segment.D(); i++) {
-    dimensions.push_back(i);
-  }
+  std::vector<int> dimensions(segment.D());
+  std::iota(dimensions.begin(), dimensions.end(), 0);
   return segment.computeMinMaxMagnitudeCandidateTimes(
       derivative, t_start, t_stop, dimensions, candidates);
 }
