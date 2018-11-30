@@ -102,6 +102,10 @@ class Trajectory {
   Vertex getStartVertex(int max_derivative_order) const;
   // Evaluate the vertex constraint at goal time.
   Vertex getGoalVertex(int max_derivative_order) const;
+  // Evaluate all underlying vertices.
+  bool getVertices(int max_derivative_order_pos, int max_derivative_order_yaw,
+                   Vertex::Vector* pos_vertices,
+                   Vertex::Vector* yaw_vertices) const;
 
   // Evaluation functions.
   // Evaluate at a single time, and a single derivative. Return type of

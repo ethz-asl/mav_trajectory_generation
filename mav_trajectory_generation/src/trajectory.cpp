@@ -279,6 +279,46 @@ Vertex Trajectory::getGoalVertex(int max_derivative_order) const {
   return getVertexAtTime(max_time_, max_derivative_order);
 }
 
+bool Trajectory::getVertices(int max_derivative_order_pos,
+                             int max_derivative_order_yaw,
+                             Vertex::Vector* pos_vertices,
+                             Vertex::Vector* yaw_vertices) const {
+  CHECK_NOTNULL(pos_vertices);
+  CHECK_NOTNULL(yaw_vertices);
+  const std::vector<size_t> kPosDimensions = {0, 1, 2};
+  const std::vector<size_t> kYawDimension = {4};
+  const int kMaxDerivativeOrder =
+      std::max(max_derivative_order_pos, max_derivative_order_yaw);
+  pos_vertices->resize(3, segments_.size() + 1);
+  yaw_vertices->resize(1, segments_.size() + 1);
+
+  Vertex::Vector::iterator pos_it = pos_vertices->begin();
+  Vertex::Vector::iterator yaw_it = yaw_vertices->begin();
+  Vertex temp_vertex(4);
+
+  // Start vertex.
+  temp_vertex = getStartVertex(kMaxDerivativeOrder);
+  if (!temp_vertex.getSubdimension(kPosDimensions, max_derivative_order_pos,
+                                   &*(pos_it++)))
+    return false;
+  if (!temp_vertex.getSubdimension(kYawDimension, max_derivative_order_yaw,
+                                   &*(yaw_it++)))
+    return false;
+
+  double t = 0.0;
+  for (const Segment& s : segments_) {
+    t += s.getTime();
+    temp_vertex = getVertexAtTime(t, kMaxDerivativeOrder);
+    if (!temp_vertex.getSubdimension(kPosDimensions, max_derivative_order_pos,
+                                     &*(pos_it++)))
+      return false;
+    if (!temp_vertex.getSubdimension(kYawDimension, max_derivative_order_yaw,
+                                     &*(yaw_it++)))
+      return false;
+  }
+  return true;
+}
+
 // Compute max velocity and max acceleration.
 bool Trajectory::computeMaxVelocityAndAcceleration(double* v_max,
                                                    double* a_max) const {
