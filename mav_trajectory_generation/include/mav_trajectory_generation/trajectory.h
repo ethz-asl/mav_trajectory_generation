@@ -93,6 +93,9 @@ class Trajectory {
   bool addTrajectories(const std::vector<Trajectory>& trajectories,
                        Trajectory* merged) const;
 
+  // Offset this trajectory by vector A_r_B.
+  bool offsetTrajectory(const Eigen::VectorXd& A_r_B);
+
   // Evaluate the vertex constraint at time t.
   Vertex getVertexAtTime(double t, int max_derivative_order) const;
   // Evaluate the vertex constraint at start time.

@@ -255,6 +255,14 @@ bool Trajectory::addTrajectories(const std::vector<Trajectory>& trajectories,
   return true;
 }
 
+bool Trajectory::offsetTrajectory(const Eigen::VectorXd& A_r_B) {
+  for (Segment& s : segments_) {
+    if (!s.offsetSegment(A_r_B)) return false;
+  }
+
+  return true;
+}
+
 Vertex Trajectory::getVertexAtTime(double t, int max_derivative_order) const {
   Vertex v(D_);
   for (size_t i = 0; i <= max_derivative_order; i++) {
