@@ -24,29 +24,63 @@
 #include <yaml-cpp/yaml.h>
 #include <fstream>
 
-const std::string kSegments = "segments";
-const std::string kNumCoefficients = "N";
-const std::string kDim = "D";
-const std::string kSegmentTime = "time";
-const std::string kCoefficients = "coefficients";
+const std::string kSegmentsKey = "segments";
+const std::string kNumCoefficientsKey = "N";
+const std::string kDimKey = "D";
+const std::string kSegmentTimeKey = "time";
+const std::string kCoefficientsKey = "coefficients";
 
 namespace mav_trajectory_generation {
+
+YAML::Node coefficientsToYaml(const Eigen::VectorXd& coefficients) {
+  YAML::Node node(YAML::NodeType::Sequence);
+  for (size_t i = 0; i < coefficients.size(); ++i)
+    node.push_back(coefficients(i));
+  node.SetStyle(YAML::EmitterStyle::Flow);
+  return node;
+}
+
+YAML::Node segmentToYaml(const Segment& segment) {
+  YAML::Node node;
+  node[kNumCoefficientsKey] = segment.N();
+  node[kDimKey] = segment.D();
+  node[kSegmentTimeKey] = segment.getTimeNSec();
+
+  for (size_t i = 0; i < segment.D(); ++i)
+    node[kCoefficientsKey].push_back(
+        coefficientsToYaml(segment[i].getCoefficients()));
+
+  return node;
+}
+
+YAML::Node segmentsToYaml(const Segment::Vector& segments) {
+  YAML::Node node;
+  for (const mav_trajectory_generation::Segment& segment : segments)
+    node[kSegmentsKey].push_back(segmentToYaml(segment));
+
+  return node;
+}
+
+YAML::Node trajectoryToYaml(const Trajectory& trajectory) {
+  return segmentToYaml(trajectory.getSegments());
+}
+
 bool segmentsToFile(
     const std::string& filename,
     const mav_trajectory_generation::Segment::Vector& segments) {
   YAML::Emitter out;
   out << YAML::BeginMap;
-  out << YAML::Key << kSegments;
+  out << YAML::Key << kSegmentsKey;
   out << YAML::BeginSeq;
   for (const mav_trajectory_generation::Segment& segment : segments) {
     out << YAML::BeginMap;
     // Header.
-    out << YAML::Key << kNumCoefficients << YAML::Value << segment.N();
-    out << YAML::Key << kDim << YAML::Value << segment.D();
-    out << YAML::Key << kSegmentTime << YAML::Value << segment.getTimeNSec()
+    out << YAML::Key << kNumCoefficientsKey << YAML::Value << segment.N();
+    out << YAML::Key << kDimKey << YAML::Value << segment.D();
+    out << YAML::Key << kSegmentTimeKey << YAML::Value << segment.getTimeNSec()
         << YAML::Comment("[ns]");
     // Coefficients.
-    out << YAML::Key << kCoefficients;
+    out << YAML::Key << kCoefficientsKey;
     out << YAML::BeginSeq;
     for (size_t i = 0; i < segment.D(); i++) {
       out << YAML::Flow;  // List output format.
@@ -88,28 +122,29 @@ bool segmentsFromFile(const std::string& filename,
   // Parse YAML.
   YAML::Node node = YAML::LoadFile(filename);
 
-  if (node[kSegments]) {
-    const YAML::Node& segments_yaml = node[kSegments];
+  if (node[kSegmentsKey]) {
+    const YAML::Node& segments_yaml = node[kSegmentsKey];
     for (size_t i = 0; i < segments_yaml.size(); i++) {
-      if (segments_yaml[i][kNumCoefficients] && segments_yaml[i][kDim] &&
-          segments_yaml[i][kSegmentTime] && segments_yaml[i][kCoefficients]) {
+      if (segments_yaml[i][kNumCoefficientsKey] && segments_yaml[i][kDimKey] &&
+          segments_yaml[i][kSegmentTimeKey] &&
+          segments_yaml[i][kCoefficientsKey]) {
         // Header.
-        int N = segments_yaml[i][kNumCoefficients].as<int>();
-        int D = segments_yaml[i][kDim].as<int>();
+        int N = segments_yaml[i][kNumCoefficientsKey].as<int>();
+        int D = segments_yaml[i][kDimKey].as<int>();
         mav_trajectory_generation::Segment segment(N, D);
-        uint64_t t = segments_yaml[i][kSegmentTime].as<uint64_t>();
+        uint64_t t = segments_yaml[i][kSegmentTimeKey].as<uint64_t>();
         segment.setTimeNSec(t);
         // Coefficients.
-        if (segments_yaml[i][kCoefficients].size() != D) {
+        if (segments_yaml[i][kCoefficientsKey].size() != D) {
           return false;  // Coefficients and dimensions do not coincide.
         }
         for (size_t j = 0; j < D; j++) {
-          if (segments_yaml[i][kCoefficients][j].size() != N) {
+          if (segments_yaml[i][kCoefficientsKey][j].size() != N) {
             return false;  // Number of coefficients does no coincide.
           }
           Eigen::VectorXd coeffs(N);
           for (size_t k = 0; k < N; k++) {
-            coeffs(k) = segments_yaml[i][kCoefficients][j][k].as<double>();
+            coeffs(k) = segments_yaml[i][kCoefficientsKey][j][k].as<double>();
           }
           segment[j] = coeffs;
         }
