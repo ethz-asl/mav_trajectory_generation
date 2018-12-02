@@ -244,6 +244,10 @@ bool Trajectory::addTrajectories(const std::vector<Trajectory>& trajectories,
     // Check dimensions and coefficients.
     // TODO(rikba): Allow different number of coefficients.
     if (t.D() != D_ || t.N() != N_) {
+      LOG(WARNING) << "Dimension to append: " << t.D()
+                   << " this dimension: " << D_;
+      LOG(WARNING) << "Number of coefficients to append: " << t.N()
+                   << " this number of coefficients: " << N_;
       return false;
     }
     // Add segments.
