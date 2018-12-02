@@ -24,9 +24,9 @@
 // fixes error due to std::iota (has been introduced in c++ standard lately
 // and may cause compilation errors depending on compiler)
 #if __cplusplus <= 199711L
-  #include <algorithm>
+#include <algorithm>
 #else
-  #include <numeric>
+#include <numeric>
 #endif
 
 namespace mav_trajectory_generation {
@@ -290,34 +290,31 @@ bool Trajectory::getVertices(int max_derivative_order_pos,
   CHECK_NOTNULL(pos_vertices);
   CHECK_NOTNULL(yaw_vertices);
   const std::vector<size_t> kPosDimensions = {0, 1, 2};
-  const std::vector<size_t> kYawDimension = {4};
+  const std::vector<size_t> kYawDimensions = {3};
   const int kMaxDerivativeOrder =
       std::max(max_derivative_order_pos, max_derivative_order_yaw);
-  pos_vertices->resize(3, segments_.size() + 1);
-  yaw_vertices->resize(1, segments_.size() + 1);
-
-  Vertex::Vector::iterator pos_it = pos_vertices->begin();
-  Vertex::Vector::iterator yaw_it = yaw_vertices->begin();
-  Vertex temp_vertex(4);
+  pos_vertices->resize(segments_.size() + 1, Vertex(3));
+  yaw_vertices->resize(segments_.size() + 1, Vertex(1));
 
   // Start vertex.
+  Vertex temp_vertex(4);
   temp_vertex = getStartVertex(kMaxDerivativeOrder);
   if (!temp_vertex.getSubdimension(kPosDimensions, max_derivative_order_pos,
-                                   &*(pos_it++)))
+                                   &pos_vertices->front()))
     return false;
-  if (!temp_vertex.getSubdimension(kYawDimension, max_derivative_order_yaw,
-                                   &*(yaw_it++)))
+  if (!temp_vertex.getSubdimension(kYawDimensions, max_derivative_order_yaw,
+                                   &yaw_vertices->front()))
     return false;
 
   double t = 0.0;
-  for (const Segment& s : segments_) {
-    t += s.getTime();
+  for (size_t i = 0; i < segments_.size(); ++i) {
+    t += segments_[i].getTime();
     temp_vertex = getVertexAtTime(t, kMaxDerivativeOrder);
     if (!temp_vertex.getSubdimension(kPosDimensions, max_derivative_order_pos,
-                                     &*(pos_it++)))
+                                     &(*pos_vertices)[i + 1]))
       return false;
-    if (!temp_vertex.getSubdimension(kYawDimension, max_derivative_order_yaw,
-                                     &*(yaw_it++)))
+    if (!temp_vertex.getSubdimension(kYawDimensions, max_derivative_order_yaw,
+                                     &(*yaw_vertices)[i + 1]))
       return false;
   }
   return true;
