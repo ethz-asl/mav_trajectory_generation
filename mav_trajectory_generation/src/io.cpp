@@ -67,6 +67,61 @@ YAML::Node trajectoryToYaml(const Trajectory& trajectory) {
   return segmentsToYaml(segments);
 }
 
+bool coefficientsFromYaml(const YAML::Node& node,
+                          Eigen::VectorXd* coefficients) {
+  CHECK_NOTNULL(coefficients);
+  if (!node.IsSequence()) return false;
+  *coefficients = Eigen::VectorXd(node.size());
+  for (std::size_t i = 0; i < node.size(); ++i) {
+    (*coefficients)(i) = node[i].as<double>();
+  }
+  return true;
+}
+
+bool segmentFromYaml(const YAML::Node& node, Segment* segment) {
+  CHECK_NOTNULL(segment);
+
+  if (!node[kNumCoefficientsKey]) return false;
+  if (!node[kDimKey]) return false;
+  if (!node[kSegmentTimeKey]) return false;
+  if (!node[kCoefficientsKey]) return false;
+  if (!node[kCoefficientsKey].IsSequence()) return false;
+
+  *segment =
+      Segment(node[kNumCoefficientsKey].as<int>(), node[kDimKey].as<int>());
+
+  for (size_t i = 0; i < segment->D(); ++i) {
+    Eigen::VectorXd coeffs;
+    if (!coefficientsFromYaml(node[kCoefficientsKey][i], &coeffs)) return false;
+    (*segment)[i] = coeffs;
+  }
+  segment->setTimeNSec(node[kCoefficientsKey].as<uint64_t>());
+
+  return true;
+}
+
+bool segmentsFromYaml(const YAML::Node& node, Segment::Vector* segments) {
+  CHECK_NOTNULL(segments);
+  if (!node.IsSequence()) return false;
+
+  segments->resize(node.size(), Segment(0, 0));
+  for (size_t i = 0; i < node.size(); ++i) {
+    if(!segmentFromYaml(node[i], &(*segments)[i])) return false;
+  }
+
+  return true;
+}
+
+bool trajectoryFromYaml(const YAML::Node& node, Trajectory* trajectory) {
+  CHECK_NOTNULL(trajectory);
+
+  Segment::Vector segments;
+  if(!segmentsFromYaml(node, &segments)) return false;
+  trajectory->setSegments(segments);
+
+  return true;
+}
+
 bool segmentsToFile(
     const std::string& filename,
     const mav_trajectory_generation::Segment::Vector& segments) {

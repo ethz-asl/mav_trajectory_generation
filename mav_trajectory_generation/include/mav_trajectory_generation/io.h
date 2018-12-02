@@ -33,6 +33,12 @@ YAML::Node segmentToYaml(const Segment& segment);
 YAML::Node segmentsToYaml(const Segment::Vector& segments);
 YAML::Node trajectoryToYaml(const Trajectory& trajectory);
 
+bool coefficientsFromYaml(const YAML::Node& node,
+                          Eigen::VectorXd* coefficients);
+bool segmentFromYaml(const YAML::Node& node, Segment* segment);
+bool segmentsFromYaml(const YAML::Node& node, Segment::Vector* segments);
+bool trajectoryFromYaml(const YAML::Node& node, Trajectory* trajectory);
+
 bool segmentsToFile(const std::string& filename,
                     const mav_trajectory_generation::Segment::Vector& segments);
 
