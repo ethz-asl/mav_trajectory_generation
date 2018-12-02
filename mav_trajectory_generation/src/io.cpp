@@ -62,7 +62,9 @@ YAML::Node segmentsToYaml(const Segment::Vector& segments) {
 }
 
 YAML::Node trajectoryToYaml(const Trajectory& trajectory) {
-  return segmentToYaml(trajectory.getSegments());
+  Segment::Vector segments;
+  trajectory.getSegments(&segments);
+  return segmentsToYaml(segments);
 }
 
 bool segmentsToFile(
