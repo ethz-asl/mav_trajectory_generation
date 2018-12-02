@@ -95,7 +95,8 @@ bool segmentFromYaml(const YAML::Node& node, Segment* segment) {
     if (!coefficientsFromYaml(node[kCoefficientsKey][i], &coeffs)) return false;
     (*segment)[i] = coeffs;
   }
-  segment->setTimeNSec(node[kCoefficientsKey].as<uint64_t>());
+
+  segment->setTimeNSec(node[kSegmentTimeKey].as<uint64_t>());
 
   return true;
 }
@@ -106,7 +107,7 @@ bool segmentsFromYaml(const YAML::Node& node, Segment::Vector* segments) {
 
   segments->resize(node.size(), Segment(0, 0));
   for (size_t i = 0; i < node.size(); ++i) {
-    if(!segmentFromYaml(node[i], &(*segments)[i])) return false;
+    if (!segmentFromYaml(node[i], &(*segments)[i])) return false;
   }
 
   return true;
@@ -116,7 +117,7 @@ bool trajectoryFromYaml(const YAML::Node& node, Trajectory* trajectory) {
   CHECK_NOTNULL(trajectory);
 
   Segment::Vector segments;
-  if(!segmentsFromYaml(node, &segments)) return false;
+  if (!segmentsFromYaml(node[kSegmentsKey], &segments)) return false;
   trajectory->setSegments(segments);
 
   return true;
