@@ -115,6 +115,11 @@ void InputConstraints::fromYaml(const YAML::Node& node) {
         static_cast<int>(InputConstraintType::kFMin),
         node[getInputConstraintName(InputConstraintType::kFMin)].as<double>());
 
+  if (node[getInputConstraintName(InputConstraintType::kFMax)])
+    addConstraint(
+        static_cast<int>(InputConstraintType::kFMax),
+        node[getInputConstraintName(InputConstraintType::kFMax)].as<double>());
+
   if (node[getInputConstraintName(InputConstraintType::kVMax)])
     addConstraint(
         static_cast<int>(InputConstraintType::kVMax),
