@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>mav_trajectory_generation_example</name>
+  <version>0.0.0</version>
+  <description>Example of a simple trajectory generation node</description>
+
+  <author email="michael.pantic@mavt.ethz.ch">Michael Pantic</author>
+  <maintainer email="michael.pantic@mavt.ethz.ch">Michael Pantic</maintainer>
+
+
+  <license>ASL 2.0</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <buildtool_depend>catkin_simple</buildtool_depend>
+
+  <depend>eigen_catkin</depend>
+  <depend>mav_msgs</depend>
+  <depend>mav_trajectory_generation</depend>
+  <depend>mav_trajectory_generation_ros</depend>
+  <depend>mav_visualization</depend>
+  <depend>mav_planning_msgs</depend>
+  <depend>eigen_checks</depend>
+  <depend>roslib</depend>
+</package>
