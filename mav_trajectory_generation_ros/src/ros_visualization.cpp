@@ -122,6 +122,7 @@ void drawMavSampledTrajectoryWithMavMarker(
       accumulated_distance = 0.0;
       mav_msgs::EigenMavState mav_state;
       mav_msgs::EigenMavStateFromEigenTrajectoryPoint(flat_state, &mav_state);
+      mav_state.orientation_W_B = flat_state.orientation_W_B;
 
       visualization_msgs::MarkerArray axes_arrows;
       mav_visualization::drawAxesArrows(mav_state.position_W,
