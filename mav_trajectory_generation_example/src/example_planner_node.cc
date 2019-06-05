@@ -28,24 +28,19 @@ int main(int argc, char** argv) {
   ros::Duration(5.0).sleep();
   ROS_WARN_STREAM("WARNING: CONSOLE INPUT/OUTPUT ONLY FOR DEMONSTRATION!");
 
+  // define set point
+  Eigen::Vector3d position, velocity;
+  position << 0.0, 1.0, 2.0;
+  velocity << 0.0, 0.0, 0.0;
+
   // THIS SHOULD NORMALLY RUN INSIDE ROS::SPIN!!! JUST FOR DEMO PURPOSES LIKE THIS.
-  ROS_WARN_STREAM("PRESS ENTER TO UPDATE CURRENT POSITION");
+  ROS_WARN_STREAM("PRESS ENTER TO UPDATE CURRENT POSITION AND SEND TRAJECTORY");
   std::cin.get();
   for (int i = 0; i < 10; i++) {
     ros::spinOnce();  // process a few messages in the background - causes the uavPoseCallback to happen
   }
-  Eigen::Affine3d pose;
-  planner.getCurrentPose(&pose);
-  ROS_WARN_STREAM("CURRENT POSITION: " << pose.translation());
 
-  ROS_WARN_STREAM("PRESS ENTER TO VISUALIZE TRAJECTORY....");
-  std::cin.get();
-  planner.planTakeOffTrajectory(5.0);
-  planner.visualizeCachedTrajectory();
-
-  ROS_WARN_STREAM("SENT RVIZ MARKERS. PRESS ENTER TO EXECUTE.");
-  std::cin.get();
-  planner.executeCachedTrajectory();
+  planner.planTrajectory(position, velocity);
   ROS_WARN_STREAM("DONE. GOODBYE.");
 
   return 0;
