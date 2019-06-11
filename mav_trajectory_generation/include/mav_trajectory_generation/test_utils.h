@@ -21,8 +21,8 @@
 #ifndef MAV_TRAJECTORY_GENERATION_TEST_UTILS_H_
 #define MAV_TRAJECTORY_GENERATION_TEST_UTILS_H_
 
-#include <random>
 #include <Eigen/Eigen>
+#include <random>
 
 #include "mav_trajectory_generation/trajectory.h"
 

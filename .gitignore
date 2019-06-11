@@ -36,3 +36,7 @@
 
 # Matlab
 *.m~
+
+docs/_build
+docs/doxyoutput
+docs/api
