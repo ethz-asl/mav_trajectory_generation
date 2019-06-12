@@ -242,6 +242,9 @@ class Polynomial {
   // p_out = a12*b^12*t^12 + a11*b^11*t^11... etc.
   void scalePolynomialInTime(double scaling_factor);
 
+  // Offset this polynomial.
+  void offsetPolynomial(const double offset);
+
  private:
   int N_;
   Eigen::VectorXd coefficients_;

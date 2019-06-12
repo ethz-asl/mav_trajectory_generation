@@ -21,12 +21,12 @@
 #include "mav_trajectory_generation/trajectory.h"
 #include <limits>
 
-// fixes error due to std::iota (has been introduced in c++ standard lately 
+// fixes error due to std::iota (has been introduced in c++ standard lately
 // and may cause compilation errors depending on compiler)
 #if __cplusplus <= 199711L
-  #include <algorithm>
+#include <algorithm>
 #else
-  #include <numeric>
+#include <numeric>
 #endif
 
 namespace mav_trajectory_generation {
@@ -244,12 +244,24 @@ bool Trajectory::addTrajectories(const std::vector<Trajectory>& trajectories,
     // Check dimensions and coefficients.
     // TODO(rikba): Allow different number of coefficients.
     if (t.D() != D_ || t.N() != N_) {
+      LOG(WARNING) << "Dimension to append: " << t.D()
+                   << " this dimension: " << D_;
+      LOG(WARNING) << "Number of coefficients to append: " << t.N()
+                   << " this number of coefficients: " << N_;
       return false;
     }
     // Add segments.
     Segment::Vector segments;
     t.getSegments(&segments);
     merged->addSegments(segments);
+  }
+
+  return true;
+}
+
+bool Trajectory::offsetTrajectory(const Eigen::VectorXd& A_r_B) {
+  for (Segment& s : segments_) {
+    if (!s.offsetSegment(A_r_B)) return false;
   }
 
   return true;
@@ -271,6 +283,43 @@ Vertex Trajectory::getGoalVertex(int max_derivative_order) const {
   return getVertexAtTime(max_time_, max_derivative_order);
 }
 
+bool Trajectory::getVertices(int max_derivative_order_pos,
+                             int max_derivative_order_yaw,
+                             Vertex::Vector* pos_vertices,
+                             Vertex::Vector* yaw_vertices) const {
+  CHECK_NOTNULL(pos_vertices);
+  CHECK_NOTNULL(yaw_vertices);
+  const std::vector<size_t> kPosDimensions = {0, 1, 2};
+  const std::vector<size_t> kYawDimensions = {3};
+  const int kMaxDerivativeOrder =
+      std::max(max_derivative_order_pos, max_derivative_order_yaw);
+  pos_vertices->resize(segments_.size() + 1, Vertex(3));
+  yaw_vertices->resize(segments_.size() + 1, Vertex(1));
+
+  // Start vertex.
+  Vertex temp_vertex(4);
+  temp_vertex = getStartVertex(kMaxDerivativeOrder);
+  if (!temp_vertex.getSubdimension(kPosDimensions, max_derivative_order_pos,
+                                   &pos_vertices->front()))
+    return false;
+  if (!temp_vertex.getSubdimension(kYawDimensions, max_derivative_order_yaw,
+                                   &yaw_vertices->front()))
+    return false;
+
+  double t = 0.0;
+  for (size_t i = 0; i < segments_.size(); ++i) {
+    t += segments_[i].getTime();
+    temp_vertex = getVertexAtTime(t, kMaxDerivativeOrder);
+    if (!temp_vertex.getSubdimension(kPosDimensions, max_derivative_order_pos,
+                                     &(*pos_vertices)[i + 1]))
+      return false;
+    if (!temp_vertex.getSubdimension(kYawDimensions, max_derivative_order_yaw,
+                                     &(*yaw_vertices)[i + 1]))
+      return false;
+  }
+  return true;
+}
+
 // Compute max velocity and max acceleration.
 bool Trajectory::computeMaxVelocityAndAcceleration(double* v_max,
                                                    double* a_max) const {
@@ -289,6 +338,25 @@ bool Trajectory::computeMaxVelocityAndAcceleration(double* v_max,
   *v_max = v_max_traj.value;
   *a_max = a_max_traj.value;
   return success;
+}
+
+bool Trajectory::scaleSegmentTimes(double scaling) {
+  if (scaling < 1.0e-6) return false;
+
+  // Scale the segment times of each segment.
+  double new_max_time = 0.0;
+  double scaling_inverse = 1.0 / scaling;
+  for (size_t i = 0; i < segments_.size(); i++) {
+    double new_time = segments_[i].getTime() * scaling;
+    for (int d = 0; d < segments_[i].D(); d++) {
+      (segments_[i])[d].scalePolynomialInTime(scaling_inverse);
+    }
+    segments_[i].setTime(new_time);
+    new_max_time += new_time;
+  }
+  max_time_ = new_max_time;
+
+  return true;
 }
 
 // This method SCALES the segment times evenly to ensure that the trajectory

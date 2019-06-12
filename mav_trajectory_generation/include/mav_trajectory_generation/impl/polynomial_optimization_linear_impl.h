@@ -26,7 +26,7 @@
 #include <set>
 #include <tuple>
 
-// fixes error due to std::iota (has been introduced in c++ standard lately 
+// fixes error due to std::iota (has been introduced in c++ standard lately
 // and may cause compilation errors depending on compiler)
 #if __cplusplus <= 199711L
   #include <algorithm>
@@ -341,7 +341,7 @@ bool PolynomialOptimization<_N>::solveLinear() {
         derivative_to_optimize_ <= kHighestDerivativeToOptimize);
   // Catch the fully constrained case:
   if (n_free_constraints_ == 0) {
-    LOG(WARNING)
+    DLOG(WARNING)
         << "No free constraints set in the vertices. Polynomial can "
            "not be optimized. Outputting fully constrained polynomial.";
     updateSegmentsFromCompactConstraints();

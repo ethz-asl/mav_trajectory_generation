@@ -115,6 +115,9 @@ class Segment {
   bool getSegmentWithAppendedDimension(const Segment& segment_to_append,
                                        Segment* new_segment) const;
 
+ // Offset this segment by vector A_r_B.
+ bool offsetSegment(const Eigen::VectorXd& A_r_B);
+
  protected:
   Polynomial::Vector polynomials_;
   double time_;

@@ -204,6 +204,12 @@ void Polynomial::scalePolynomialInTime(double scaling_factor) {
   }
 }
 
+void Polynomial::offsetPolynomial(const double offset) {
+  if (coefficients_.size() == 0) return;
+
+  coefficients_[0] += offset;
+}
+
 Eigen::MatrixXd Polynomial::base_coefficients_ =
     computeBaseCoefficients(Polynomial::kMaxConvolutionSize);
 
