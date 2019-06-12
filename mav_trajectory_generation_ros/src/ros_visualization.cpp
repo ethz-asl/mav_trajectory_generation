@@ -81,12 +81,12 @@ void drawMavSampledTrajectorybyTime(
       filtered_vector.push_back(flat_states.front());
       for(size_t i = 1; i < flat_states.size() -1; i++){
         uint32_t current_time_ns = flat_states[i].time_from_start_ns;
-        
+
         if(current_time_ns - last_time_ns >= dt_ns){
           filtered_vector.push_back(flat_states[i]);
           last_time_ns = current_time_ns;
         }
-        
+
       }
 
       filtered_vector.push_back(flat_states.back());
@@ -240,15 +240,10 @@ void drawVerticesFromTrajectory(const Trajectory& trajectory,
   Vertex::Vector vertices(segment_times.size() + 1, trajectory.D());
 
   double trajectory_time = 0.0;
-  for (size_t i = 0; i < vertices.size(); ++i) {
+  for (size_t i = 0; i < segment_times.size(); ++i) {
     vertices[i] =
         trajectory.getVertexAtTime(trajectory_time, derivative_order::POSITION);
-    if (i < segment_times.size() - 1) trajectory_time += segment_times[i];
-    // Assertion.
-    if (trajectory_time > trajectory.getMaxTime()) {
-      ROS_ERROR("trajectory_time > max_time_");
-      return;
-    }
+    trajectory_time += segment_times[i];
   }
 
   // Add final vertex manually to not end up in numeric errors.
