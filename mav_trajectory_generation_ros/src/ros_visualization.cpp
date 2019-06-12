@@ -71,6 +71,33 @@ void drawMavTrajectory(const Trajectory& trajectory, double distance,
                                         dummy_marker, marker_array);
 }
 
+void drawMavSampledTrajectorybyTime(
+    const mav_msgs::EigenTrajectoryPoint::Vector& flat_states, double dt,
+    const std::string& frame_id, visualization_msgs::MarkerArray* marker_array){
+
+      mav_msgs::EigenTrajectoryPointVector filtered_vector;
+      uint32_t dt_ns = ((uint32_t)(dt * 1e9));
+      uint32_t last_time_ns = 0;
+      filtered_vector.push_back(flat_states.front());
+      for(size_t i = 1; i < flat_states.size() -1; i++){
+        uint32_t current_time_ns = flat_states[i].time_from_start_ns;
+        
+        if(current_time_ns - last_time_ns >= dt_ns){
+          filtered_vector.push_back(flat_states[i]);
+          last_time_ns = current_time_ns;
+        }
+        
+      }
+
+      filtered_vector.push_back(flat_states.back());
+
+      // filter by time.
+      mav_visualization::MarkerGroup dummy_marker;
+      return drawMavSampledTrajectoryWithMavMarker(filtered_vector, 0.0, frame_id,
+                                               dummy_marker, marker_array);
+    }
+
+
 void drawMavSampledTrajectory(
     const mav_msgs::EigenTrajectoryPoint::Vector& flat_states, double distance,
     const std::string& frame_id,
