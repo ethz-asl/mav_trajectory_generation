@@ -50,5 +50,5 @@
 
     </group>
 
-    <node type="rviz" name="rviz" pkg="rviz" args="-d $(find mav_trajectory_generation_example)/cfg/rviz_view.rviz" />
+    <node type="rviz" name="rviz" pkg="rviz" args="-d $(find mav_trajectory_generation_example)/cfg/rviz_view_$(arg mav_name).rviz" />
 </launch>

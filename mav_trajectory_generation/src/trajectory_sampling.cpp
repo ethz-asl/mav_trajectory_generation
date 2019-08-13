@@ -35,7 +35,7 @@ bool sampleTrajectoryAtTime(const Trajectory& trajectory, double sample_time,
   }
 
   if (trajectory.D() < 3) {
-    LOG(ERROR) << "Dimension has to be 3 or 4, but is " << trajectory.D();
+    LOG(ERROR) << "Dimension has to be at least 3, but is " << trajectory.D();
     return false;
   }
 
