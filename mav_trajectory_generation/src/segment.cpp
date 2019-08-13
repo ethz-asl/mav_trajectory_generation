@@ -247,4 +247,18 @@ bool Segment::getSegmentWithAppendedDimension(const Segment& segment_to_append,
   return true;
 }
 
+bool Segment::offsetSegment(const Eigen::VectorXd& A_r_B) {
+  if (A_r_B.size() < std::min(D_, 3)) {
+    LOG(WARNING) << "Offset vector size smaller than segment dimension.";
+    return false;
+  }
+
+  // Only translate the first three dimensions.
+  for (size_t i = 0; i < std::min(D_, 3); ++i) {
+    polynomials_[i].offsetPolynomial(A_r_B(i));
+  }
+
+  return true;
+}
+
 }  // namespace mav_trajectory_generation

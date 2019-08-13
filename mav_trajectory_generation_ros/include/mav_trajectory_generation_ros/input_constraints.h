@@ -21,18 +21,21 @@
 #ifndef MAV_TRAJECTORY_GENERATION_ROS_INPUT_CONSTRAINTS_H_
 #define MAV_TRAJECTORY_GENERATION_ROS_INPUT_CONSTRAINTS_H_
 
+#include <yaml-cpp/yaml.h>
 #include <map>
 
 namespace mav_trajectory_generation {
 
 enum InputConstraintType {
-  kFMin = 0,    // Minimum acceleration (normalized thrust) in [m/s/s].
-  kFMax,  // Maximum acceleration (normalized thrust) in [m/s/s].
-  kVMax,      // Maximum velocity in [m/s].
-  kOmegaXYMax,       // Maximum roll/pitch rate in [rad/s].
-  kOmegaZMax, // Maximum yaw rate in [rad/s].
-  kOmegaZDotMax // Maximum yaw acceleration in [rad/s/s].
+  kFMin = 0,     // Minimum acceleration (normalized thrust) in [m/s/s].
+  kFMax,         // Maximum acceleration (normalized thrust) in [m/s/s].
+  kVMax,         // Maximum velocity in [m/s].
+  kOmegaXYMax,   // Maximum roll/pitch rate in [rad/s].
+  kOmegaZMax,    // Maximum yaw rate in [rad/s].
+  kOmegaZDotMax  // Maximum yaw acceleration in [rad/s/s].
 };
+
+std::string getInputConstraintName(InputConstraintType type);
 
 // Dynamic constraints of the MAV.
 class InputConstraints {
@@ -55,9 +58,15 @@ class InputConstraints {
   // Remove a specific constraint type. Returns false if constraint was not set.
   bool removeConstraint(int constraint_type);
 
+  // Save this to a YAML node.
+  YAML::Node toYaml() const;
+
+  // Load this from a YAML node.
+  void fromYaml(const YAML::Node& node);
+
  private:
   std::map<int, double> constraints_;
 };
 }  // namespace mav_trajectory_generation
 
-#endif // MAV_TRAJECTORY_GENERATION_ROS_INPUT_CONSTRAINTS_H_
+#endif  // MAV_TRAJECTORY_GENERATION_ROS_INPUT_CONSTRAINTS_H_

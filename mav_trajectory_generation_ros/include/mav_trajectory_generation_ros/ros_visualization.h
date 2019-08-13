@@ -42,6 +42,11 @@ void drawMavSampledTrajectory(
     const mav_msgs::EigenTrajectoryPoint::Vector& flat_states, double distance,
     const std::string& frame_id, visualization_msgs::MarkerArray* marker_array);
 
+// Draw an eigen trajectory with markers that are a minimum of dt apart in time.
+void drawMavSampledTrajectorybyTime(
+    const mav_msgs::EigenTrajectoryPoint::Vector& flat_states, double dt,
+    const std::string& frame_id, visualization_msgs::MarkerArray* marker_array);
+
 // Same as drawMavTrajectory, but also draws an additional marker at a set
 // distance.
 void drawMavTrajectoryWithMavMarker(
@@ -59,6 +64,11 @@ void drawMavSampledTrajectoryWithMavMarker(
 // Visualize original vertices.
 void drawVertices(const Vertex::Vector& vertices, const std::string& frame_id,
                   visualization_msgs::MarkerArray* marker_array);
+
+// Visualize orginal vertices from trajectory.
+void drawVerticesFromTrajectory(const Trajectory& trajectory,
+                                const std::string& frame_id,
+                                visualization_msgs::MarkerArray* marker_array);
 
 }  // namespace mav_trajectory_generation
 

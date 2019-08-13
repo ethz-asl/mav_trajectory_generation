@@ -93,12 +93,19 @@ class Trajectory {
   bool addTrajectories(const std::vector<Trajectory>& trajectories,
                        Trajectory* merged) const;
 
+  // Offset this trajectory by vector A_r_B.
+  bool offsetTrajectory(const Eigen::VectorXd& A_r_B);
+
   // Evaluate the vertex constraint at time t.
   Vertex getVertexAtTime(double t, int max_derivative_order) const;
   // Evaluate the vertex constraint at start time.
   Vertex getStartVertex(int max_derivative_order) const;
   // Evaluate the vertex constraint at goal time.
   Vertex getGoalVertex(int max_derivative_order) const;
+  // Evaluate all underlying vertices.
+  bool getVertices(int max_derivative_order_pos, int max_derivative_order_yaw,
+                   Vertex::Vector* pos_vertices,
+                   Vertex::Vector* yaw_vertices) const;
 
   // Evaluation functions.
   // Evaluate at a single time, and a single derivative. Return type of
@@ -122,6 +129,9 @@ class Trajectory {
 
   // Compute max velocity and max acceleration. Shorthand for the method above.
   bool computeMaxVelocityAndAcceleration(double* v_max, double* a_max) const;
+
+  // This method SCALES the segment times evenly.
+  bool scaleSegmentTimes(double scaling);
 
   // This method SCALES the segment times evenly to ensure that the trajectory
   // is feasible given the provided v_max and a_max. Does not change the shape

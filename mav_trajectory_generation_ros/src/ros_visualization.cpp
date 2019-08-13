@@ -22,8 +22,8 @@
 #include <mav_msgs/conversions.h>
 #include <mav_visualization/helpers.h>
 
-#include "mav_trajectory_generation_ros/ros_visualization.h"
 #include "mav_trajectory_generation/trajectory_sampling.h"
+#include "mav_trajectory_generation_ros/ros_visualization.h"
 
 namespace mav_trajectory_generation {
 
@@ -70,6 +70,33 @@ void drawMavTrajectory(const Trajectory& trajectory, double distance,
   return drawMavTrajectoryWithMavMarker(trajectory, distance, frame_id,
                                         dummy_marker, marker_array);
 }
+
+void drawMavSampledTrajectorybyTime(
+    const mav_msgs::EigenTrajectoryPoint::Vector& flat_states, double dt,
+    const std::string& frame_id, visualization_msgs::MarkerArray* marker_array){
+
+      mav_msgs::EigenTrajectoryPointVector filtered_vector;
+      uint32_t dt_ns = ((uint32_t)(dt * 1e9));
+      uint32_t last_time_ns = 0;
+      filtered_vector.push_back(flat_states.front());
+      for(size_t i = 1; i < flat_states.size() -1; i++){
+        uint32_t current_time_ns = flat_states[i].time_from_start_ns;
+
+        if(current_time_ns - last_time_ns >= dt_ns){
+          filtered_vector.push_back(flat_states[i]);
+          last_time_ns = current_time_ns;
+        }
+
+      }
+
+      filtered_vector.push_back(flat_states.back());
+
+      // filter by time.
+      mav_visualization::MarkerGroup dummy_marker;
+      return drawMavSampledTrajectoryWithMavMarker(filtered_vector, 0.0, frame_id,
+                                               dummy_marker, marker_array);
+    }
+
 
 void drawMavSampledTrajectory(
     const mav_msgs::EigenTrajectoryPoint::Vector& flat_states, double distance,
@@ -199,6 +226,31 @@ void drawVertices(const Vertex::Vector& vertices, const std::string& frame_id,
   header.stamp = ros::Time::now();
   internal::setMarkerProperties(header, 0.0, visualization_msgs::Marker::ADD,
                                 marker_array);
+}
+
+void drawVerticesFromTrajectory(const Trajectory& trajectory,
+                                const std::string& frame_id,
+                                visualization_msgs::MarkerArray* marker_array) {
+  CHECK_NOTNULL(marker_array);
+
+  std::vector<double> segment_times = trajectory.getSegmentTimes();
+  if (segment_times.empty()) {
+    ROS_WARN("Empty trajectory.");
+    return;
+  }
+  Vertex::Vector vertices(segment_times.size() + 1, trajectory.D());
+
+  double trajectory_time = 0.0;
+  for (size_t i = 0; i < segment_times.size(); ++i) {
+    vertices[i] =
+        trajectory.getVertexAtTime(trajectory_time, derivative_order::POSITION);
+    trajectory_time += segment_times[i];
+  }
+
+  // Add final vertex manually to not end up in numeric errors.
+  vertices.back() = trajectory.getGoalVertex(derivative_order::POSITION);
+
+  drawVertices(vertices, frame_id, marker_array);
 }
 
 }  // namespace mav_trajectory_generation
