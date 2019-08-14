@@ -91,20 +91,17 @@ bool sampleTrajectoryInRange(const Trajectory& trajectory, double min_time,
       state.setFromYawRate(velocity[i](3));
       state.setFromYawAcc(acceleration[i](3));
     }
-    if (trajectory.D() == 6) {
+    else if (trajectory.D() == 6) {
       // overactuated, write quaternion from interpolated rotation vector
       Eigen::Vector3d rot_vec, rot_vec_vel, rot_vec_acc;
-      rot_vec << position[i](3), position[i](4), position[i](5);
-      rot_vec_vel << velocity[i](3), velocity[i](4), velocity[i](5);
-      rot_vec_acc << acceleration[i](3), acceleration[i](4), acceleration[i](5);
-      double angle = rot_vec.norm();
-      Eigen::Vector3d rot_vec_normalized = rot_vec.normalized();
-      state.orientation_W_B = Eigen::Quaterniond(Eigen::AngleAxisd(angle, rot_vec_normalized));
+      rot_vec = position[i].tail<3>();
+      rot_vec_vel  = velocity[i].tail<3>();
+      rot_vec_acc  = acceleration[i].tail<3>();
+      Eigen::Matrix3d rot_matrix; 
+      mav_msgs::matrixFromRotationVector(rot_vec, &rot_matrix);
+      state.orientation_W_B = Eigen::Quaterniond(rot_matrix);
       state.angular_velocity_W = mav_msgs::omegaFromRotationVector(rot_vec, rot_vec_vel);
       state.angular_acceleration_W = mav_msgs::omegaDotFromRotationVector(rot_vec, rot_vec_vel, rot_vec_acc);
-      if (angle == 0.0f) {
-        state.orientation_W_B = Eigen::Quaterniond(1.0f,0.0f,0.0f,0.0f);
-      }
     }
   }
   return true;
@@ -143,28 +140,38 @@ template <class T>
 bool sampleFlatStateAtTime(const T& type, double sample_time,
                            mav_msgs::EigenTrajectoryPoint* state) {
   if (type.D() < 3) {
-    LOG(ERROR) << "Dimension has to be 3 or 4, but is " << type.D();
+    LOG(ERROR) << "Dimension has to be 3, 4, or 6 but is " << type.D();
     return false;
   }
-  type.evaluate(sample_time, derivative_order::POSITION);
+  
+  Eigen::VectorXd position = type.evaluate(sample_time, derivative_order::POSITION);
+  Eigen::VectorXd velocity = type.evaluate(sample_time, derivative_order::VELOCITY);
+  Eigen::VectorXd acceleration = type.evaluate(sample_time, derivative_order::ACCELERATION);
 
-  state->position_W =
-      type.evaluate(sample_time, derivative_order::POSITION).head(3);
-  state->velocity_W =
-      type.evaluate(sample_time, derivative_order::VELOCITY).head(3);
-  state->acceleration_W =
-      type.evaluate(sample_time, derivative_order::ACCELERATION).head(3);
+  state->position_W = position.head(3);
+  state->velocity_W = velocity.head(3);
+  state->acceleration_W = acceleration.head(3);
   state->jerk_W = type.evaluate(sample_time, derivative_order::JERK).head(3);
   state->snap_W = type.evaluate(sample_time, derivative_order::SNAP).head(3);
 
-  if (type.D() > 3) {
-    state->setFromYaw(
-        (type.evaluate(sample_time, derivative_order::POSITION))(3));
-    state->setFromYawRate(
-        (type.evaluate(sample_time, derivative_order::VELOCITY))(3));
-    state->setFromYawAcc(
-        (type.evaluate(sample_time, derivative_order::ACCELERATION))(3));
+  if (type.D() == 4) {
+    state->setFromYaw(position(3));
+    state->setFromYawRate(velocity(3));
+    state->setFromYawAcc(acceleration(3));
   }
+  else if (type.D() == 6) {
+    // overactuated, write quaternion from interpolated rotation vector
+    Eigen::Vector3d rot_vec, rot_vec_vel, rot_vec_acc;
+    rot_vec  = position.tail(3);
+    rot_vec_vel = velocity.tail(3);
+    rot_vec_acc = acceleration.tail(3);
+    Eigen::Matrix3d rot_matrix; 
+    mav_msgs::matrixFromRotationVector(rot_vec, &rot_matrix);
+    state->orientation_W_B = Eigen::Quaterniond(rot_matrix);
+    state->angular_velocity_W = mav_msgs::omegaFromRotationVector(rot_vec, rot_vec_vel);
+    state->angular_acceleration_W = mav_msgs::omegaDotFromRotationVector(rot_vec, rot_vec_vel, rot_vec_acc);
+  }
+  
   state->time_from_start_ns =
       static_cast<int64_t>(sample_time * kNumNanosecondsPerSecond);
   return true;

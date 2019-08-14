@@ -5,6 +5,7 @@ ExamplePlanner::ExamplePlanner(ros::NodeHandle& nh) :
     max_v_(2.0),
     max_a_(2.0),
     current_velocity_(Eigen::Vector3d::Zero()),
+    current_angular_velocity_(Eigen::Vector3d::Zero()),
     current_pose_(Eigen::Affine3d::Identity()) {
 
   // create publisher for RVIZ markers
@@ -28,6 +29,7 @@ void ExamplePlanner::uavOdomCallback(const nav_msgs::Odometry::ConstPtr& odom) {
 
   // store current vleocity
   tf::vectorMsgToEigen(odom->twist.twist.linear, current_velocity_);
+  tf::vectorMsgToEigen(odom->twist.twist.angular, current_angular_velocity_);
 }
 
 // Method to set maximum speed.
@@ -40,9 +42,10 @@ void ExamplePlanner::setMaxSpeed(const double max_v) {
 bool ExamplePlanner::planTrajectory(const Eigen::VectorXd& goal_pos,
                                     const Eigen::VectorXd& goal_vel) {
 
-
-  // 3 Dimensional trajectory => through carteisan space, no orientation
-  const int dimension = 3;
+  // 3 Dimensional trajectory =>
+  // 4 Dimensional trajectory => 
+  // 6 Dimensional trajectory => through SE(3) space, position and orientation
+  const int dimension = goal_pos.size();
 
   // Array for all waypoints and their constrains
   mav_trajectory_generation::Vertex::Vector vertices;
@@ -52,19 +55,24 @@ bool ExamplePlanner::planTrajectory(const Eigen::VectorXd& goal_pos,
       mav_trajectory_generation::derivative_order::SNAP;
 
   // we have 2 vertices:
-  // Start = current position
-  // end = desired position and velocity
+  // Start = current pose and twist
+  // end = desired pose and twist
   mav_trajectory_generation::Vertex start(dimension), end(dimension);
-
 
   /******* Configure start point *******/
   // set start point constraints to current position and set all derivatives to zero
-  start.makeStartOrEnd(current_pose_.translation(),
+  Eigen::VectorXd current_pose_vector(6);
+  Eigen::Vector3d current_rot_vec;
+  mav_msgs::vectorFromRotationMatrix(current_pose_.rotation(), &current_rot_vec);
+  current_pose_vector << current_pose_.translation(), current_rot_vec;
+  start.makeStartOrEnd(current_pose_vector,
                        derivative_to_optimize);
 
   // set start point's velocity to be constrained to current velocity
+  Eigen::VectorXd current_twist(6);
+  current_twist << current_velocity_, current_angular_velocity_;
   start.addConstraint(mav_trajectory_generation::derivative_order::VELOCITY,
-                      current_velocity_);
+                      current_twist);
 
   // add waypoint to list
   vertices.push_back(start);
@@ -107,7 +115,6 @@ bool ExamplePlanner::planTrajectory(const Eigen::VectorXd& goal_pos,
   mav_trajectory_generation::Trajectory trajectory;
   opt.getTrajectory(&trajectory);
 
-
   // send trajectory as markers to display them in RVIZ
   visualization_msgs::MarkerArray markers;
   double distance =
@@ -119,7 +126,6 @@ bool ExamplePlanner::planTrajectory(const Eigen::VectorXd& goal_pos,
                                                frame_id,
                                                &markers);
   pub_markers_.publish(markers);
-
 
   // send trajectory to be executed on UAV
   mav_planning_msgs::PolynomialTrajectory msg;

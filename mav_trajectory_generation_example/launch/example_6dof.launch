@@ -45,7 +45,6 @@
 
         <!-- Start Voliro Controller Node. -->
         <node name="voliro_$(arg ctrl-controller)_controller_node" pkg="overactuated_control" type="voliro_$(arg ctrl-controller)_controller_node" output="screen">
-          <rosparam command="load" file="$(find overactuated_simulation)/resource/controller_$(arg mav_name).yaml"/>
           <rosparam command="load" file="$(find overactuated_simulation)/resource/$(arg mav_name).yaml"/>
           <remap from="odometry" to="$(arg odometry_topic)"/>
         </node>
@@ -53,7 +52,7 @@
         <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" />
 
         <!--- Trajectory planner -->
-        <node name="planner" pkg="mav_trajectory_generation_example" type="trajectory_generation_example" output="screen">
+        <node name="planner" pkg="mav_trajectory_generation_example" type="trajectory_generation_6dof_example" output="screen">
             <remap from="uav_pose" to="$(arg odometry_topic)"/>
         </node>
 

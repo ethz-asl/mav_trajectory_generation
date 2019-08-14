@@ -24,7 +24,7 @@ namespace mav_trajectory_generation {
 
 bool trajectoryToPolynomialTrajectoryMsg(
     const Trajectory& trajectory,
-    mav_planning_msgs::PolynomialTrajectory4D* msg) {
+    mav_planning_msgs::PolynomialTrajectory* msg) {
   CHECK_NOTNULL(msg);
   msg->segments.clear();
 
@@ -38,18 +38,23 @@ bool trajectoryToPolynomialTrajectoryMsg(
     const Segment& segment = segments[i];
 
     if (segment.D() < 3) {
-      LOG(ERROR) << "Dimension of position segment has to be 3 or 4, but is "
+      LOG(ERROR) << "Dimension of position segment has to be greater than 3, but is "
                  << segment.D();
       success = false;
       break;
     }
 
-    mav_planning_msgs::PolynomialSegment4D segment_msg;
+    mav_planning_msgs::PolynomialSegment segment_msg;
     mav_planning_msgs::EigenPolynomialSegment eigen_segment;
     eigen_segment.x = segment[0].getCoefficients();
     eigen_segment.y = segment[1].getCoefficients();
     eigen_segment.z = segment[2].getCoefficients();
-    if (segment.D() > 3) {
+    if (segment.D() > 5) {
+      eigen_segment.rx = segment[3].getCoefficients();
+      eigen_segment.ry = segment[4].getCoefficients();
+      eigen_segment.rz = segment[5].getCoefficients();
+    } 
+    else if (segment.D() > 3) {
       eigen_segment.yaw = segment[3].getCoefficients();
     }
     eigen_segment.num_coeffs = segment.N();
@@ -66,7 +71,7 @@ bool trajectoryToPolynomialTrajectoryMsg(
 
 // Converts a ROS polynomial trajectory msg into a Trajectory.
 bool polynomialTrajectoryMsgToTrajectory(
-    const mav_planning_msgs::PolynomialTrajectory4D& msg,
+    const mav_planning_msgs::PolynomialTrajectory& msg,
     Trajectory* trajectory) {
   mav_planning_msgs::EigenPolynomialTrajectory eigen_trajectory_msg;
   mav_planning_msgs::eigenPolynomialTrajectoryFromMsg(msg,
@@ -76,7 +81,10 @@ bool polynomialTrajectoryMsgToTrajectory(
   for (const mav_planning_msgs::EigenPolynomialSegment& msg_segment :
        eigen_trajectory_msg) {
     int D = 3;
-    if (msg_segment.yaw.size() > 0) {
+    if (msg_segment.rz.size() > 0) {
+      D = 6;
+    }
+    else if(msg_segment.yaw.size() > 0) {
       D = 4;
     }
 
@@ -84,7 +92,12 @@ bool polynomialTrajectoryMsgToTrajectory(
     segment[0].setCoefficients(msg_segment.x);
     segment[1].setCoefficients(msg_segment.y);
     segment[2].setCoefficients(msg_segment.z);
-    if (D > 3) {
+    if (D > 5) {
+      segment[3].setCoefficients(msg_segment.rx);
+      segment[4].setCoefficients(msg_segment.ry);
+      segment[5].setCoefficients(msg_segment.rz);
+    }
+    else if (D > 3) {
       segment[3].setCoefficients(msg_segment.yaw);
     }
     segment.setTimeNSec(msg_segment.segment_time_ns);

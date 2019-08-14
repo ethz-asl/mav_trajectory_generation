@@ -17,8 +17,8 @@ class ExamplePlanner {
 
   // Plans a trajectory to take off from the current position and
   // fly to the given altitude (while maintaining x,y, and yaw).
-  bool planTrajectory(const Eigen::Vector3d& goal_pos,
-                      const Eigen::Vector3d& goal_vel);
+  bool planTrajectory(const Eigen::VectorXd& goal_pos,
+                      const Eigen::VectorXd& goal_vel);
 
  private:
   ros::Publisher pub_markers_;
@@ -28,6 +28,7 @@ class ExamplePlanner {
   ros::NodeHandle& nh_;
   Eigen::Affine3d current_pose_;
   Eigen::Vector3d current_velocity_;
+  Eigen::Vector3d current_angular_velocity_;
   double max_v_; // m/s
   double max_a_; // m/s^2
 
