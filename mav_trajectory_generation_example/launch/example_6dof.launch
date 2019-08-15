@@ -7,7 +7,7 @@
     <arg name="log_file" default="$(arg mav_name)"/>
     <arg name="wait_to_record_bag" default="false"/>
     <arg name="add_top_arm" default="false"/>
-    <arg name="ctrl-controller" default="lqri"/>
+    <arg name="ctrl-controller" default="impedance"/>
 
     <!-- Gazebo params  -->
     <arg name="world_name" default="empty"/>

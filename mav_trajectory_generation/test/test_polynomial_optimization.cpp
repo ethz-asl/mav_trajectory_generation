@@ -572,7 +572,6 @@ TEST_P(PolynomialOptimizationTests, ConstraintPacking) {
 TEST_P(PolynomialOptimizationTests, TimeAllocation) {
   std::vector<double> segment_times_ramp, segment_times_nfabian;
   double time_factor = 1.0;
-  double nfabian_constant = 6.5;
   segment_times_ramp =
       estimateSegmentTimesVelocityRamp(vertices_, v_max, a_max);
   segment_times_nfabian = estimateSegmentTimesNfabian(vertices_, v_max, a_max);

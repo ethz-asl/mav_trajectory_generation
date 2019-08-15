@@ -62,7 +62,10 @@ Visualization Manager:
       Marker Topic: /voliro/trajectory_markers
       Name: MarkerArray
       Namespaces:
-        {}
+        acceleration: true
+        path: true
+        pose: true
+        velocity: true
       Queue Size: 100
       Value: true
     - Class: rviz/TF
@@ -95,7 +98,7 @@ Visualization Manager:
         rotor_9:
           Value: false
         voliro/base_link:
-          Value: true
+          Value: false
         voliro/base_link_inertia:
           Value: false
         voliro/imu_link:
@@ -109,17 +112,17 @@ Visualization Manager:
         voliro/odometry_sensorgt_link:
           Value: false
         voliro/tilt_unit_0:
-          Value: true
+          Value: false
         voliro/tilt_unit_1:
-          Value: true
+          Value: false
         voliro/tilt_unit_2:
-          Value: true
+          Value: false
         voliro/tilt_unit_3:
-          Value: true
+          Value: false
         voliro/tilt_unit_4:
-          Value: true
+          Value: false
         voliro/tilt_unit_5:
-          Value: true
+          Value: false
         world:
           Value: true
       Marker Scale: 1
@@ -333,26 +336,46 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 4.4164347648620605
+      Distance: 5.605311393737793
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0.6926935315132141
-        Y: 0.03723691403865814
-        Z: 1.6252400875091553
+        X: 0.46029219031333923
+        Y: 0.2448783665895462
+        Z: 1.570998191833496
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.22479687631130219
+      Pitch: 0.5047968029975891
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 0.32118546962738037
-    Saved: ~
+      Yaw: 0.9311872720718384
+    Saved:
+      - Class: rviz/Orbit
+        Distance: 5.605311393737793
+        Enable Stereo Rendering:
+          Stereo Eye Separation: 0.05999999865889549
+          Stereo Focal Distance: 1
+          Swap Stereo Eyes: false
+          Value: false
+        Focal Point:
+          X: 0.46029219031333923
+          Y: 0.2448783665895462
+          Z: 1.570998191833496
+        Focal Shape Fixed Size: true
+        Focal Shape Size: 0.05000000074505806
+        Invert Z Axis: false
+        Name: Orbit
+        Near Clip Distance: 0.009999999776482582
+        Pitch: 0.5047968029975891
+        Target Frame: <Fixed Frame>
+        Value: Orbit (rviz)
+        Yaw: 0.9311872720718384
 Window Geometry:
   Displays:
     collapsed: false
