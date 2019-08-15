@@ -46,6 +46,7 @@ class TrajectorySamplerNode {
   bool stopSamplingCallback(std_srvs::Empty::Request& request,
                             std_srvs::Empty::Response& response);
   void commandTimerCallback(const ros::TimerEvent&);
+  void processTrajectory();
 
   ros::NodeHandle nh_;
   ros::NodeHandle nh_private_;

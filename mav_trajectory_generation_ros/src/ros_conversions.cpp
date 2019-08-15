@@ -37,8 +37,8 @@ bool trajectoryToPolynomialTrajectoryMsg(
   for (size_t i = 0; i < segments.size(); ++i) {
     const Segment& segment = segments[i];
 
-    if (segment.D() < 3) {
-      LOG(ERROR) << "Dimension of position segment has to be greater than 3, but is "
+    if (segment.D() != 3 && segment.D() != 4 && segment.D() != 6) {
+      LOG(ERROR) << "Dimension of position segment has to be 3, 4 or 6, but is "
                  << segment.D();
       success = false;
       break;
@@ -49,14 +49,14 @@ bool trajectoryToPolynomialTrajectoryMsg(
     eigen_segment.x = segment[0].getCoefficients();
     eigen_segment.y = segment[1].getCoefficients();
     eigen_segment.z = segment[2].getCoefficients();
-    if (segment.D() > 5) {
+    if (segment.D() == 4) {
+      eigen_segment.yaw = segment[3].getCoefficients();
+    }
+    else if (segment.D() == 6) {
       eigen_segment.rx = segment[3].getCoefficients();
       eigen_segment.ry = segment[4].getCoefficients();
       eigen_segment.rz = segment[5].getCoefficients();
     } 
-    else if (segment.D() > 3) {
-      eigen_segment.yaw = segment[3].getCoefficients();
-    }
     eigen_segment.num_coeffs = segment.N();
     eigen_segment.segment_time_ns = segment.getTimeNSec();
 
@@ -74,31 +74,30 @@ bool polynomialTrajectoryMsgToTrajectory(
     const mav_planning_msgs::PolynomialTrajectory& msg,
     Trajectory* trajectory) {
   mav_planning_msgs::EigenPolynomialTrajectory eigen_trajectory_msg;
-  mav_planning_msgs::eigenPolynomialTrajectoryFromMsg(msg,
-                                                      &eigen_trajectory_msg);
-  // TODO(helenol): maybe add more error checking here.
+  mav_planning_msgs::eigenPolynomialTrajectoryFromMsg(
+      msg, &eigen_trajectory_msg);
   Segment::Vector segment_vector;
   for (const mav_planning_msgs::EigenPolynomialSegment& msg_segment :
        eigen_trajectory_msg) {
     int D = 3;
-    if (msg_segment.rz.size() > 0) {
-      D = 6;
-    }
-    else if(msg_segment.yaw.size() > 0) {
+    if (msg_segment.yaw.size() > 0) {
       D = 4;
+    }
+    if (msg_segment.rx.size() > 0 && msg_segment.ry.size() > 0 &&
+        msg_segment.rz.size() > 0) {
+      D = 6;
     }
 
     Segment segment(msg_segment.x.size(), D);
     segment[0].setCoefficients(msg_segment.x);
     segment[1].setCoefficients(msg_segment.y);
     segment[2].setCoefficients(msg_segment.z);
-    if (D > 5) {
+    if (D == 4) {
+      segment[3].setCoefficients(msg_segment.yaw);
+    } else if (D == 6) {
       segment[3].setCoefficients(msg_segment.rx);
       segment[4].setCoefficients(msg_segment.ry);
       segment[5].setCoefficients(msg_segment.rz);
-    }
-    else if (D > 3) {
-      segment[3].setCoefficients(msg_segment.yaw);
     }
     segment.setTimeNSec(msg_segment.segment_time_ns);
     segment_vector.push_back(segment);

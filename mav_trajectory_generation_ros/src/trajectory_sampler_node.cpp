@@ -59,12 +59,15 @@ void TrajectorySamplerNode::pathSegmentsCallback(
              segments_message.segments.size());
   }
 
-  bool success = mav_trajectory_generation::polynomialTrajectoryMsgToTrajectory(
-      segments_message, &trajectory_);
-  if (!success) {
-    return;
-  }
+    bool success = mav_trajectory_generation::polynomialTrajectoryMsgToTrajectory(
+        segments_message, &trajectory_);
+    if (!success) {
+      return;
+    }
+    processTrajectory();
+}
 
+void TrajectorySamplerNode::processTrajectory() {
   // Call the service call to takeover publishing commands.
   if (position_hold_client_.exists()) {
     std_srvs::Empty empty_call;

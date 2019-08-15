@@ -1,3 +1,6 @@
+#ifndef MAV_TRAJECTORY_GENERATION_EXAMPLE_PLANNER_H
+#define MAV_TRAJECTORY_GENERATION_EXAMPLE_PLANNER_H
+
 #include <iostream>
 #include <ros/ros.h>
 #include <Eigen/Dense>
@@ -33,3 +36,5 @@ class ExamplePlanner {
   double max_a_; // m/s^2
 
 };
+
+#endif // MAV_TRAJECTORY_GENERATION_EXAMPLE_PLANNER_H
