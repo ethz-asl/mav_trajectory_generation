@@ -218,24 +218,26 @@ bool segmentsFromFile(const std::string& filename,
   return true;
 }
 
-bool sampledTrajectoryStatesToFile(const std::string& filename,
-                                   const Trajectory& trajectory) {
+bool sampledTrajectoryStatesToFile(
+    const std::string& filename, const Trajectory& trajectory) {
   // Print to file for matlab
   const double sampling_time = 0.01;
-  mav_msgs::EigenTrajectoryPoint::Vector flat_states;
-  bool success = sampleWholeTrajectory(trajectory, sampling_time, &flat_states);
+  mav_msgs::EigenTrajectoryPoint::Vector trajectory_points;
+  bool success =
+      sampleWholeTrajectory(trajectory, sampling_time, &trajectory_points);
   if (!success) {
     return false;
   }
 
   // Layout: [t, x, y, z, vx, vy, vz, jx, jy, jz, sx, sy, sz, tm]
-  const unsigned int dim = trajectory.D();
-  Eigen::MatrixXd output(flat_states.size(), 5 * dim + 2);
-  output.setZero();
-  for (int i = 0; i < flat_states.size(); ++i) {
-    const mav_msgs::EigenTrajectoryPoint state = flat_states[i];
+  const unsigned int dim = trajectory.D() == 6 ? 3 : trajectory.D();
 
-    if (trajectory.D() > 3) {
+  Eigen::MatrixXd output(trajectory_points.size(), 5 * dim + 2);
+  output.setZero();
+  for (int i = 0; i < trajectory_points.size(); ++i) {
+    const mav_msgs::EigenTrajectoryPoint state = trajectory_points[i];
+
+    if (trajectory.D() == 4) {
       double yaw = state.getYaw();
       double yaw_rate = state.getYawRate();
       double yaw_acc = state.getYawAcc();
@@ -248,6 +250,15 @@ bool sampledTrajectoryStatesToFile(const std::string& filename,
       output.row(i).segment(1 + 2 * dim, dim) = state.acceleration_W;
       output.row(i).segment(1 + 3 * dim, dim) = state.jerk_W;
       output.row(i).segment(1 + 4 * dim, dim) = state.snap_W;
+      if (trajectory.D() == 6) {
+        // Layout for 6D trajectory: 
+        //        [..., sz, qw, qx, qy, qz, wx, wy, wz, ax, ay, az, tm]
+        output.row(i).segment(1 + 5 * dim, dim + 1) = Eigen::Vector4d(
+            state.orientation_W_B.w(), state.orientation_W_B.x(),
+            state.orientation_W_B.y(), state.orientation_W_B.z());
+        output.row(i).segment(2 + 6 * dim, dim) = state.angular_velocity_W;
+        output.row(i).segment(2 + 7 * dim, dim) = state.angular_acceleration_W;
+      }
     }
   }
 
@@ -258,7 +269,11 @@ bool sampledTrajectoryStatesToFile(const std::string& filename,
   for (int j = 0; j < segments.size(); ++j) {
     double segment_time = segments[j].getTime();
     current_segment_time += segment_time;
-    output(j, 1 + 5 * dim) = current_segment_time;
+    if (trajectory.D() == 6) {
+      output(j, 2 + 8 * dim) = current_segment_time;
+    } else {
+      output(j, 1 + 5 * dim) = current_segment_time;
+    }
   }
 
   std::fstream fs;

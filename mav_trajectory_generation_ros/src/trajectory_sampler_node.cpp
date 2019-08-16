@@ -96,11 +96,11 @@ void TrajectorySamplerNode::processTrajectory() {
 
   if (publish_whole_trajectory_) {
     // Publish the entire trajectory at once.
-    mav_msgs::EigenTrajectoryPoint::Vector flat_states;
+    mav_msgs::EigenTrajectoryPoint::Vector trajectory_points;
     mav_trajectory_generation::sampleWholeTrajectory(trajectory_, dt_,
-                                                     &flat_states);
+                                                     &trajectory_points);
     trajectory_msgs::MultiDOFJointTrajectory msg_pub;
-    msgMultiDofJointTrajectoryFromEigen(flat_states, &msg_pub);
+    msgMultiDofJointTrajectoryFromEigen(trajectory_points, &msg_pub);
     command_pub_.publish(msg_pub);
   } else {
     publish_timer_.start();
@@ -118,13 +118,13 @@ bool TrajectorySamplerNode::stopSamplingCallback(
 void TrajectorySamplerNode::commandTimerCallback(const ros::TimerEvent&) {
   if (current_sample_time_ <= trajectory_.getMaxTime()) {
     trajectory_msgs::MultiDOFJointTrajectory msg;
-    mav_msgs::EigenTrajectoryPoint flat_state;
+    mav_msgs::EigenTrajectoryPoint trajectory_point;
     bool success = mav_trajectory_generation::sampleTrajectoryAtTime(
-        trajectory_, current_sample_time_, &flat_state);
+        trajectory_, current_sample_time_, &trajectory_point);
     if (!success) {
       publish_timer_.stop();
     }
-    mav_msgs::msgMultiDofJointTrajectoryFromEigen(flat_state, &msg);
+    mav_msgs::msgMultiDofJointTrajectoryFromEigen(trajectory_point, &msg);
     msg.points[0].time_from_start = ros::Duration(current_sample_time_);
     command_pub_.publish(msg);
     current_sample_time_ += dt_;

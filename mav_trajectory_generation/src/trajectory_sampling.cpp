@@ -78,7 +78,8 @@ bool sampleTrajectoryInRange(const Trajectory& trajectory, double min_time,
   states->resize(n_samples);
   for (size_t i = 0; i < n_samples; ++i) {
     mav_msgs::EigenTrajectoryPoint& state = (*states)[i];
-
+    
+    state.degrees_of_freedom = mav_msgs::MavActuation::DOF4;
     state.position_W = position[i].head<3>();
     state.velocity_W = velocity[i].head<3>();
     state.acceleration_W = acceleration[i].head<3>();
@@ -102,6 +103,7 @@ bool sampleTrajectoryInRange(const Trajectory& trajectory, double min_time,
       state.orientation_W_B = Eigen::Quaterniond(rot_matrix);
       state.angular_velocity_W = mav_msgs::omegaFromRotationVector(rot_vec, rot_vec_vel);
       state.angular_acceleration_W = mav_msgs::omegaDotFromRotationVector(rot_vec, rot_vec_vel, rot_vec_acc);
+      state.degrees_of_freedom = mav_msgs::MavActuation::DOF6;
     }
   }
   return true;
@@ -148,6 +150,7 @@ bool sampleFlatStateAtTime(const T& type, double sample_time,
   Eigen::VectorXd velocity = type.evaluate(sample_time, derivative_order::VELOCITY);
   Eigen::VectorXd acceleration = type.evaluate(sample_time, derivative_order::ACCELERATION);
 
+  state->degrees_of_freedom = mav_msgs::MavActuation::DOF4;
   state->position_W = position.head(3);
   state->velocity_W = velocity.head(3);
   state->acceleration_W = acceleration.head(3);
@@ -170,6 +173,7 @@ bool sampleFlatStateAtTime(const T& type, double sample_time,
     state->orientation_W_B = Eigen::Quaterniond(rot_matrix);
     state->angular_velocity_W = mav_msgs::omegaFromRotationVector(rot_vec, rot_vec_vel);
     state->angular_acceleration_W = mav_msgs::omegaDotFromRotationVector(rot_vec, rot_vec_vel, rot_vec_acc);
+    state->degrees_of_freedom = mav_msgs::MavActuation::DOF6;
   }
   
   state->time_from_start_ns =

@@ -39,7 +39,7 @@ FeasibilitySampling::FeasibilitySampling(
 
 InputFeasibilityResult FeasibilitySampling::checkInputFeasibility(
     const Segment& segment) const {
-  // Check user input.
+  // Check user input. Feasilbility sampling only valid for 4DOF flat state trajectories.
   if (!(segment.D() == 3 || segment.D() == 4)) {
     return InputFeasibilityResult::kInputIndeterminable;
   }
