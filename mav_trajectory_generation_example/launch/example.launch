@@ -5,7 +5,7 @@
     <arg name="enable_ground_truth" default="true" />
     <arg name="log_file" default="$(arg mav_name)" />
     <arg name="debug" default="false"/>
-    <arg name="gui" default="true"/>
+    <arg name="gui" default="false"/>
     <arg name="paused" default="false"/>
     <!-- The following line causes gzmsg and gzerr messages to be printed to the console
         (even when Gazebo is started through roslaunch) -->
@@ -45,7 +45,7 @@
 
         <!--- Trajectory sampler -->
         <node name="sampler" pkg="mav_trajectory_generation_ros" type="trajectory_sampler_node" output="screen">
-            <remap from="path_segments" to="trajectory"/>
+            <remap from="path_segments_4D" to="trajectory"/>
         </node>
 
     </group>

@@ -12,7 +12,7 @@ ExamplePlanner::ExamplePlanner(ros::NodeHandle& nh) :
       nh.advertise<visualization_msgs::MarkerArray>("trajectory_markers", 0);
 
   pub_trajectory_ =
-      nh.advertise<mav_planning_msgs::PolynomialTrajectory>("trajectory",
+      nh.advertise<mav_planning_msgs::PolynomialTrajectory4D>("trajectory",
                                                               0);
 
   // subscriber for Odometry
@@ -122,7 +122,7 @@ bool ExamplePlanner::planTrajectory(const Eigen::VectorXd& goal_pos,
 
 
   // send trajectory to be executed on UAV
-  mav_planning_msgs::PolynomialTrajectory msg;
+  mav_planning_msgs::PolynomialTrajectory4D msg;
   mav_trajectory_generation::trajectoryToPolynomialTrajectoryMsg(trajectory,
                                                                  &msg);
   msg.header.frame_id = "world";
