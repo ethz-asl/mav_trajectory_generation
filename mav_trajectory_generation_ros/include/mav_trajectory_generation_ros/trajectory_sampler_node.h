@@ -34,6 +34,10 @@
 #include <mav_trajectory_generation/trajectory_sampling.h>
 #include <mav_trajectory_generation_ros/ros_conversions.h>
 
+// deprecated
+#include <mav_planning_msgs/PolynomialSegment4D.h>
+#include <mav_planning_msgs/PolynomialTrajectory4D.h>
+
 class TrajectorySamplerNode {
  public:
   TrajectorySamplerNode(const ros::NodeHandle& nh,
@@ -43,6 +47,8 @@ class TrajectorySamplerNode {
  private:
   void pathSegmentsCallback(
       const mav_planning_msgs::PolynomialTrajectory& segments_message);
+  void pathSegments4DCallback(
+      const mav_planning_msgs::PolynomialTrajectory4D& segments_message);
   bool stopSamplingCallback(std_srvs::Empty::Request& request,
                             std_srvs::Empty::Response& response);
   void commandTimerCallback(const ros::TimerEvent&);
@@ -53,6 +59,7 @@ class TrajectorySamplerNode {
 
   ros::Timer publish_timer_;
   ros::Subscriber trajectory_sub_;
+  ros::Subscriber trajectory4D_sub_;
   ros::Publisher command_pub_;
   ros::ServiceServer stop_srv_;
   ros::Time start_time_;

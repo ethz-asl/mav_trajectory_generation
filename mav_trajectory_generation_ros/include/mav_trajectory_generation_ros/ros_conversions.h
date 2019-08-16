@@ -22,6 +22,7 @@
 #define MAV_TRAJECTORY_GENERATION_ROS_ROS_CONVERSIONS_H_
 
 #include <mav_planning_msgs/PolynomialTrajectory.h>
+#include <mav_planning_msgs/PolynomialTrajectory4D.h>
 #include <mav_planning_msgs/conversions.h>
 
 #include <mav_trajectory_generation/trajectory.h>
@@ -32,10 +33,18 @@ namespace mav_trajectory_generation {
 bool trajectoryToPolynomialTrajectoryMsg(
     const Trajectory& trajectory,
     mav_planning_msgs::PolynomialTrajectory* msg);
+    
+bool trajectoryToPolynomialTrajectoryMsg(
+    const Trajectory& trajectory,
+    mav_planning_msgs::PolynomialTrajectory4D* msg);
 
 // Converts a ROS polynomial trajectory msg into a Trajectory.
 bool polynomialTrajectoryMsgToTrajectory(
     const mav_planning_msgs::PolynomialTrajectory& msg,
+    Trajectory* trajectory);
+    
+bool polynomialTrajectoryMsgToTrajectory(
+    const mav_planning_msgs::PolynomialTrajectory4D& msg,
     Trajectory* trajectory);
 
 }  // namespace mav_trajectory_generation
