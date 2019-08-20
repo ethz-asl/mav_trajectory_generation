@@ -27,7 +27,7 @@ void ExamplePlanner::uavOdomCallback(const nav_msgs::Odometry::ConstPtr& odom) {
   // store current position in our planner
   tf::poseMsgToEigen(odom->pose.pose, current_pose_);
 
-  // store current vleocity
+  // store current velocity
   tf::vectorMsgToEigen(odom->twist.twist.linear, current_velocity_);
   tf::vectorMsgToEigen(odom->twist.twist.angular, current_angular_velocity_);
 }
@@ -38,16 +38,82 @@ void ExamplePlanner::setMaxSpeed(const double max_v) {
 }
 
 // Plans a trajectory from the current position to the a goal position and velocity
-// we neglect attitude here for simplicity
-bool ExamplePlanner::planTrajectory(const Eigen::VectorXd& goal_pos,
-                                    const Eigen::VectorXd& goal_vel) {
+bool ExamplePlanner::planTrajectory(
+    const Eigen::VectorXd& goal_pos, const Eigen::VectorXd& goal_vel,
+    mav_trajectory_generation::Trajectory* trajectory) {
+  assert(*trajectory);
+  trajectory->clear();
 
-  // 3 Dimensional trajectory =>
-  // 4 Dimensional trajectory => 
+  // 3 Dimensional trajectory => 3D position
+  // 4 Dimensional trajectory => 3D position + yaw
   // 6 Dimensional trajectory => through SE(3) space, position and orientation
   const int dimension = goal_pos.size();
+  const double v_max = 2.0;
+  const double a_max = 2.0;
+  const double ang_v_max = 2.0;
+  const double ang_a_max = 2.0;
+  bool success = false;
 
-  // Array for all waypoints and their constrains
+  if (dimension == 6) 
+  {
+    mav_trajectory_generation::Trajectory trajectory_trans, trajectory_rot;
+
+    // Translation trajectory.
+    Eigen::Vector3d goal_position = goal_pos.head(3);
+    Eigen::Vector3d goal_lin_vel = goal_vel.head(3);
+    success = planTrajectory(
+        goal_position, goal_lin_vel, current_pose_.translation(), current_velocity_, v_max,
+        a_max, &trajectory_trans);
+
+    // Rotation trajectory.
+    Eigen::Vector3d goal_rotation = goal_pos.tail(3);
+    Eigen::Vector3d goal_ang_vel = goal_vel.tail(3);
+    Eigen::Vector3d current_rot_vec;
+    mav_msgs::vectorFromRotationMatrix(
+        current_pose_.rotation(), &current_rot_vec);
+    success &= planTrajectory(
+        goal_rotation, goal_ang_vel, current_rot_vec, current_angular_velocity_, ang_v_max,
+        ang_a_max, &trajectory_rot);
+
+    // Combine trajectories.
+    success &= trajectory_trans.getTrajectoryWithAppendedDimension(
+            trajectory_rot, &(*trajectory));
+    return success;
+  } 
+  else if (dimension == 3) 
+  {
+    success = planTrajectory(
+        goal_pos, goal_vel, current_pose_.translation(), current_velocity_, 
+        v_max, a_max, &(*trajectory));
+    return success;
+  } 
+  else if (dimension == 4) 
+  {
+    Eigen::Vector4d start_pos_4d, start_vel_4d;
+    start_pos_4d << current_pose_.translation(), mav_msgs::yawFromQuaternion((Eigen::Quaterniond)current_pose_.rotation());
+    start_vel_4d << current_velocity_, 0.0;
+    success = planTrajectory(
+        goal_pos, goal_vel, start_pos_4d, start_vel_4d, 
+        v_max, a_max, &(*trajectory));
+    return success;
+  } 
+  else 
+  {
+    LOG(WARNING) << "Dimension must be 3, 4 or 6 to be valid.";
+    return false;
+  }
+}
+
+// Plans a trajectory from a start position and velocity to a goal position and velocity
+bool ExamplePlanner::planTrajectory(const Eigen::VectorXd& goal_pos,
+                                    const Eigen::VectorXd& goal_vel,
+                                    const Eigen::VectorXd& start_pos,
+                                    const Eigen::VectorXd& start_vel,
+                                    double v_max, double a_max,
+                                    mav_trajectory_generation::Trajectory* trajectory) {
+  assert(*trajectory);
+  const int dimension = goal_pos.size();
+  // Array for all waypoints and their constraints
   mav_trajectory_generation::Vertex::Vector vertices;
 
   // Optimze up to 4th order derivative (SNAP)
@@ -55,45 +121,25 @@ bool ExamplePlanner::planTrajectory(const Eigen::VectorXd& goal_pos,
       mav_trajectory_generation::derivative_order::SNAP;
 
   // we have 2 vertices:
-  // Start = current pose and twist
-  // end = desired pose and twist
+  // start = desired start vector
+  // end = desired end vector
   mav_trajectory_generation::Vertex start(dimension), end(dimension);
 
   /******* Configure start point *******/
-  // set start point constraints to current position and set all derivatives to zero
-  Eigen::VectorXd current_pose_vector(6);
-  Eigen::Vector3d current_rot_vec;
-  mav_msgs::vectorFromRotationMatrix(current_pose_.rotation(), &current_rot_vec);
-  current_pose_vector << current_pose_.translation(), current_rot_vec;
-  start.makeStartOrEnd(current_pose_vector,
-                       derivative_to_optimize);
-
-  // set start point's velocity to be constrained to current velocity
-  Eigen::VectorXd current_twist(6);
-  current_twist << current_velocity_, current_angular_velocity_;
+  start.makeStartOrEnd(start_pos, derivative_to_optimize);
   start.addConstraint(mav_trajectory_generation::derivative_order::VELOCITY,
-                      current_twist);
-
-  // add waypoint to list
+                      start_vel);
   vertices.push_back(start);
-
 
   /******* Configure end point *******/
   // set end point constraints to desired position and set all derivatives to zero
-  end.makeStartOrEnd(goal_pos,
-                     derivative_to_optimize);
-
-  // set start point's velocity to be constrained to current velocity
+  end.makeStartOrEnd(goal_pos, derivative_to_optimize);
   end.addConstraint(mav_trajectory_generation::derivative_order::VELOCITY,
                     goal_vel);
-
-  // add waypoint to list
-  vertices.push_back(end);
+vertices.push_back(end);
 
   // setimate initial segment times
   std::vector<double> segment_times;
-  const double v_max = 2.0;
-  const double a_max = 2.0;
   segment_times = estimateSegmentTimes(vertices, v_max, a_max);
 
   // Set up polynomial solver with default params
@@ -112,9 +158,14 @@ bool ExamplePlanner::planTrajectory(const Eigen::VectorXd& goal_pos,
   opt.optimize();
 
   // get trajectory as polynomial parameters
-  mav_trajectory_generation::Trajectory trajectory;
-  opt.getTrajectory(&trajectory);
+  opt.getTrajectory(&(*trajectory));
+  trajectory->scaleSegmentTimesToMeetConstraints(v_max, a_max);
+  
+  return true;
+}
+                                    
 
+bool ExamplePlanner::publishTrajectory(const mav_trajectory_generation::Trajectory& trajectory){
   // send trajectory as markers to display them in RVIZ
   visualization_msgs::MarkerArray markers;
   double distance =

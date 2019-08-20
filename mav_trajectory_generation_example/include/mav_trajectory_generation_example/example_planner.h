@@ -21,7 +21,17 @@ class ExamplePlanner {
   // Plans a trajectory to take off from the current position and
   // fly to the given altitude (while maintaining x,y, and yaw).
   bool planTrajectory(const Eigen::VectorXd& goal_pos,
-                      const Eigen::VectorXd& goal_vel);
+                      const Eigen::VectorXd& goal_vel,
+                      mav_trajectory_generation::Trajectory* trajectory);
+                      
+  bool planTrajectory(const Eigen::VectorXd& goal_pos,
+                      const Eigen::VectorXd& goal_vel,
+                      const Eigen::VectorXd& start_pos,
+                      const Eigen::VectorXd& start_vel,
+                      double v_max, double a_max,
+                      mav_trajectory_generation::Trajectory* trajectory);
+                      
+  bool publishTrajectory(const mav_trajectory_generation::Trajectory& trajectory);
 
  private:
   ros::Publisher pub_markers_;

@@ -40,7 +40,9 @@ int main(int argc, char** argv) {
     ros::spinOnce();  // process a few messages in the background - causes the uavPoseCallback to happen
   }
 
-  planner.planTrajectory(position, velocity);
+  mav_trajectory_generation::Trajectory trajectory;
+  planner.planTrajectory(position, velocity, &trajectory);
+  planner.publishTrajectory(trajectory);
   ROS_WARN_STREAM("DONE. GOODBYE.");
 
   return 0;

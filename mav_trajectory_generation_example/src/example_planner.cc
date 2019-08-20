@@ -38,7 +38,8 @@ void ExamplePlanner::setMaxSpeed(const double max_v) {
 // Plans a trajectory from the current position to the a goal position and velocity
 // we neglect attitude here for simplicity
 bool ExamplePlanner::planTrajectory(const Eigen::VectorXd& goal_pos,
-                                    const Eigen::VectorXd& goal_vel) {
+                                    const Eigen::VectorXd& goal_vel,
+                                    mav_trajectory_generation::Trajectory* trajectory) {
 
 
   // 3 Dimensional trajectory => through carteisan space, no orientation
@@ -104,10 +105,12 @@ bool ExamplePlanner::planTrajectory(const Eigen::VectorXd& goal_pos,
   opt.optimize();
 
   // get trajectory as polynomial parameters
-  mav_trajectory_generation::Trajectory trajectory;
-  opt.getTrajectory(&trajectory);
+  opt.getTrajectory(&(*trajectory));
 
+  return true;
+}
 
+bool ExamplePlanner::publishTrajectory(const mav_trajectory_generation::Trajectory& trajectory){
   // send trajectory as markers to display them in RVIZ
   visualization_msgs::MarkerArray markers;
   double distance =
@@ -120,9 +123,8 @@ bool ExamplePlanner::planTrajectory(const Eigen::VectorXd& goal_pos,
                                                &markers);
   pub_markers_.publish(markers);
 
-
   // send trajectory to be executed on UAV
-  mav_planning_msgs::PolynomialTrajectory4D msg;
+  mav_planning_msgs::PolynomialTrajectory msg;
   mav_trajectory_generation::trajectoryToPolynomialTrajectoryMsg(trajectory,
                                                                  &msg);
   msg.header.frame_id = "world";
