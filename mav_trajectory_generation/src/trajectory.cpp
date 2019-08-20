@@ -320,6 +320,20 @@ bool Trajectory::getVertices(int max_derivative_order_pos,
   return true;
 }
 
+bool Trajectory::getVertices(int max_derivative_order,
+                             Vertex::Vector* vertices) const {
+  CHECK_NOTNULL(vertices);
+  vertices->resize(segments_.size() + 1, D_);
+  vertices->front() = getStartVertex(max_derivative_order);
+  
+  double t = 0.0;
+  for (size_t i = 0; i < segments_.size(); ++i) {
+    t += segments_[i].getTime();
+    (*vertices)[i + 1] = getVertexAtTime(t, max_derivative_order);
+  }
+  return true;
+}
+
 // Compute max velocity and max acceleration.
 bool Trajectory::computeMaxVelocityAndAcceleration(double* v_max,
                                                    double* a_max) const {

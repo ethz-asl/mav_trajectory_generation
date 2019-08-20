@@ -106,6 +106,8 @@ class Trajectory {
   bool getVertices(int max_derivative_order_pos, int max_derivative_order_yaw,
                    Vertex::Vector* pos_vertices,
                    Vertex::Vector* yaw_vertices) const;
+  bool getVertices(int max_derivative_order,
+                   Vertex::Vector* vertices) const;
 
   // Evaluation functions.
   // Evaluate at a single time, and a single derivative. Return type of
