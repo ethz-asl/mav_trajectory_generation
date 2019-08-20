@@ -226,8 +226,8 @@ std::ostream& operator<<(std::ostream& stream,
 }
 
 std::vector<double> estimateSegmentTimes(const Vertex::Vector& vertices,
-                                         double v_max, double a_max, double t_min) {
-  return estimateSegmentTimesNfabian(vertices, v_max, a_max, t_min);
+                                         double v_max, double a_max) {
+  return estimateSegmentTimesNfabian(vertices, v_max, a_max);
 }
 
 std::vector<double> estimateSegmentTimesVelocityRamp(
@@ -254,7 +254,6 @@ std::vector<double> estimateSegmentTimesVelocityRamp(
 
 std::vector<double> estimateSegmentTimesNfabian(const Vertex::Vector& vertices,
                                                 double v_max, double a_max,
-                                                double t_min,
                                                 double magic_fabian_constant) {
   CHECK_GE(vertices.size(), 2);
   std::vector<double> segment_times;
