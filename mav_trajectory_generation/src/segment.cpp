@@ -218,11 +218,11 @@ bool Segment::getSegmentWithAppendedDimension(const Segment& segment_to_append,
   
   // Scale segment polynomials to the longer segment time.
   const double new_time = std::max(time_, segment_to_append.getTime());
-  if (time_ < new_time){
+  if (time_ < new_time && new_time > 0.0){
     for (int d = 0; d < D_; d++) {
       current_segment[d].scalePolynomialInTime(time_ / new_time);
     }
-  } else if (segment_to_append.getTime() < new_time) {
+  } else if (segment_to_append.getTime() < new_time && new_time > 0.0) {
     for (int d = 0; d < segment_to_append.D(); d++) {
       segment_to_append_temp[d].scalePolynomialInTime(segment_to_append.getTime() / new_time);
     }
