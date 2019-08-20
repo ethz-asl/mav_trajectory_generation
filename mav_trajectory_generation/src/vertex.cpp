@@ -264,14 +264,9 @@ std::vector<double> estimateSegmentTimesNfabian(const Vertex::Vector& vertices,
     vertices[i].getConstraint(derivative_order::POSITION, &start);
     vertices[i + 1].getConstraint(derivative_order::POSITION, &end);
     double distance = (end - start).norm();
-
-    double t = distance / v_max * 2 * (1.0 +
-                                       magic_fabian_constant * v_max / a_max *
-                                           exp(-distance / v_max * 2));
-    if (t < t_min) {
-      t = t_min;
-    }
-
+    double t = distance / v_max * 2 *
+               (1.0 + magic_fabian_constant * v_max / a_max *
+                          exp(-distance / v_max * 2));
     segment_times.push_back(t);
   }
   return segment_times;
