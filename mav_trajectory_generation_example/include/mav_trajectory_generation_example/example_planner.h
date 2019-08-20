@@ -44,6 +44,8 @@ class ExamplePlanner {
   Eigen::Vector3d current_angular_velocity_;
   double max_v_; // m/s
   double max_a_; // m/s^2
+  double max_ang_v_;
+  double max_ang_a_;
 
 };
 

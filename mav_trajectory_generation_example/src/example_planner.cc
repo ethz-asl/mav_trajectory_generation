@@ -6,6 +6,14 @@ ExamplePlanner::ExamplePlanner(ros::NodeHandle& nh) :
     max_a_(2.0),
     current_velocity_(Eigen::Vector3d::Zero()),
     current_pose_(Eigen::Affine3d::Identity()) {
+      
+  // Load params
+  if (!nh_.getParam(ros::this_node::getName() + "/max_v", max_v_)){
+    ROS_WARN("[example_planner] param max_v not found");
+  }
+  if (!nh_.getParam(ros::this_node::getName() + "/max_a", max_a_)){
+    ROS_WARN("[example_planner] param max_a not found");
+  }
 
   // create publisher for RVIZ markers
   pub_markers_ =
@@ -85,9 +93,7 @@ bool ExamplePlanner::planTrajectory(const Eigen::VectorXd& goal_pos,
 
   // setimate initial segment times
   std::vector<double> segment_times;
-  const double v_max = 2.0;
-  const double a_max = 2.0;
-  segment_times = estimateSegmentTimes(vertices, v_max, a_max);
+  segment_times = estimateSegmentTimes(vertices, max_v_, max_a_);
 
   // Set up polynomial solver with default params
   mav_trajectory_generation::NonlinearOptimizationParameters parameters;
@@ -98,8 +104,8 @@ bool ExamplePlanner::planTrajectory(const Eigen::VectorXd& goal_pos,
   opt.setupFromVertices(vertices, segment_times, derivative_to_optimize);
 
   // constrain velocity and acceleration
-  opt.addMaximumMagnitudeConstraint(mav_trajectory_generation::derivative_order::VELOCITY, v_max);
-  opt.addMaximumMagnitudeConstraint(mav_trajectory_generation::derivative_order::ACCELERATION, a_max);
+  opt.addMaximumMagnitudeConstraint(mav_trajectory_generation::derivative_order::VELOCITY, max_v_);
+  opt.addMaximumMagnitudeConstraint(mav_trajectory_generation::derivative_order::ACCELERATION, max_a_);
 
   // solve trajectory
   opt.optimize();

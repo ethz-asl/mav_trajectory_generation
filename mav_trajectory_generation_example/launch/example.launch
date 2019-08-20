@@ -40,6 +40,7 @@
 
         <!--- Trajectory planner -->
         <node name="planner" pkg="mav_trajectory_generation_example" type="trajectory_generation_example" output="screen">
+            <rosparam command="load" file="$(find mav_trajectory_generation_example)/cfg/$(arg mav_name)_params.yaml"/>
             <remap from="uav_pose" to="odometry_sensor1/odometry"/>
         </node>
 

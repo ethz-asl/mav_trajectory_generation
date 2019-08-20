@@ -1,13 +1,29 @@
 #include <mav_trajectory_generation_example/example_planner.h>
 
-ExamplePlanner::ExamplePlanner(ros::NodeHandle& nh) :
-    nh_(nh),
-    max_v_(2.0),
-    max_a_(2.0),
-    current_velocity_(Eigen::Vector3d::Zero()),
-    current_angular_velocity_(Eigen::Vector3d::Zero()),
-    current_pose_(Eigen::Affine3d::Identity()) {
-
+ExamplePlanner::ExamplePlanner(ros::NodeHandle& nh)
+    : nh_(nh),
+      max_v_(2.0),
+      max_a_(2.0),
+      max_ang_v_(2.0),
+      max_ang_a_(2.0),
+      current_velocity_(Eigen::Vector3d::Zero()),
+      current_angular_velocity_(Eigen::Vector3d::Zero()),
+      current_pose_(Eigen::Affine3d::Identity()) {
+        
+  // Load params
+  if (!nh_.getParam(ros::this_node::getName() + "/max_v", max_v_)){
+    ROS_WARN("[example_planner] param max_v not found");
+  }
+  if (!nh_.getParam(ros::this_node::getName() + "/max_a", max_a_)){
+    ROS_WARN("[example_planner] param max_a not found");
+  }
+  if (!nh_.getParam(ros::this_node::getName() + "/max_ang_v", max_ang_v_)){
+    ROS_WARN("[example_planner] param max_ang_v not found");
+  }
+  if (!nh_.getParam(ros::this_node::getName() + "/max_ang_a", max_ang_a_)){
+    ROS_WARN("[example_planner] param max_ang_a not found");
+  }
+        
   // create publisher for RVIZ markers
   pub_markers_ =
       nh.advertise<visualization_msgs::MarkerArray>("trajectory_markers", 0);
@@ -48,10 +64,6 @@ bool ExamplePlanner::planTrajectory(
   // 4 Dimensional trajectory => 3D position + yaw
   // 6 Dimensional trajectory => through SE(3) space, position and orientation
   const int dimension = goal_pos.size();
-  const double v_max = 2.0;
-  const double a_max = 2.0;
-  const double ang_v_max = 2.0;
-  const double ang_a_max = 2.0;
   bool success = false;
 
   if (dimension == 6) 
@@ -62,8 +74,8 @@ bool ExamplePlanner::planTrajectory(
     Eigen::Vector3d goal_position = goal_pos.head(3);
     Eigen::Vector3d goal_lin_vel = goal_vel.head(3);
     success = planTrajectory(
-        goal_position, goal_lin_vel, current_pose_.translation(), current_velocity_, v_max,
-        a_max, &trajectory_trans);
+        goal_position, goal_lin_vel, current_pose_.translation(),
+        current_velocity_, max_v_, max_a_, &trajectory_trans);
 
     // Rotation trajectory.
     Eigen::Vector3d goal_rotation = goal_pos.tail(3);
@@ -72,8 +84,8 @@ bool ExamplePlanner::planTrajectory(
     mav_msgs::vectorFromRotationMatrix(
         current_pose_.rotation(), &current_rot_vec);
     success &= planTrajectory(
-        goal_rotation, goal_ang_vel, current_rot_vec, current_angular_velocity_, ang_v_max,
-        ang_a_max, &trajectory_rot);
+        goal_rotation, goal_ang_vel, current_rot_vec, current_angular_velocity_,
+        max_ang_v_, max_ang_a_, &trajectory_rot);
 
     // Combine trajectories.
     success &= trajectory_trans.getTrajectoryWithAppendedDimension(
@@ -83,18 +95,20 @@ bool ExamplePlanner::planTrajectory(
   else if (dimension == 3) 
   {
     success = planTrajectory(
-        goal_pos, goal_vel, current_pose_.translation(), current_velocity_, 
-        v_max, a_max, &(*trajectory));
+        goal_pos, goal_vel, current_pose_.translation(), current_velocity_,
+        max_v_, max_a_, &(*trajectory));
     return success;
   } 
   else if (dimension == 4) 
   {
     Eigen::Vector4d start_pos_4d, start_vel_4d;
-    start_pos_4d << current_pose_.translation(), mav_msgs::yawFromQuaternion((Eigen::Quaterniond)current_pose_.rotation());
+    start_pos_4d << current_pose_.translation(),
+        mav_msgs::yawFromQuaternion(
+            (Eigen::Quaterniond)current_pose_.rotation());
     start_vel_4d << current_velocity_, 0.0;
     success = planTrajectory(
-        goal_pos, goal_vel, start_pos_4d, start_vel_4d, 
-        v_max, a_max, &(*trajectory));
+        goal_pos, goal_vel, start_pos_4d, start_vel_4d, max_v_, max_a_,
+        &(*trajectory));
     return success;
   } 
   else 
