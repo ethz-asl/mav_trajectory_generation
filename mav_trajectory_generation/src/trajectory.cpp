@@ -260,7 +260,13 @@ bool Trajectory::addTrajectories(const std::vector<Trajectory>& trajectories,
 }
 
 bool Trajectory::offsetTrajectory(const Eigen::VectorXd& A_r_B) {
+  if (A_r_B.size() < std::min(D_, 3)) {
+    LOG(WARNING) << "Offset vector size smaller than trajectory dimension.";
+    return false;
+  }
+  
   for (Segment& s : segments_) {
+    // Returns false if dimension check fails at segment level.
     if (!s.offsetSegment(A_r_B)) return false;
   }
 
