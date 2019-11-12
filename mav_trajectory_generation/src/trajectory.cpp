@@ -260,7 +260,13 @@ bool Trajectory::addTrajectories(const std::vector<Trajectory>& trajectories,
 }
 
 bool Trajectory::offsetTrajectory(const Eigen::VectorXd& A_r_B) {
+  if (A_r_B.size() < std::min(D_, 3)) {
+    LOG(WARNING) << "Offset vector size smaller than trajectory dimension.";
+    return false;
+  }
+  
   for (Segment& s : segments_) {
+    // Returns false if dimension check fails at segment level.
     if (!s.offsetSegment(A_r_B)) return false;
   }
 
@@ -316,6 +322,20 @@ bool Trajectory::getVertices(int max_derivative_order_pos,
     if (!temp_vertex.getSubdimension(kYawDimensions, max_derivative_order_yaw,
                                      &(*yaw_vertices)[i + 1]))
       return false;
+  }
+  return true;
+}
+
+bool Trajectory::getVertices(int max_derivative_order,
+                             Vertex::Vector* vertices) const {
+  CHECK_NOTNULL(vertices);
+  vertices->resize(segments_.size() + 1, D_);
+  vertices->front() = getStartVertex(max_derivative_order);
+  
+  double t = 0.0;
+  for (size_t i = 0; i < segments_.size(); ++i) {
+    t += segments_[i].getTime();
+    (*vertices)[i + 1] = getVertexAtTime(t, max_derivative_order);
   }
   return true;
 }

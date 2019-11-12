@@ -6,6 +6,14 @@ ExamplePlanner::ExamplePlanner(ros::NodeHandle& nh) :
     max_a_(2.0),
     current_velocity_(Eigen::Vector3d::Zero()),
     current_pose_(Eigen::Affine3d::Identity()) {
+      
+  // Load params
+  if (!nh_.getParam(ros::this_node::getName() + "/max_v", max_v_)){
+    ROS_WARN("[example_planner] param max_v not found");
+  }
+  if (!nh_.getParam(ros::this_node::getName() + "/max_a", max_a_)){
+    ROS_WARN("[example_planner] param max_a not found");
+  }
 
   // create publisher for RVIZ markers
   pub_markers_ =
@@ -37,8 +45,9 @@ void ExamplePlanner::setMaxSpeed(const double max_v) {
 
 // Plans a trajectory from the current position to the a goal position and velocity
 // we neglect attitude here for simplicity
-bool ExamplePlanner::planTrajectory(const Eigen::Vector3d& goal_pos,
-                                    const Eigen::Vector3d& goal_vel) {
+bool ExamplePlanner::planTrajectory(const Eigen::VectorXd& goal_pos,
+                                    const Eigen::VectorXd& goal_vel,
+                                    mav_trajectory_generation::Trajectory* trajectory) {
 
 
   // 3 Dimensional trajectory => through carteisan space, no orientation
@@ -84,9 +93,7 @@ bool ExamplePlanner::planTrajectory(const Eigen::Vector3d& goal_pos,
 
   // setimate initial segment times
   std::vector<double> segment_times;
-  const double v_max = 2.0;
-  const double a_max = 2.0;
-  segment_times = estimateSegmentTimes(vertices, v_max, a_max);
+  segment_times = estimateSegmentTimes(vertices, max_v_, max_a_);
 
   // Set up polynomial solver with default params
   mav_trajectory_generation::NonlinearOptimizationParameters parameters;
@@ -97,17 +104,19 @@ bool ExamplePlanner::planTrajectory(const Eigen::Vector3d& goal_pos,
   opt.setupFromVertices(vertices, segment_times, derivative_to_optimize);
 
   // constrain velocity and acceleration
-  opt.addMaximumMagnitudeConstraint(mav_trajectory_generation::derivative_order::VELOCITY, v_max);
-  opt.addMaximumMagnitudeConstraint(mav_trajectory_generation::derivative_order::ACCELERATION, a_max);
+  opt.addMaximumMagnitudeConstraint(mav_trajectory_generation::derivative_order::VELOCITY, max_v_);
+  opt.addMaximumMagnitudeConstraint(mav_trajectory_generation::derivative_order::ACCELERATION, max_a_);
 
   // solve trajectory
   opt.optimize();
 
   // get trajectory as polynomial parameters
-  mav_trajectory_generation::Trajectory trajectory;
-  opt.getTrajectory(&trajectory);
+  opt.getTrajectory(&(*trajectory));
 
+  return true;
+}
 
+bool ExamplePlanner::publishTrajectory(const mav_trajectory_generation::Trajectory& trajectory){
   // send trajectory as markers to display them in RVIZ
   visualization_msgs::MarkerArray markers;
   double distance =
@@ -120,9 +129,8 @@ bool ExamplePlanner::planTrajectory(const Eigen::Vector3d& goal_pos,
                                                &markers);
   pub_markers_.publish(markers);
 
-
   // send trajectory to be executed on UAV
-  mav_planning_msgs::PolynomialTrajectory4D msg;
+  mav_planning_msgs::PolynomialTrajectory msg;
   mav_trajectory_generation::trajectoryToPolynomialTrajectoryMsg(trajectory,
                                                                  &msg);
   msg.header.frame_id = "world";

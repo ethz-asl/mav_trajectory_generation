@@ -1,0 +1,68 @@
+<launch>
+    <!-- Vehicle params  -->
+    <arg name="mav_name" default="voliro"/>
+    <arg name="model" default="$(find overactuated_description)/urdf/$(arg mav_name)_base.xacro"/>
+    <arg name="enable_logging" default="false"/>
+    <arg name="enable_ground_truth" default="true"/>
+    <arg name="log_file" default="$(arg mav_name)"/>
+    <arg name="wait_to_record_bag" default="false"/>
+    <arg name="add_top_arm" default="false"/>
+    <arg name="ctrl-controller" default="impedance"/>
+
+    <!-- Gazebo params  -->
+    <arg name="world_name" default="empty"/>
+    <arg name="debug" default="false"/>
+    <arg name="gui" default="false"/>
+    <arg name="paused" default="false"/>
+    <arg name="verbose" default="false"/>
+
+    <env name="GAZEBO_MODEL_PATH" value="${GAZEBO_MODEL_PATH}:$(find rotors_gazebo)/models"/>
+    <env name="GAZEBO_RESOURCE_PATH" value="${GAZEBO_RESOURCE_PATH}:$(find rotors_gazebo)/models"/>
+    <include file="$(find gazebo_ros)/launch/empty_world.launch">
+      <arg name="world_name" value="$(find rotors_gazebo)/worlds/$(arg world_name).world"/>
+      <arg name="debug" value="$(arg debug)"/>
+      <arg name="paused" value="$(arg paused)"/>
+      <arg name="gui" value="$(arg gui)"/>
+      <arg name="verbose" value="$(arg verbose)"/>
+    </include>
+
+    <group ns="$(arg mav_name)">
+      <arg name="odometry_topic" default="odometry_sensor/odometry"/>
+
+        <!-- Spawn MAV. -->
+        <include file="$(find overactuated_simulation)/launch/spawn_overactuated_mav.launch">
+          <arg name="mav_name" value="$(arg mav_name)"/>
+          <arg name="namespace" value="$(arg mav_name)"/>
+          <arg name="model" value="$(arg model)"/>
+          <arg name="enable_logging" value="$(arg enable_logging)"/>
+          <arg name="enable_ground_truth" value="$(arg enable_ground_truth)"/>
+          <arg name="log_file" value="$(arg log_file)"/>
+          <arg name="add_top_arm" value="$(arg add_top_arm)"/>
+          <arg name="x" default="0.0"/>
+          <arg name="y" default="0.0"/>
+          <arg name="z" default="0.3"/>
+        </include>
+
+        <!-- Start Voliro Controller Node. -->
+        <node name="voliro_$(arg ctrl-controller)_controller_node" pkg="overactuated_control" type="voliro_$(arg ctrl-controller)_controller_node" output="screen">
+          <rosparam command="load" file="$(find overactuated_simulation)/resource/$(arg mav_name).yaml"/>
+          <remap from="odometry" to="$(arg odometry_topic)"/>
+        </node>
+        <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />
+        <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" />
+
+        <!--- Trajectory planner -->
+        <node name="planner" pkg="mav_trajectory_generation_example" type="trajectory_generation_6dof_example" output="screen">
+            <rosparam command="load" file="$(find mav_trajectory_generation_example)/cfg/$(arg mav_name)_params.yaml"/>
+            <remap from="uav_pose" to="$(arg odometry_topic)"/>
+        </node>
+
+        <!--- Trajectory sampler -->
+        <node name="sampler" pkg="mav_trajectory_generation_ros" type="trajectory_sampler_node" output="screen">
+            <remap from="path_segments" to="trajectory"/>
+        </node>
+
+    </group>
+
+    <node type="rviz" name="rviz" pkg="rviz" args="-d $(find mav_trajectory_generation_example)/cfg/rviz_view_$(arg mav_name).rviz" />
+</launch>

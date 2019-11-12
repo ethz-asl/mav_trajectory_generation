@@ -199,10 +199,6 @@ bool Segment::getSegmentWithSingleDimension(int dimension,
 
 bool Segment::getSegmentWithAppendedDimension(const Segment& segment_to_append,
                                               Segment* new_segment) const {
-  if (time_ != segment_to_append.getTime()) {
-    LOG(WARNING) << "The appended segment needs the same segment time.";
-    return false;
-  }
   if (N_ == 0 || D_ == 0) {
     *new_segment = segment_to_append;
     return true;
@@ -215,14 +211,31 @@ bool Segment::getSegmentWithAppendedDimension(const Segment& segment_to_append,
   // Get common polynomial order.
   const int new_N = std::max(segment_to_append.N(), N_);
   const int new_D = D_ + segment_to_append.D();
+  
+  // Create temporary segments to scale polynomials if necessary.
+  Segment current_segment = *this;
+  Segment segment_to_append_temp = segment_to_append;
+  
+  // Scale segment polynomials to the longer segment time.
+  const double new_time = std::max(time_, segment_to_append.getTime());
+  if (time_ < new_time && new_time > 0.0){
+    for (int d = 0; d < D_; d++) {
+      current_segment[d].scalePolynomialInTime(time_ / new_time);
+    }
+  } else if (segment_to_append.getTime() < new_time && new_time > 0.0) {
+    for (int d = 0; d < segment_to_append.D(); d++) {
+      segment_to_append_temp[d].scalePolynomialInTime(segment_to_append.getTime() / new_time);
+    }
+  }
+  
   *new_segment = Segment(new_N, new_D);
 
   if (N_ == segment_to_append.N()) {
     for (int i = 0; i < new_D; i++) {
       if (i < D_) {
-        (*new_segment)[i] = polynomials_[i];
+        (*new_segment)[i] = current_segment[i];
       } else {
-        (*new_segment)[i] = segment_to_append[i - D_];
+        (*new_segment)[i] = segment_to_append_temp[i - D_];
       }
     }
   } else {
@@ -243,7 +256,7 @@ bool Segment::getSegmentWithAppendedDimension(const Segment& segment_to_append,
     }
   }
 
-  new_segment->setTime(time_);
+  new_segment->setTime(new_time);
   return true;
 }
 

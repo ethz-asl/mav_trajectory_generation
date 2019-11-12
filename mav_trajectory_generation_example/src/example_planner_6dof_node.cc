@@ -29,9 +29,18 @@ int main(int argc, char** argv) {
   ROS_WARN_STREAM("WARNING: CONSOLE INPUT/OUTPUT ONLY FOR DEMONSTRATION!");
 
   // define set point
-  Eigen::Vector3d position, velocity;
+  Eigen::VectorXd pose, twist;
+  pose.resize(6);
+  twist.resize(6);
+  Eigen::Vector3d position, rotation_vec;
+  Eigen::Matrix3d rotation_mat;
+  rotation_mat = Eigen::AngleAxisd(0.0, Eigen::Vector3d::UnitX()) 
+              * Eigen::AngleAxisd(M_PI / 2.0,  Eigen::Vector3d::UnitY())
+              * Eigen::AngleAxisd(M_PI / 2.0, Eigen::Vector3d::UnitZ());
+  mav_msgs::vectorFromRotationMatrix(rotation_mat, &rotation_vec);
   position << 0.0, 1.0, 2.0;
-  velocity << 0.0, 0.0, 0.0;
+  pose << position, rotation_vec;
+  twist << 0.0, 0.0, 0.0, 0.0, 0.0, 0.0;
 
   // THIS SHOULD NORMALLY RUN INSIDE ROS::SPIN!!! JUST FOR DEMO PURPOSES LIKE THIS.
   ROS_WARN_STREAM("PRESS ENTER TO UPDATE CURRENT POSITION AND SEND TRAJECTORY");
@@ -41,7 +50,7 @@ int main(int argc, char** argv) {
   }
 
   mav_trajectory_generation::Trajectory trajectory;
-  planner.planTrajectory(position, velocity, &trajectory);
+  planner.planTrajectory(pose, twist, &trajectory);
   planner.publishTrajectory(trajectory);
   ROS_WARN_STREAM("DONE. GOODBYE.");
 

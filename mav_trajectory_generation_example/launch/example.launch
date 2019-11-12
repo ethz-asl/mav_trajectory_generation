@@ -5,7 +5,7 @@
     <arg name="enable_ground_truth" default="true" />
     <arg name="log_file" default="$(arg mav_name)" />
     <arg name="debug" default="false"/>
-    <arg name="gui" default="true"/>
+    <arg name="gui" default="false"/>
     <arg name="paused" default="false"/>
     <!-- The following line causes gzmsg and gzerr messages to be printed to the console
         (even when Gazebo is started through roslaunch) -->
@@ -40,15 +40,16 @@
 
         <!--- Trajectory planner -->
         <node name="planner" pkg="mav_trajectory_generation_example" type="trajectory_generation_example" output="screen">
+            <rosparam command="load" file="$(find mav_trajectory_generation_example)/cfg/$(arg mav_name)_params.yaml"/>
             <remap from="uav_pose" to="odometry_sensor1/odometry"/>
         </node>
 
         <!--- Trajectory sampler -->
         <node name="sampler" pkg="mav_trajectory_generation_ros" type="trajectory_sampler_node" output="screen">
-            <remap from="path_segments" to="trajectory"/>
+            <remap from="path_segments_4D" to="trajectory"/>
         </node>
 
     </group>
 
-    <node type="rviz" name="rviz" pkg="rviz" args="-d $(find mav_trajectory_generation_example)/cfg/rviz_view.rviz" />
+    <node type="rviz" name="rviz" pkg="rviz" args="-d $(find mav_trajectory_generation_example)/cfg/rviz_view_$(arg mav_name).rviz" />
 </launch>
