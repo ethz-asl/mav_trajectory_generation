@@ -57,7 +57,7 @@ void ExamplePlanner::setMaxSpeed(const double max_v) {
 bool ExamplePlanner::planTrajectory(
     const Eigen::VectorXd& goal_pos, const Eigen::VectorXd& goal_vel,
     mav_trajectory_generation::Trajectory* trajectory) {
-  assert(*trajectory);
+  assert(trajectory);
   trajectory->clear();
 
   // 3 Dimensional trajectory => 3D position
@@ -125,7 +125,7 @@ bool ExamplePlanner::planTrajectory(const Eigen::VectorXd& goal_pos,
                                     const Eigen::VectorXd& start_vel,
                                     double v_max, double a_max,
                                     mav_trajectory_generation::Trajectory* trajectory) {
-  assert(*trajectory);
+  assert(trajectory);
   const int dimension = goal_pos.size();
   // Array for all waypoints and their constraints
   mav_trajectory_generation::Vertex::Vector vertices;
