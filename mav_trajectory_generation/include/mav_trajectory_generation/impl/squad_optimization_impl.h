@@ -110,6 +110,12 @@ bool SquadOptimization::getInterpolation(const double &t, Eigen::Quaterniond *re
   q2 = quaternions_[std::min(int(n_vertices_)-1, idx+1)];
   q3 = quaternions_[std::min(int(n_vertices_)-1, idx+2)];
 
+  // If there's barely any change, don't interpolate
+  if (q1.angularDistance(q2) < 0.001) {
+    *result = q1;
+    return true;
+  }
+
   double tau = (t - waypoint_times_[idx])/segment_times_[idx];
 
   s1 = getQuaternionControlPoint(q0,q1,q2);
@@ -119,6 +125,7 @@ bool SquadOptimization::getInterpolation(const double &t, Eigen::Quaterniond *re
   qa = slerp(q1, q2, tau);
   qb = slerp(s1, s2, tau);
   *result = slerp(qa, qb, 2.0*tau*(1.0-tau));
+  return true;
   // std::cout << "Quaternion indices: " << std::max(0,idx-1) << ", " << idx << ", " << std::min(int(n_vertices_)-1, idx+1) << ", " << std::min(int(n_vertices_)-1, idx+2) << std::endl;
   // std::cout << "Result at t = " << t << " is " << (*result).coeffs().transpose() << std::endl;
   // std::cout << "t = " << t << ", idx = " << idx << ", tau = " << tau << "s1 = " << s1.coeffs().transpose() << ", s2 = " << s2.coeffs().transpose() << std::endl;
