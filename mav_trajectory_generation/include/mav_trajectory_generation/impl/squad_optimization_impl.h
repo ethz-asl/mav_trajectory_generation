@@ -64,9 +64,9 @@ bool SquadOptimization::setupFromRotations(
     waypoint_times_.push_back(waypoint_times_[i-1]+segment_times[i-1]);
   }
 
-  std::cout << "List of reference quaternions: " << std::endl;
+  std::cout << "List of reference quaternions and segment times: " << std::endl;
   for (int i=0;i<quaternions.size();i++) {
-    std::cout << i << " = " << quaternions[i].coeffs().transpose() << std::endl;
+    std::cout << i << " = " << quaternions[i].coeffs().transpose() << ", t = " << segment_times[i] << std::endl;
   }
 }
 
@@ -143,13 +143,15 @@ Eigen::Quaterniond SquadOptimization::quaternionSum(const Eigen::Quaterniond &q1
 }
 
 Eigen::Quaterniond SquadOptimization::quaternionPow(const Eigen::Quaterniond &q, const double &t) {
+  if (q.vec().norm() < 0.00001) {
+    return Eigen::Quaterniond(1.0,0.0,0.0,0.0);
+  }
   Eigen::Quaterniond q2;
   q2.coeffs() = t*quaternionLogarithm(q).coeffs();
   return quaternionExponential(q2);
 }
 
 Eigen::Quaterniond SquadOptimization::slerp(const Eigen::Quaterniond &q0, const Eigen::Quaterniond &q1, const double &t) {
-  // q_interp = tf.quaternion_multiply(quatpow(tf.quaternion_multiply(q1,tf.quaternion_conjugate(q0)),h),q0)
   Eigen::Quaterniond res;
   res = quaternionPow( q1 * q0.conjugate(), t ) * q0;
   return res;
