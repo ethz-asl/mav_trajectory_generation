@@ -82,7 +82,7 @@ void SquadOptimization::addToStates(mav_msgs::EigenTrajectoryPoint::Vector* stat
       double dt = double(states->at(i).time_from_start_ns - states->at(i-1).time_from_start_ns)*1.e-9;
       q_dot.coeffs() = (states->at(i).orientation_W_B.coeffs() - states->at(i-1).orientation_W_B.coeffs()) / 
                         dt;
-      omega = 2.0*( q_dot * states->at(i).orientation_W_B ).vec();
+      omega = 2.0*( states->at(i).orientation_W_B.conjugate() * q_dot).vec();
       omega_dot = (omega - states->at(i-1).angular_velocity_W) / dt;
       states->at(i).angular_velocity_W = omega;
       states->at(i).angular_acceleration_W = omega_dot;
