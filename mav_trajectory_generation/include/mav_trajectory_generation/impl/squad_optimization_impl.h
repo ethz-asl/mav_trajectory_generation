@@ -182,7 +182,14 @@ Eigen::Quaterniond SquadOptimization::quaternionLogarithm(const Eigen::Quaternio
   Eigen::Quaterniond result;
   double theta = atan2(q.vec().norm(),q.w());
   result.w() = log(q.norm());
-  result.vec() = q.vec().normalized() * theta;
+  if (q.vec().norm() < 1e-5)
+  {
+    result.vec() = Eigen::Vector3d(0,0,0);
+  }
+  else
+  {
+    result.vec() = q.vec().normalized() * theta;
+  }
   return result;  
 }
 
