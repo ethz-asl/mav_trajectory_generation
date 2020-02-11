@@ -42,33 +42,20 @@ class SquadOptimization {
   // Constructor
   SquadOptimization();
 
-  // Sets up the optimization problem from a vector of Vertex objects and
-  // a vector of times between the vertices.
-  // Input: vertices = Vector containing the vertices defining the support
-  // points and constraints of the path.
-  // Input: segment_times = Vector containing the time between two vertices.
-  // Thus, its size is size(vertices) - 1.
-  // Input: derivative_to_optimize = Specifies the derivative of which the
-  // cost is optimized.
-  bool setupFromVertices(
-      const Vertex::Vector& vertices, const std::vector<double>& segment_times);
-
-  // TBD: Sets up the optimization problem from a vector of quaternions.
   bool setupFromRotations(const std::vector<Eigen::Quaterniond>& quaternions,
                          const std::vector<double>& times);
-  void addToStates(mav_msgs::EigenTrajectoryPoint::Vector* states);
+  void addToStates(mav_msgs::EigenTrajectoryPoint::Vector* states) const;
 
  private:
-
-  bool getInterpolation(const double &t, Eigen::Quaterniond *result);
+  bool getInterpolation(const double &t, Eigen::Quaterniond *result) const;
   Eigen::Quaterniond getQuaternionControlPoint(const Eigen::Quaterniond &q0,
                                             const Eigen::Quaterniond &q1,
-                                            const Eigen::Quaterniond &q2);
-  Eigen::Quaterniond quaternionExponential(const Eigen::Quaterniond &q);
-  Eigen::Quaterniond quaternionLogarithm(const Eigen::Quaterniond &q);
-  Eigen::Quaterniond quaternionSum(const Eigen::Quaterniond &q1, const Eigen::Quaterniond &q2);
-  Eigen::Quaterniond quaternionPow(const Eigen::Quaterniond &q, const double &t);
-  Eigen::Quaterniond slerp(const Eigen::Quaterniond &q1, const Eigen::Quaterniond &q2, const double &t);
+                                            const Eigen::Quaterniond &q2) const;
+  Eigen::Quaterniond quaternionExponential(const Eigen::Quaterniond &q) const;
+  Eigen::Quaterniond quaternionLogarithm(const Eigen::Quaterniond &q) const;
+  Eigen::Quaterniond quaternionSum(const Eigen::Quaterniond &q1, const Eigen::Quaterniond &q2) const;
+  Eigen::Quaterniond quaternionPow(const Eigen::Quaterniond &q, const double &t) const;
+  Eigen::Quaterniond slerp(const Eigen::Quaterniond &q1, const Eigen::Quaterniond &q2, const double &t) const;
 
   // Original vertices containing the constraints.
   Vertex::Vector vertices_;
@@ -82,6 +69,7 @@ class SquadOptimization {
 
   size_t n_vertices_;
   size_t n_segments_;
+  bool verbose_;
 
 };
 
