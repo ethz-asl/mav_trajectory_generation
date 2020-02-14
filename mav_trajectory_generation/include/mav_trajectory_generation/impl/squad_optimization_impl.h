@@ -40,7 +40,14 @@ namespace mav_trajectory_generation {
 SquadOptimization::SquadOptimization()
     : n_vertices_(0),
       n_segments_(0),
-      verbose_(false) {
+      verbose_(false),
+      use_slerp_(false) {
+}
+SquadOptimization::SquadOptimization(const bool &use_slerp)
+    : n_vertices_(0),
+      n_segments_(0),
+      verbose_(false),
+      use_slerp_(use_slerp) {
 }
 
 bool SquadOptimization::setupFromRotations(
@@ -82,12 +89,14 @@ void SquadOptimization::addToStates(mav_msgs::EigenTrajectoryPoint::Vector* stat
       Eigen::Vector3d omega, omega_dot;
       Eigen::Quaterniond q_dot;
       double dt = double(states->at(i).time_from_start_ns - states->at(i-1).time_from_start_ns)*1.e-9;
-      q_dot.coeffs() = (states->at(i).orientation_W_B.coeffs() - states->at(i-1).orientation_W_B.coeffs()) / 
-                        dt;
-      omega = 2.0*( states->at(i).orientation_W_B.conjugate() * q_dot).vec();
-      omega_dot = (omega - states->at(i-1).angular_velocity_W) / dt;
-      states->at(i-1).angular_velocity_W = omega;
-      states->at(i-1).angular_acceleration_W = omega_dot;
+      if (dt > 0) {
+        q_dot.coeffs() = (states->at(i).orientation_W_B.coeffs() - states->at(i-1).orientation_W_B.coeffs()) / 
+                          dt;
+        omega = 2.0*( states->at(i).orientation_W_B.conjugate() * q_dot).vec();
+        omega_dot = (omega - states->at(i-1).angular_velocity_W) / dt;
+        states->at(i-1).angular_velocity_W = omega;
+        states->at(i-1).angular_acceleration_W = omega_dot;
+      }
     }
   }
 }
@@ -125,6 +134,14 @@ bool SquadOptimization::getInterpolation(const double &t, Eigen::Quaterniond *re
   }
 
   double tau = (t - waypoint_times_[idx])/segment_times_[idx];
+  if (tau > 1 || tau < 0) {
+    ROS_WARN("[SQUAD OPTIMIZATION] tau out of range, this should not happen.");
+  }
+
+  if (use_slerp_) {
+    *result = q1.slerp(tau,q2);
+    return true;
+  }
 
   s1 = getQuaternionControlPoint(q0,q1,q2);
   s2 = getQuaternionControlPoint(q1,q2,q3);
@@ -162,6 +179,9 @@ Eigen::Quaterniond SquadOptimization::quaternionPow(const Eigen::Quaterniond &q,
 
 Eigen::Quaterniond SquadOptimization::slerp(const Eigen::Quaterniond &q0, const Eigen::Quaterniond &q1, const double &t) const {
   Eigen::Quaterniond res;
+  if (t > 1 || t < 0) {
+    ROS_WARN("[SQUAD OPTIMIZATION] t out of range, this should not happen.");
+  }
   if (t <= 0) {
     return q0;
   }

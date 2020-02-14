@@ -41,6 +41,7 @@ class SquadOptimization {
 
   // Constructor
   SquadOptimization();
+  SquadOptimization(const bool &use_slerp);
 
   bool setupFromRotations(const std::vector<Eigen::Quaterniond>& quaternions,
                          const std::vector<double>& times);
@@ -70,6 +71,8 @@ class SquadOptimization {
   size_t n_vertices_;
   size_t n_segments_;
   bool verbose_;
+
+  bool use_slerp_;
 
 };
 
