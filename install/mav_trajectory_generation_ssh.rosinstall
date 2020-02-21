@@ -1,5 +1,6 @@
 - git: {local-name: eigen_catkin, uri: 'git@github.com:ethz-asl/eigen_catkin.git'}
 - git: {local-name: eigen_checks, uri: 'git@github.com:ethz-asl/eigen_checks.git'}
 - git: {local-name: glog_catkin, uri: 'git@github.com:ethz-asl/glog_catkin.git'}
+- git: {local-name: yaml_cpp_catkin, uri: 'git@github.com:ethz-asl/yaml_cpp_catkin.git'}
 - git: {local-name: mav_comm, uri: 'git@github.com:ethz-asl/mav_comm.git'}
 - git: {local-name: nlopt, uri: 'git@github.com:ethz-asl/nlopt.git'}
