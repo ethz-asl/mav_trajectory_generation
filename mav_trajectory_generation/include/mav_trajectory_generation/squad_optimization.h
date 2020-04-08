@@ -23,47 +23,35 @@
 #define MAV_TRAJECTORY_GENERATION_SQUAD_OPTIMIZATION_H_
 
 #include <glog/logging.h>
-#include <Eigen/Sparse>
-#include <tuple>
-
-#include "mav_trajectory_generation/extremum.h"
-#include "mav_trajectory_generation/motion_defines.h"
-#include "mav_trajectory_generation/polynomial.h"
-#include "mav_trajectory_generation/segment.h"
-#include "mav_trajectory_generation/trajectory.h"
-#include "mav_trajectory_generation/vertex.h"
+#include <Eigen/Core>
+#include <mav_msgs/conversions.h>
 
 namespace mav_trajectory_generation {
 
 class SquadOptimization {
-
  public:
-
-  // Constructor
   SquadOptimization();
   SquadOptimization(const bool &use_slerp);
 
-  bool setupFromRotations(const std::vector<Eigen::Quaterniond>& quaternions,
-                         const std::vector<double>& times);
-  void addToStates(mav_msgs::EigenTrajectoryPoint::Vector* states) const;
+  bool setupFromRotations(const std::vector<Eigen::Quaterniond> &quaternions,
+                          const std::vector<double> &times);
+  void addToStates(mav_msgs::EigenTrajectoryPoint::Vector *states) const;
 
  private:
   bool getInterpolation(const double &t, Eigen::Quaterniond *result) const;
   Eigen::Quaterniond getQuaternionControlPoint(const Eigen::Quaterniond &q0,
-                                            const Eigen::Quaterniond &q1,
-                                            const Eigen::Quaterniond &q2) const;
+                                               const Eigen::Quaterniond &q1,
+                                               const Eigen::Quaterniond &q2) const;
   Eigen::Quaterniond quaternionExponential(const Eigen::Quaterniond &q) const;
   Eigen::Quaterniond quaternionLogarithm(const Eigen::Quaterniond &q) const;
-  Eigen::Quaterniond quaternionSum(const Eigen::Quaterniond &q1, const Eigen::Quaterniond &q2) const;
+  Eigen::Quaterniond quaternionSum(const Eigen::Quaterniond &q1,
+                                   const Eigen::Quaterniond &q2) const;
   Eigen::Quaterniond quaternionPow(const Eigen::Quaterniond &q, const double &t) const;
-  Eigen::Quaterniond slerp(const Eigen::Quaterniond &q1, const Eigen::Quaterniond &q2, const double &t) const;
+  Eigen::Quaterniond slerp(const Eigen::Quaterniond &q1, const Eigen::Quaterniond &q2,
+                           const double &t) const;
 
   // Original vertices containing the constraints.
-  Vertex::Vector vertices_;
   std::vector<Eigen::Quaterniond> quaternions_;
-
-  // The actual segments containing the solution.
-  Segment::Vector segments_;
 
   std::vector<double> segment_times_;
   std::vector<double> waypoint_times_;
@@ -73,7 +61,6 @@ class SquadOptimization {
   bool verbose_;
 
   bool use_slerp_;
-
 };
 
 }  // namespace mav_trajectory_generation
