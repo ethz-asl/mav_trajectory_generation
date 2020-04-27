@@ -72,7 +72,14 @@ In case you have your SSH keys for github set up, feel free to use the ssh rosin
 wstool merge mav_trajectory_generation/install/mav_trajectory_generation_ssh.rosinstall
 ```
 
-4. Use [catkin_build](http://catkin-tools.readthedocs.io/en/latest/verbs/catkin_build.html) to build the repository:
+4. Clone catkin_simple and yaml_cpp_catkin into the source directory:
+
+```
+git clone git@github.com:catkin/catkin_simple.git
+git clone git@github.com:ethz-asl/yaml_cpp_catkin.git
+```
+
+5. Use [catkin_build](http://catkin-tools.readthedocs.io/en/latest/verbs/catkin_build.html) to build the repository:
 
 ```
 catkin build mav_trajectory_generation_ros
