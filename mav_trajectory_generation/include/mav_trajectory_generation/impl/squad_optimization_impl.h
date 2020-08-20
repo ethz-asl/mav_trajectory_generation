@@ -68,25 +68,29 @@ bool SquadOptimization::setupFromRotations(const std::vector<Eigen::Quaterniond>
 void SquadOptimization::addToStates(mav_msgs::EigenTrajectoryPoint::Vector *states) const {
   for (size_t i = 0; i < states->size(); i++) {
     Eigen::Quaterniond q;
-    double t = double(states->at(i).time_from_start_ns) / 1.e9;
+    double t = static_cast<double>((*states)[i].time_from_start_ns) / 1.e9;
     getInterpolation(t, &q);
-    states->at(i).orientation_W_B = q;
+    (*states)[i].orientation_W_B = q;
     if (i > 0) {
       Eigen::Vector3d omega, omega_dot;
       Eigen::Quaterniond q_dot;
-      double dt =
-          double(states->at(i).time_from_start_ns - states->at(i - 1).time_from_start_ns) * 1.e-9;
+      double dt = static_cast<double>((*states)[i].time_from_start_ns -
+                                      (*states)[i - 1].time_from_start_ns) *
+                  1.e-9;
       if (dt > 0) {
         q_dot.coeffs() =
-            (states->at(i).orientation_W_B.coeffs() - states->at(i - 1).orientation_W_B.coeffs()) /
+            ((*states)[i].orientation_W_B.coeffs() - (*states)[i - 1].orientation_W_B.coeffs()) /
             dt;
-        omega = 2.0 * (states->at(i).orientation_W_B.conjugate() * q_dot).vec();
-        omega_dot = (omega - states->at(i - 1).angular_velocity_W) / dt;
-        states->at(i - 1).angular_velocity_W = omega;
-        states->at(i - 1).angular_acceleration_W = omega_dot;
+        omega = 2.0 * ((*states)[i].orientation_W_B.conjugate() * q_dot).vec();
+        omega_dot = (omega - (*states)[i - 1].angular_velocity_W) / dt;
+        (*states)[i].angular_velocity_W = omega;
+        (*states)[i].angular_acceleration_W = omega_dot;
       }
     }
   }
+  // Set last waypoint's angular velocity and acceleration to zero
+  states->back().angular_velocity_W = Eigen::Vector3d::Zero();
+  states->back().angular_acceleration_W = Eigen::Vector3d::Zero();
 }
 
 bool SquadOptimization::getInterpolation(const double &t, Eigen::Quaterniond *result) const {
