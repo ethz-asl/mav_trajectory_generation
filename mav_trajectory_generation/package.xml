@@ -19,9 +19,10 @@
 
   <depend>cmake_modules</depend>
   <depend>eigen_catkin</depend>
-  <depend>yaml_cpp_catkin</depend>
   <depend>eigen_checks</depend>
   <depend>glog_catkin</depend>
   <depend>mav_msgs</depend>
   <depend>nlopt</depend>
+
+  <exec_depend>yaml_cpp_catkin</exec_depend>
 </package>

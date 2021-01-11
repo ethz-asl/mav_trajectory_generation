@@ -37,7 +37,9 @@ Michael Burri, Helen Oleynikova, Markus Achtelik, and Roland Siegwart, “**Real
 ## Installation Instructions (Ubuntu)
 To install this package with [ROS Indigo](http://wiki.ros.org/indigo/Installation/Ubuntu) or [ROS Kinetic](http://wiki.ros.org/kinetic/Installation/Ubuntu):
 
-1. Install additional system dependencies (swap indigo for kinetic as necessary):
+1. Install additional system dependencies (swap indigo for kinetic or melodic as necessary):
+
+** Note: ROS melodic requires libyaml-cpp-dev and does not build with yaml_cpp_catkin in your catkin workspace!
 
 ```
 sudo apt-get install python-wstool python-catkin-tools ros-indigo-cmake-modules libyaml-cpp-dev
@@ -64,7 +66,7 @@ wstool update
 wstool merge mav_trajectory_generation/install/mav_trajectory_generation_https.rosinstall
 wstool update -j8
 echo "source ~/catkin_ws/devel/setup.bash" >> ~/.bashrc
-source ~/.bashrc
+source /opt/ros/indigo/setup.bash
 ```
 
 In case you have your SSH keys for github set up, feel free to use the ssh rosinstall instead:
