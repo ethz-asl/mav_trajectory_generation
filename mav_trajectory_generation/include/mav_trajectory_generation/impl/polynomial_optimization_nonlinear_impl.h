@@ -472,7 +472,7 @@ int PolynomialOptimizationNonLinear<_N>::optimizeTimeAndFreeConstraints() {
     double x = initial_solution[i];
     const double abs_x = std::abs(x);
     // Initial step size cannot be 0.0 --> invalid arg
-    if (abs_x <= std::numeric_limits<double>::lowest()) {
+    if (abs_x <= std::numeric_limits<double>::epsilon()) {
       initial_step.push_back(1e-13);
     } else {
       initial_step.push_back(optimization_parameters_.initial_stepsize_rel *
