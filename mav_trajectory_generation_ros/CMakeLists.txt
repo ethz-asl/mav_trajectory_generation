@@ -48,10 +48,12 @@ target_link_libraries(time_evaluation_node ${PROJECT_NAME})
 #########
 # TESTS #
 #########
-catkin_add_gtest(test_feasibility
-  test/test_feasibility.cpp
-)
-target_link_libraries(test_feasibility ${PROJECT_NAME} ${catkin_LIBRARIES})
+if (CATKIN_ENABLE_TESTING)
+    catkin_add_gtest(test_feasibility
+      test/test_feasibility.cpp
+    )
+    target_link_libraries(test_feasibility ${PROJECT_NAME} ${catkin_LIBRARIES})
+endif()
 
 ##########
 # EXPORT #
