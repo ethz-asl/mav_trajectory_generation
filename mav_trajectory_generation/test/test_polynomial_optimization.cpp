@@ -335,24 +335,18 @@ TEST_P(PolynomialOptimizationTests, ExtremaOfMagnitude) {
 
     std::vector<double> res_sampling;
     time_sampling.Start();
+    const double dt = 0.01;
     opt.computeSegmentMaximumMagnitudeCandidatesBySampling<kDerivative>(
-        s, 0, s.getTime(), 0.01, &res_sampling);
+        s, 0, s.getTime(), dt, &res_sampling);
     time_sampling.Stop();
 
-    // First check that the candidates are ACTUAL extrema.
-    // Do this by evaluating the derivative+1 of the segment.
-    for (double candidate : res_sampling) {
-      Eigen::VectorXd sampled = s.evaluate(candidate, kDerivative + 1);
-      EXPECT_NEAR(0.0, sampled.norm(), 0.01) << "Sampled Result: Time: "
-                                             << candidate;
-    }
-
-    constexpr double check_tolerance = 0.01;
+    const double check_tolerance = 2 * dt; // Nyquist resolution
     bool success = checkExtrema(res_sampling, res, check_tolerance);
     if (!success) {
       std::cout << "############CHECK XTREMA FAILED: \n";
       std::cout << "segment idx: " << segment_idx << "/" << segments.size()
-                << " time: " << s.getTime() << std::endl;
+                << " time: " << s.getTime() << std::endl
+                << "segment: " << s << std::endl;
 
       std::cout << "analytically found: ";
       for (const double& t : res) {

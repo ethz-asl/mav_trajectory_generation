@@ -63,6 +63,7 @@ void printSegment(std::ostream& stream, const Segment& s, int derivative) {
   stream << " coefficients for " << positionDerivativeToString(derivative)
          << ": " << std::endl;
   for (int i = 0; i < s.D(); ++i) {
+    stream << "dim " << i << ": " << std::endl;
     stream << s[i].getCoefficients(derivative) << std::endl;
   }
 }
@@ -211,11 +212,11 @@ bool Segment::getSegmentWithAppendedDimension(const Segment& segment_to_append,
   // Get common polynomial order.
   const int new_N = std::max(segment_to_append.N(), N_);
   const int new_D = D_ + segment_to_append.D();
-  
+
   // Create temporary segments to scale polynomials if necessary.
   Segment current_segment = *this;
   Segment segment_to_append_temp = segment_to_append;
-  
+
   // Scale segment polynomials to the longer segment time.
   const double new_time = std::max(time_, segment_to_append.getTime());
   if (time_ < new_time && new_time > 0.0){
@@ -227,7 +228,7 @@ bool Segment::getSegmentWithAppendedDimension(const Segment& segment_to_append,
       segment_to_append_temp[d].scalePolynomialInTime(segment_to_append.getTime() / new_time);
     }
   }
-  
+
   *new_segment = Segment(new_N, new_D);
 
   if (N_ == segment_to_append.N()) {

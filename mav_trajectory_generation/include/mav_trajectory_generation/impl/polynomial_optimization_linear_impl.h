@@ -414,32 +414,44 @@ void PolynomialOptimization<_N>::
     computeSegmentMaximumMagnitudeCandidatesBySampling(
         const Segment& segment, double t_start, double t_stop, double dt,
         std::vector<double>* candidates) {
-  Eigen::VectorXd value_old, value_start;
-  value_start = segment.evaluate(t_start - dt, Derivative);
+  CHECK_NOTNULL(candidates);
+  // Start is candidate.
+  candidates->push_back(t_start);
 
-  value_old = segment.evaluate(t_start, Derivative);
+  // Determine initial direction from t_start to t_start + dt.
+  auto t_old = t_start + dt;
+  auto value_new = segment.evaluate(t_old, Derivative);
+  auto value_old = segment.evaluate(t_start, Derivative);
+  auto direction = value_new.norm() - value_old.norm();
 
-  // Determine initial direction from t_start -dt to t_start.
-  // t_start may be an extremum, especially for start and end vertices!
-  double direction = value_old.norm() - value_start.norm();
-
-  // Continue with direction from t_start to t_start + dt until t_stop + dt.
-  // Again, there may be an extremum at t_stop (e.g. end vertex).
-  for (double t = t_start + dt; t < t_stop + dt; t += dt) {
-    Eigen::VectorXd value_new;
+  // Continue with direction from t_start + dt to t_start + 2 dt until t_stop.
+  bool last_sample = false;
+  for (double t = t_start + dt + dt; t <= t_stop; t += dt) {
+    // Update direction.
+    value_old = value_new;
     value_new = segment.evaluate(t, Derivative);
-
-    double direction_new = value_new.norm() - value_old.norm();
+    auto direction_new = value_new.norm() - value_old.norm();
 
     if (std::signbit(direction) != std::signbit(direction_new)) {
-      Eigen::VectorXd value_deriv = segment.evaluate(t - dt, Derivative + 1);
+      auto value_deriv = segment.evaluate(t_old, Derivative + 1);
       if (value_deriv.norm() < 1e-2) {
-        candidates->push_back(t - dt);  // extremum was at last dt
+        candidates->push_back(t_old);  // extremum was at last dt
       }
     }
 
-    value_old = value_new;
     direction = direction_new;
+    t_old = t;
+
+    // Check last sample before t_stop.
+    if ((t + dt) > t_stop && !last_sample) {
+      t = t_stop - dt;
+      last_sample = true;
+    }
+  }
+
+  // End is candidates.
+  if (candidates->back() != t_stop) {
+    candidates->push_back(t_stop);
   }
 }
 
