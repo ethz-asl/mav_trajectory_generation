@@ -130,7 +130,7 @@ bool ExamplePlanner::publishTrajectory(const mav_trajectory_generation::Trajecto
   pub_markers_.publish(markers);
 
   // send trajectory to be executed on UAV
-  mav_planning_msgs::PolynomialTrajectory msg;
+  mav_planning_msgs::PolynomialTrajectory4D msg;
   mav_trajectory_generation::trajectoryToPolynomialTrajectoryMsg(trajectory,
                                                                  &msg);
   msg.header.frame_id = "world";
