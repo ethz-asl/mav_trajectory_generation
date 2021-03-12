@@ -22,9 +22,11 @@
 #ifndef MAV_TRAJECTORY_GENERATION_SQUAD_OPTIMIZATION_H_
 #define MAV_TRAJECTORY_GENERATION_SQUAD_OPTIMIZATION_H_
 
+#include <mav_msgs/common.h>
+#include <mav_msgs/conversions.h>
+
 #include <glog/logging.h>
 #include <Eigen/Core>
-#include <mav_msgs/conversions.h>
 
 namespace mav_trajectory_generation {
 
@@ -35,10 +37,15 @@ class SquadOptimization {
 
   bool setupFromRotations(const std::vector<Eigen::Quaterniond> &quaternions,
                           const std::vector<double> &times);
-  void addToStates(mav_msgs::EigenTrajectoryPoint::Vector *states) const;
+  bool addToStates(mav_msgs::EigenTrajectoryPoint::Vector &states) const;
+  bool addToStatesSmoothed(mav_msgs::EigenTrajectoryPoint::Vector &states,
+                           const Eigen::Vector3d &inertia, const Eigen::Vector3d &kp,
+                           const Eigen::Vector3d &kd) const;
+  bool smoothAttitude(mav_msgs::EigenTrajectoryPoint::Vector &states) const;
 
  private:
   bool getInterpolation(const double &t, Eigen::Quaterniond *result) const;
+  bool addVelAcc(mav_msgs::EigenTrajectoryPoint::Vector &states) const;
   Eigen::Quaterniond getQuaternionControlPoint(const Eigen::Quaterniond &q0,
                                                const Eigen::Quaterniond &q1,
                                                const Eigen::Quaterniond &q2) const;
@@ -49,6 +56,12 @@ class SquadOptimization {
   Eigen::Quaterniond quaternionPow(const Eigen::Quaterniond &q, const double &t) const;
   Eigen::Quaterniond slerp(const Eigen::Quaterniond &q1, const Eigen::Quaterniond &q2,
                            const double &t) const;
+  inline Eigen::Matrix<double, 4, 1> quaternionDiff(const Eigen::Quaterniond &q1,
+                                                    const Eigen::Quaterniond &q2) const;
+  Eigen::Vector3d getOmega(const Eigen::Quaterniond &q1,
+                                            const Eigen::Quaterniond &q2,
+                                            const Eigen::Quaterniond &qm, const double &dt) const;
+  bool addAcc(mav_msgs::EigenTrajectoryPoint::Vector &states) const;
 
   // Original vertices containing the constraints.
   std::vector<Eigen::Quaterniond> quaternions_;

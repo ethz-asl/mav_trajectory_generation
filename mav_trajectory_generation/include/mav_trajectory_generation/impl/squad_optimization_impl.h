@@ -65,32 +65,158 @@ bool SquadOptimization::setupFromRotations(const std::vector<Eigen::Quaterniond>
   return true;
 }
 
-void SquadOptimization::addToStates(mav_msgs::EigenTrajectoryPoint::Vector *states) const {
-  for (size_t i = 0; i < states->size(); i++) {
+/**
+ * @brief      Adds interpolated reference attitude to a given trajectory
+ *
+ * @param      states  Trajectory reference
+ *
+ * @return     True if successful, false if too few points provided
+ */
+bool SquadOptimization::addToStates(mav_msgs::EigenTrajectoryPoint::Vector &states) const {
+  if (states.size() <= 1) {
+    return false;
+  }
+  for (size_t i = 0; i < states.size(); i++) {
     Eigen::Quaterniond q;
-    double t = static_cast<double>((*states)[i].time_from_start_ns) / 1.e9;
+    double t = static_cast<double>(states[i].time_from_start_ns) / 1.e9;
     getInterpolation(t, &q);
-    (*states)[i].orientation_W_B = q;
-    if (i > 0) {
-      Eigen::Vector3d omega, omega_dot;
-      Eigen::Quaterniond q_dot;
-      double dt = static_cast<double>((*states)[i].time_from_start_ns -
-                                      (*states)[i - 1].time_from_start_ns) *
-                  1.e-9;
+    states[i].orientation_W_B = q;
+  }
+  addVelAcc(states);
+  return true;
+}
+
+bool SquadOptimization::addVelAcc(mav_msgs::EigenTrajectoryPoint::Vector &states) const {
+  Eigen::Vector3d omega;
+  const double dt = 0.01;
+  size_t n = states.size();
+
+  states.front().angular_velocity_W =
+      getOmega(states[1].orientation_W_B, states[0].orientation_W_B, states[0].orientation_W_B, dt);
+  for (size_t i = 1; i < n - 1; i++) {
+    // double dt =
+    //     static_cast<double>(states[i + 1].time_from_start_ns - states[i - 1].time_from_start_ns)
+    //     * 1.e-9;
+    if (dt > 0) {
+      omega = getOmega(states[i + 1].orientation_W_B, states[i - 1].orientation_W_B,
+                       states[i].orientation_W_B, 2.0 * dt);
+    }
+    states[i].angular_velocity_W = omega;
+  }
+  // Set last waypoint's angular velocity to zero
+  states.back().angular_velocity_W = Eigen::Vector3d::Zero();
+  addAcc(states);
+  return true;
+}
+
+Eigen::Vector3d SquadOptimization::getOmega(const Eigen::Quaterniond &q1,
+                                            const Eigen::Quaterniond &q2,
+                                            const Eigen::Quaterniond &qm, const double &dt) const {
+  Eigen::Quaterniond q_dot;
+  q_dot.coeffs() = quaternionDiff(q1, q2) / dt;
+  return 2.0 * (qm.conjugate() * q_dot).vec();
+}
+
+bool SquadOptimization::addAcc(mav_msgs::EigenTrajectoryPoint::Vector &states) const {
+  const double dt = 0.01;
+  size_t n = states.size();
+
+  states.front().angular_acceleration_W =
+      (-1.5 * states[0].angular_velocity_W + 2.0 * states[1].angular_velocity_W -
+       0.5 * states[1].angular_velocity_W) /
+      dt;
+  states.back().angular_acceleration_W = Eigen::Vector3d::Zero();
+
+  for (size_t i = 1; i < n - 1; i++) {
+    states[i].angular_acceleration_W =
+        (-0.5 * states[i - 1].angular_velocity_W + 0.5 * states[i + 1].angular_velocity_W) / dt;
+  }
+
+  return true;
+}
+
+/**
+ * @brief      Add interpolated attitude reference to trajectory. The reference is smoothed using a
+ * geometric controller to avoid discontinuities in acceleration. The trajectory rate should be high
+ * enough as the geometric controller is approximated as a first order system.
+ *
+ * @param      states   Trajectory states
+ * @param[in]  inertia  The inertia of the body that is controlled by the geom. contr.
+ * @param[in]  kp       Proportional gain
+ * @param[in]  kd       Derivative gain
+ *
+ * @return     True if successful, false if not enough points in the trajectory
+ */
+bool SquadOptimization::addToStatesSmoothed(mav_msgs::EigenTrajectoryPoint::Vector &states,
+                                            const Eigen::Vector3d &inertia,
+                                            const Eigen::Vector3d &kp,
+                                            const Eigen::Vector3d &kd) const {
+  if (states.size() <= 1) {
+    return false;
+  }
+  Eigen::Vector3d omega_ref(Eigen::Vector3d::Zero());
+  Eigen::Vector3d omega(Eigen::Vector3d::Zero());
+  Eigen::Vector3d omegadot(Eigen::Vector3d::Zero());
+  Eigen::Vector3d inertia_inv(inertia.cwiseInverse());
+  Eigen::Quaterniond q, q_ref, q_ref_prev;
+  for (size_t i = 0; i < states.size(); i++) {
+    double t = static_cast<double>(states[i].time_from_start_ns) / 1.e9;
+    getInterpolation(t, &q_ref);
+    if (i == 0) {
+      q = q_ref;
+    } else {
+      double dt =
+          static_cast<double>(states[i].time_from_start_ns - states[i - 1].time_from_start_ns) *
+          1.e-9;
       if (dt > 0) {
-        q_dot.coeffs() =
-            ((*states)[i].orientation_W_B.coeffs() - (*states)[i - 1].orientation_W_B.coeffs()) /
-            dt;
-        omega = 2.0 * ((*states)[i].orientation_W_B.conjugate() * q_dot).vec();
-        omega_dot = (omega - (*states)[i - 1].angular_velocity_W) / dt;
-        (*states)[i].angular_velocity_W = omega;
-        (*states)[i].angular_acceleration_W = omega_dot;
+        Eigen::Matrix3d R_d(q_ref.toRotationMatrix());
+        Eigen::Matrix3d R(q.toRotationMatrix());
+        Eigen::Matrix3d eR_m = 0.5 * (R_d.transpose() * R - R.transpose() * R_d);
+        Eigen::Vector3d eR;
+        mav_msgs::vectorFromSkewMatrix(eR_m, &eR);
+        Eigen::Quaterniond q_ref_dot;
+        q_ref_dot.coeffs() = quaternionDiff(q_ref, q_ref_prev) / dt;
+        omega_ref = 2.0 * (q_ref.conjugate() * q_ref_dot).vec();
+        Eigen::Vector3d eOmega = omega - R.transpose() * R_d * omega_ref;
+        Eigen::Vector3d M = -kp.cwiseProduct(eR) - kd.cwiseProduct(eOmega) +
+                            omega.cross(inertia.cwiseProduct(omega)) -
+                            inertia.cwiseProduct((omega.cross(R.transpose() * R_d * omega_ref)));
+
+        omegadot = inertia_inv.cwiseProduct(M - omega.cross(inertia.cwiseProduct(omega)));
+        omega += dt * omegadot;
+        Eigen::Quaterniond q_omega(0, omega(0), omega(1), omega(2));
+        Eigen::Quaterniond q_dot(q * q_omega);
+        q.coeffs() = q.coeffs() + 0.5 * q_dot.coeffs() * dt;
+        q.normalize();
       }
     }
+    states[i].orientation_W_B = q;
+    states[i].angular_velocity_W = omega;
+    states[i].angular_acceleration_W = omegadot;
+    q_ref_prev = q_ref;
   }
   // Set last waypoint's angular velocity and acceleration to zero
-  states->back().angular_velocity_W = Eigen::Vector3d::Zero();
-  states->back().angular_acceleration_W = Eigen::Vector3d::Zero();
+  states.back().angular_velocity_W = Eigen::Vector3d::Zero();
+  states.back().angular_acceleration_W = Eigen::Vector3d::Zero();
+  return true;
+}
+
+bool SquadOptimization::smoothAttitude(mav_msgs::EigenTrajectoryPoint::Vector &states) const {
+  if (states.size() <= 3) {
+    return false;
+  }
+  Eigen::Quaterniond qm1, qp1;
+  qm1 = states[0].orientation_W_B;
+  qp1 = states[2].orientation_W_B;
+  for (size_t i = 1; i < states.size() - 2; i++) {
+    Eigen::Quaterniond q_new = slerp(qm1, qp1, 0.5);
+    qm1 = states[i].orientation_W_B;
+    qp1 = states[i + 2].orientation_W_B;
+
+    states[i].orientation_W_B = q_new;
+  }
+  addVelAcc(states);
+  return true;
 }
 
 bool SquadOptimization::getInterpolation(const double &t, Eigen::Quaterniond *result) const {
@@ -159,6 +285,19 @@ Eigen::Quaterniond SquadOptimization::quaternionSum(const Eigen::Quaterniond &q1
   Eigen::Quaterniond q;
   q.coeffs() = q1.coeffs() + q2.coeffs();
   return q;
+}
+
+inline Eigen::Matrix<double, 4, 1> SquadOptimization::quaternionDiff(
+    const Eigen::Quaterniond &q1, const Eigen::Quaterniond &q2) const {
+  return q1.coeffs() - q2.coeffs();
+  // double d1, d2;
+  // d1 = (q1.coeffs() - q2.coeffs()).norm();
+  // d2 = (q1.coeffs() + q2.coeffs()).norm();
+  // if (d1 < d2) {
+  //   return q1.coeffs() - q2.coeffs();
+  // } else {
+  //   return q1.coeffs() + q2.coeffs();
+  // }
 }
 
 Eigen::Quaterniond SquadOptimization::quaternionPow(const Eigen::Quaterniond &q,
