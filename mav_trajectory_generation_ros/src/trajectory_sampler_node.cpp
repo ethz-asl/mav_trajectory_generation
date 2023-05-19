@@ -101,6 +101,7 @@ void TrajectorySamplerNode::processTrajectory() {
                                                      &trajectory_points);
     trajectory_msgs::MultiDOFJointTrajectory msg_pub;
     msgMultiDofJointTrajectoryFromEigen(trajectory_points, &msg_pub);
+    msg_pub.header.stamp = ros::Time::now();
     command_pub_.publish(msg_pub);
   } else {
     publish_timer_.start();
@@ -118,6 +119,7 @@ bool TrajectorySamplerNode::stopSamplingCallback(
 void TrajectorySamplerNode::commandTimerCallback(const ros::TimerEvent&) {
   if (current_sample_time_ <= trajectory_.getMaxTime()) {
     trajectory_msgs::MultiDOFJointTrajectory msg;
+    msg.header.stamp = ros::Time::now();
     mav_msgs::EigenTrajectoryPoint trajectory_point;
     bool success = mav_trajectory_generation::sampleTrajectoryAtTime(
         trajectory_, current_sample_time_, &trajectory_point);
