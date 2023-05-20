@@ -36,3 +36,8 @@
 
 # Matlab
 *.m~
+
+# vscode & clion
+.vscode
+.idea
+cmake-build-debug
